@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="orders">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">Sync dine-in, delivery, and cake orders.</div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">Service floor</span>
+            <h1>Order Management</h1>
+            <p class="meta">
+              Capture new tickets and update their prep status instantly.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh queue
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="split">
+          <article class="card">
+            <div class="section-heading">
+              <h2>New Order Ticket</h2>
+              <span class="pill">Cashier</span>
+            </div>
+            <form id="orders-form">
+              <label for="order-customer"
+                ><span id="order-customer-label">Customer / Table</span></label
+              >
+              <input
+                id="order-customer"
+                name="customer"
+                placeholder="Table 5, Delivery #8891"
+                required
+              />
+
+              <!-- Item entry mode -->
+              <div style="margin-top: 0.75rem">
+                <label>Item source</label>
+                <div class="chips">
+                  <label
+                    ><input
+                      type="radio"
+                      name="item-mode"
+                      value="inventory"
+                      checked
+                    />
+                    Inventory</label
+                  >
+                  <label
+                    ><input type="radio" name="item-mode" value="custom" />
+                    Custom</label
+                  >
+                </div>
+              </div>
+
+              <!-- Order type (affects supplies visibility) -->
+              <div style="margin-top: 0.5rem">
+                <label for="order-type">Order type</label>
+                <select id="order-type" name="service" class="filter-select">
+                  <option value="dinein">Dine-in</option>
+                  <option value="takeout">Takeout</option>
+                  <option value="delivery">Delivery</option>
+                </select>
+              </div>
+
+              <!-- Inventory picker -->
+              <div id="inventory-section" style="margin-top: 0.75rem">
+                <label>Inventory item</label>
+                <div
+                  style="
+                    display: flex;
+                    gap: 0.5rem;
+                    align-items: center;
+                    margin-top: 0.5rem;
+                  "
+                >
+                  <select
+                    id="inventory-category"
+                    style="min-width: 8rem"
+                  ></select>
+                  <select id="inventory-item" style="min-width: 12rem"></select>
+                  <input
+                    id="inventory-qty"
+                    type="number"
+                    min="1"
+                    value="1"
+                    style="width: 4rem"
+                  />
+                  <button
+                    id="add-inventory-item"
+                    class="btn btn-secondary"
+                    type="button"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <!-- Supplies picker (shown for takeout/delivery) -->
+              <div
+                id="supplies-section"
+                style="margin-top: 0.75rem; display: none"
+              >
+                <label>Supplies / Packaging</label>
+                <div
+                  style="
+                    display: flex;
+                    gap: 0.5rem;
+                    align-items: center;
+                    margin-top: 0.5rem;
+                  "
+                >
+                  <select id="supplies-item" style="min-width: 14rem"></select>
+                  <input
+                    id="supplies-qty"
+                    type="number"
+                    min="1"
+                    value="1"
+                    style="width: 4rem"
+                  />
+                  <button
+                    id="add-supplies-item"
+                    class="btn btn-secondary"
+                    type="button"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <!-- Custom item entry -->
+              <div
+                id="custom-section"
+                style="margin-top: 0.75rem; display: none"
+              >
+                <label>Custom item</label>
+                <div
+                  style="
+                    display: flex;
+                    gap: 0.5rem;
+                    align-items: center;
+                    margin-top: 0.5rem;
+                  "
+                >
+                  <input
+                    id="custom-name"
+                    placeholder="Item name"
+                    style="min-width: 12rem"
+                  />
+                  <input
+                    id="custom-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Price"
+                    style="width: 6rem"
+                  />
+                  <input
+                    id="custom-qty"
+                    type="number"
+                    min="1"
+                    value="1"
+                    style="width: 4rem"
+                  />
+                  <button
+                    id="add-custom-item"
+                    class="btn btn-secondary"
+                    type="button"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <div style="margin-top: 1rem">
+                <label>Order items</label>
+                <ul
+                  id="order-items-list"
+                  class="receipt-items"
+                  style="min-height: 2.5rem; margin-top: 0.5rem"
+                ></ul>
+              </div>
+
+              <textarea
+                id="order-items"
+                name="items"
+                style="display: none"
+                readonly
+              ></textarea>
+              <input id="order-total" name="total" type="hidden" readonly />
+
+              <button class="btn btn-primary" type="submit">Add Order</button>
+            </form>
+          </article>
+
+          <article class="card card-compact">
+            <div class="section-heading">
+              <h2>Status Breakdown</h2>
+              <span class="pill">Live</span>
+            </div>
+            <div class="chips" id="order-status-breakdown"></div>
+            <p class="meta">
+              Statuses update automatically as the kitchen progresses.
+            </p>
+          </article>
+        </section>
+
+        <section class="table-wrapper" style="margin-top: 2rem">
+          <div class="section-heading">
+            <h2>Order Board</h2>
+            <select id="orders-filter" class="filter-select">
+              <option value="all" selected>All statuss</option>
+              <option value="pending">Pending</option>
+              <option value="preparing">Preparing</option>
+              <option value="ready">Ready</option>
+            </select>
+          </div>
+          <table id="orders-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section class="table-wrapper" id="completed-orders-panel">
+          <div class="section-heading">
+            <h2>Completed Orders</h2>
+            <span class="pill">Served</span>
+          </div>
+          <table id="completed-orders-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Served at</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <p class="footer-note">
+          Need a printed copy? Export a sales report from the Reports module.
+        </p>
+      </main>
+    </div>
+
+    <section
+      id="receipt-modal"
+      class="receipt-overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="receipt-dialog">
+        <header class="receipt-dialog__header">
+          <h3>Receipt Preview</h3>
+          <button id="receipt-close" class="btn btn-outline" type="button">
+            Close
+          </button>
+        </header>
+        <div id="receipt-template" class="receipt-template">
+          <div class="receipt">
+            <header class="receipt-header">
+              <div>
+                <p>Sweet Box • San Juan City</p>
+              </div>
+              <div class="receipt-chip-group">
+                <span id="receipt-ticket" class="receipt-ticket">Ticket</span>
+              </div>
+            </header>
+            <section class="receipt-info-grid">
+              <div>
+                <span class="receipt-label">Customer</span>
+                <strong id="receipt-customer">Walk-in</strong>
+              </div>
+              <div>
+                <span class="receipt-label">Last update</span>
+                <strong id="receipt-time">--</strong>
+              </div>
+            </section>
+            <section class="receipt-items-section">
+              <div class="receipt-items-heading">
+                <span>Line items</span>
+                <span id="receipt-item-count" class="receipt-count"
+                  >0 items</span
+                >
+              </div>
+              <ul id="receipt-items-list" class="receipt-items"></ul>
+            </section>
+            <div class="receipt-total-stack">
+              <div class="receipt-total-row">
+                <span>Total due</span>
+                <strong id="receipt-total">₱0.00</strong>
+              </div>
+              <p id="receipt-note" class="receipt-note">
+                Thank you for dining with us!
+              </p>
+            </div>
+            <div class="receipt-footer-tags">
+              <span class="pill pill-ghost" id="receipt-service-tag"
+                >Counter pickup</span
+              >
+              <span class="pill pill-ghost">VAT inclusive</span>
+            </div>
+          </div>
+        </div>
+        <div class="receipt-dialog__actions">
+          <button id="receipt-print" class="btn btn-primary" type="button">
+            Print Now
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>

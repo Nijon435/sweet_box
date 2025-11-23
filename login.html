@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Access</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="login">
+    <section
+      class="auth-overlay active"
+      style="position: relative; min-height: 100vh"
+    >
+      <div class="auth-card">
+        <div>
+          <h2>Sign in to manage operations</h2>
+          <p>
+            Choose your role to access dashboards, inventory, attendance, and
+            reporting tools.
+          </p>
+        </div>
+        <form id="login-form" class="auth-form">
+          <label for="login-user">User</label>
+          <select id="login-user" required></select>
+          <label for="login-pin">PIN</label>
+          <input
+            id="login-pin"
+            type="password"
+            maxlength="4"
+            placeholder="Enter 4-digit PIN"
+            required
+          />
+          <p class="auth-error" id="login-error"></p>
+          <button class="btn btn-primary" type="submit">Continue</button>
+        </form>
+        <p class="meta">
+          Demo credentials: Sofia Morales (Admin, PIN 4321) • Front Desk (Staff,
+          PIN 1111)
+        </p>
+      </div>
+    </section>
+
+    <script src="java.js"></script>
+    <script>
+      (function initLoginPage() {
+        const form = document.getElementById("login-form");
+        const select = document.getElementById("login-user");
+        const pinInput = document.getElementById("login-pin");
+        const errorNode = document.getElementById("login-error");
+        if (!form || !select || !pinInput) return;
+        const landing = (role) =>
+          typeof window.getLandingPageForRole === "function"
+            ? window.getLandingPageForRole(role)
+            : "dashboard.html";
+        if (
+          typeof window.getCurrentUser === "function" &&
+          window.getCurrentUser()
+        ) {
+          window.location.href = landing(window.getCurrentUser().role);
+          return;
+        }
+        if (typeof window.ACCOUNTS === "undefined") {
+          window.ACCOUNTS = [];
+        }
+        select.innerHTML = "<option value=''>Select user</option>";
+        window.ACCOUNTS.forEach((account) => {
+          const option = document.createElement("option");
+          option.value = account.id;
+          option.textContent = `${account.name} (${account.role})`;
+          select.appendChild(option);
+        });
+        if (typeof window.setSession !== "function") {
+          console.error("Auth utilities missing.");
+          return;
+        }
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const account = window.ACCOUNTS.find(
+            (acc) => acc.id === select.value
+          );
+          if (!account || account.pin !== pinInput.value.trim()) {
+            if (errorNode) errorNode.textContent = "Invalid credentials";
+            return;
+          }
+          setSession(account.id);
+          window.location.href = landing(account.role);
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Team Registry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="employees">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">
+          Manage hiring, roles, and shift baselines in one workspace.
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">HR tools</span>
+            <h1>Team Registry</h1>
+            <p class="meta">
+              Create employees once and they sync across attendance, orders, and
+              analytics.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh view
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="split">
+          <article class="card">
+            <div class="section-heading">
+              <h2>Register Team Member</h2>
+              <span class="pill">Admin only</span>
+            </div>
+            <form id="employee-form" data-role="admin">
+              <label for="employee-name">Full name</label>
+              <input
+                id="employee-name"
+                name="name"
+                placeholder="e.g., Sofia Dela Cruz"
+                required
+              />
+
+              <label for="employee-role">Role</label>
+              <select id="employee-role" name="role" required></select>
+              <div id="custom-role-field" class="custom-role-field hidden">
+                <label for="employee-role-custom">Custom role</label>
+                <input
+                  id="employee-role-custom"
+                  name="customRole"
+                  placeholder="Enter role name"
+                />
+              </div>
+
+              <label for="employee-shift">Shift start</label>
+              <input
+                id="employee-shift"
+                name="shiftStart"
+                type="time"
+                value="08:00"
+                required
+              />
+
+              <button class="btn btn-primary" type="submit">
+                Add Employee
+              </button>
+            </form>
+            <small class="meta"
+              >New team members are immediately available everywhere.</small
+            >
+          </article>
+
+          <article class="card">
+            <div class="section-heading">
+              <h2>Team Snapshot</h2>
+              <span class="pill">Auto-updated</span>
+            </div>
+            <div class="grid grid-3">
+              <div class="card card-compact">
+                <h3>Total staff</h3>
+                <strong id="employee-total">0</strong>
+              </div>
+              <div class="card card-compact">
+                <h3>Distinct roles</h3>
+                <strong id="employee-roles">0</strong>
+              </div>
+              <div class="card card-compact">
+                <h3>Earliest shift</h3>
+                <strong id="employee-earliest">--:--</strong>
+              </div>
+            </div>
+            <div style="margin-top: 1rem">
+              <strong>Role directory</strong>
+              <div class="chips" id="employee-role-list"></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="table-wrapper" style="margin-top: 2rem">
+          <div class="section-heading">
+            <h2>Employee Roster</h2>
+            <span class="pill">System of record</span>
+          </div>
+          <table id="employee-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Shift Start</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <p class="footer-note">
+          Changes instantly sync with attendance, analytics, and reporting.
+        </p>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>

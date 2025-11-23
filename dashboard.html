@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Operations Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="dashboard">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">Open 6:00 AM – 10:00 PM • San Juan City</div>
+      </aside>
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">Live overview</span>
+            <h1>Operations Dashboard</h1>
+            <p class="meta">
+              Sales pulse, inventory health, and floor performance in one
+              glance.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh data
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="grid grid-3">
+          <article class="card">
+            <h3>Today's Sales</h3>
+            <strong id="metric-sales">₱0.00</strong>
+            <small id="sales-trend-note">0% vs yesterday</small>
+          </article>
+          <article class="card">
+            <h3>Active Orders</h3>
+            <strong id="metric-orders">0 active</strong>
+            <small>Across dine-in, takeaway, and delivery</small>
+          </article>
+          <article class="card">
+            <h3>Inventory Portfolio</h3>
+            <strong id="metric-inventory">0 items</strong>
+            <small id="stock-health-label">Healthy</small>
+          </article>
+        </section>
+
+        <section class="card highlight-card" style="margin-top: 2rem">
+          <div class="section-heading">
+            <h2>Operations Overview</h2>
+            <span class="pill">Key alerts</span>
+          </div>
+          <ul class="overview-list" id="operations-overview"></ul>
+        </section>
+
+        <section class="split" style="margin-top: 2rem">
+          <article class="chart-card">
+            <div class="section-heading">
+              <h2>Sales Trend</h2>
+              <select id="sales-range" class="filter-select">
+                <option value="7">Last 7 days</option>
+                <option value="14" selected>Last 14 days</option>
+                <option value="30">Last 30 days</option>
+              </select>
+            </div>
+            <canvas id="salesTrendChart" height="260"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="section-heading">
+              <h2>Inventory Status</h2>
+              <span class="pill" id="inventory-status-note">Stable</span>
+            </div>
+            <canvas id="inventoryStatusChart" height="220"></canvas>
+            <h3 style="margin-top: 1.25rem">Low stock watch</h3>
+            <ul class="list" id="low-stock-list"></ul>
+          </article>
+        </section>
+
+        <section class="grid grid-2" style="margin-top: 2rem">
+          <article class="chart-card">
+            <div class="section-heading">
+              <h2>Attendance Pulse</h2>
+              <span class="pill" id="attendance-summary-label">Realtime</span>
+            </div>
+            <canvas id="attendanceDonutChart" height="220"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="section-heading">
+              <h2>Orders In Progress</h2>
+              <button
+                class="btn btn-ghost"
+                onclick="window.location.href='orders.html'"
+              >
+                Manage orders
+              </button>
+            </div>
+            <div id="orders-list" class="list"></div>
+          </article>
+        </section>
+
+        <section class="card" style="margin-top: 2rem">
+          <div class="section-heading">
+            <h2>Recent Activity</h2>
+            <span class="pill">Live feed</span>
+          </div>
+          <ul class="activity-log" id="recent-activity"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>

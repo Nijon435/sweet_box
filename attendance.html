@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="attendance">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">
+          Monitor punctuality & shift adherence in real time.
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">People operations</span>
+            <h1>Attendance & Timekeeping</h1>
+            <p class="meta">
+              Clock-ins, outs, and punctuality insights for the entire crew.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh view
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="split">
+          <article class="card">
+            <div class="section-heading">
+              <h2>Clock In / Out</h2>
+              <span class="pill">Front-desk</span>
+            </div>
+            <form id="attendance-form">
+              <label for="attendance-employee">Team member</label>
+              <select
+                id="attendance-employee"
+                name="employee"
+                required
+              ></select>
+
+              <label for="attendance-action">Action</label>
+              <select id="attendance-action" name="action" required>
+                <option value="">Choose an action</option>
+                <option value="in">Clock In</option>
+                <option value="out">Clock Out</option>
+                <option value="sick">Sick Leave</option>
+                <option value="absent">Absent</option>
+              </select>
+
+              <div id="attendance-shift-group">
+                <label for="attendance-shift">Shift window</label>
+                <select id="attendance-shift" name="shift" required>
+                  <option value="">Select shift</option>
+                  <option value="Morning (7AM–12PM)">Morning (7AM–12PM)</option>
+                  <option value="Afternoon (12PM–5PM)">
+                    Afternoon (12PM–5PM)
+                  </option>
+                </select>
+              </div>
+
+              <div id="attendance-reason-group" class="hidden">
+                <label for="attendance-reason">Reason / note</label>
+                <textarea
+                  id="attendance-reason"
+                  name="reason"
+                  rows="2"
+                  placeholder="e.g., Fever, family emergency"
+                ></textarea>
+              </div>
+
+              <button class="btn btn-primary" type="submit">Record Time</button>
+            </form>
+          </article>
+
+          <article class="card">
+            <div class="section-heading">
+              <h2>Shift Snapshot</h2>
+              <span class="pill">Auto-calculated</span>
+            </div>
+            <div class="grid grid-3">
+              <div class="card">
+                <h3>Present</h3>
+                <strong id="attendance-present">0 staff</strong>
+              </div>
+              <div class="card">
+                <h3>Late</h3>
+                <strong id="attendance-late">0 staff</strong>
+              </div>
+              <div class="card">
+                <h3>Absent</h3>
+                <strong id="attendance-absent">0 staff</strong>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="card action-card" style="margin-top: 1.5rem">
+          <div class="section-heading">
+            <h2>Action Center</h2>
+            <span class="pill">Focus</span>
+          </div>
+          <ul id="attendance-alerts" class="alert-list"></ul>
+        </section>
+
+        <section class="card" style="margin-top: 1.5rem">
+          <div class="section-heading">
+            <h2>Team Registry</h2>
+            <span class="pill">New sub-module</span>
+          </div>
+          <p style="margin-bottom: 1rem">
+            Employee onboarding now lives in its own workspace with dedicated
+            tools for HR. Head over to the Team module to add or update crew
+            members.
+          </p>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="window.location.href='employees.html'"
+          >
+            Open Team Module
+          </button>
+        </section>
+
+        <section class="table-wrapper" style="margin-top: 2rem">
+          <div class="section-heading">
+            <h2>Attendance Board</h2>
+            <span class="pill">Daily Status</span>
+          </div>
+          <table id="attendance-status-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Status</th>
+                <th>Last Timestamp</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section class="table-wrapper" style="margin-top: 1.5rem">
+          <div class="section-heading">
+            <h2>Timestamp Log</h2>
+            <select id="attendance-log-filter" class="filter-select">
+              <option value="all" selected>All shifts</option>
+              <option value="morning">Morning shift</option>
+              <option value="afternoon">Afternoon shift</option>
+            </select>
+          </div>
+          <table id="attendance-log-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Action</th>
+                <th>Timestamp</th>
+                <th>Shift / Note</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>

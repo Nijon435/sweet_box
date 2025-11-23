@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="analytics">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">Insights for owners and managers.</div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">Intelligence</span>
+            <h1>Advanced Analytics</h1>
+            <p class="meta">
+              Inventory usage, labor efficiency, and sales performance with
+              dynamic charts.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh insights
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="grid grid-3">
+          <article class="card">
+            <h3>Inventory Turnover</h3>
+            <strong id="analytics-turnover">0x</strong>
+          </article>
+          <article class="card">
+            <h3>Average Ticket</h3>
+            <strong id="analytics-ticket">₱0.00</strong>
+          </article>
+          <article class="card">
+            <h3>Productivity</h3>
+            <strong id="analytics-productivity">0 tasks / staff</strong>
+          </article>
+        </section>
+
+        <section class="card kpi-panel">
+          <div class="section-heading">
+            <h2>Operations KPIs</h2>
+            <select id="kpi-range" class="filter-select">
+              <option value="7" selected>Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+          <div class="kpi-grid">
+            <article>
+              <p>Total sales</p>
+              <strong id="kpi-sales">₱0.00</strong>
+            </article>
+            <article>
+              <p>Total attendance logs</p>
+              <strong id="kpi-attendance">0 logs</strong>
+            </article>
+            <article>
+              <p>Stock usage patterns</p>
+              <strong id="kpi-stock">0 units</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="card card-compact analytics-filter-panel">
+          <div class="section-heading">
+            <h2>Chart Categories</h2>
+            <span class="pill">Focus view</span>
+          </div>
+          <div class="chart-category-tabs" role="tablist">
+            <button
+              class="chart-category-tab active"
+              data-chart-filter="all"
+              type="button"
+            >
+              All charts
+            </button>
+            <button
+              class="chart-category-tab"
+              data-chart-filter="sales"
+              type="button"
+            >
+              Sales & Revenue
+            </button>
+            <button
+              class="chart-category-tab"
+              data-chart-filter="inventory"
+              type="button"
+            >
+              Inventory & Ops
+            </button>
+            <button
+              class="chart-category-tab"
+              data-chart-filter="people"
+              type="button"
+            >
+              People & Performance
+            </button>
+          </div>
+        </section>
+
+        <section
+          class="chart-flex analytics-compact-row"
+          style="margin-top: 2rem"
+        >
+          <article
+            class="chart-card chart-card--compact"
+            data-chart-category="sales"
+          >
+            <div class="section-heading">
+              <h2>Revenue Mix</h2>
+              <span class="pill">By channel</span>
+            </div>
+            <canvas id="salesMixChart" height="280"></canvas>
+          </article>
+          <article
+            class="chart-card chart-card--compact"
+            data-chart-category="inventory"
+          >
+            <div class="section-heading">
+              <h2>Inventory Usage</h2>
+              <span class="pill">Weekly</span>
+            </div>
+            <canvas id="inventoryUsageChart" height="280"></canvas>
+          </article>
+        </section>
+
+        <section class="chart-flex" style="margin-top: 1.5rem">
+          <article class="chart-card" data-chart-category="people">
+            <div class="section-heading">
+              <h2>Attendance Trend</h2>
+              <select id="attendance-range" class="filter-select">
+                <option value="7" selected>Last 7 days</option>
+                <option value="14">Last 14 days</option>
+                <option value="30">Last 30 days</option>
+              </select>
+            </div>
+            <canvas id="attendanceTrendChart" height="280"></canvas>
+          </article>
+          <article class="chart-card" data-chart-category="people">
+            <div class="section-heading">
+              <h2>Employee Performance</h2>
+              <span class="pill">Ratings</span>
+            </div>
+            <canvas id="performanceChart" height="280"></canvas>
+          </article>
+        </section>
+
+        <section
+          class="chart-card"
+          style="margin-top: 1.5rem"
+          data-chart-category="inventory"
+        >
+          <div class="section-heading">
+            <h2>Stock Trends</h2>
+            <span class="pill">Fast movers</span>
+          </div>
+          <canvas id="stockTrendsChart" height="320"></canvas>
+          <p class="meta" style="margin-top: 0.75rem">
+            Tracks the top items that are consumed or sold fastest so you can
+            plan production.
+          </p>
+        </section>
+
+        <p class="footer-note">
+          Use these insights to plan procurement and staffing for the weekend
+          rush.
+        </p>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>

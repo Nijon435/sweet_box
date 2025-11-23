@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports & Exports</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="report">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">Export-ready ledgers for finance reviews.</div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">Compliance</span>
+            <h1>Reports & Exports</h1>
+            <p class="meta">
+              Download Excel-ready files for inventory, sales, attendance, and
+              finance.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh data
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="grid grid-2">
+          <article class="report-card">
+            <h3>Inventory Ledger</h3>
+            <p>Includes category, stock on hand, reorder point, and cost.</p>
+            <button class="btn btn-primary" data-report="inventory">
+              Export Excel
+            </button>
+          </article>
+          <article class="report-card">
+            <h3>Sales Summary</h3>
+            <p>Daily sales totals for the latest trading window.</p>
+            <button class="btn btn-primary" data-report="sales">
+              Export Excel
+            </button>
+          </article>
+        </section>
+
+        <section class="grid grid-2" style="margin-top: 1.5rem">
+          <article class="report-card">
+            <h3>Attendance Log</h3>
+            <p>Day-of clock in/out events with notes.</p>
+            <button class="btn btn-primary" data-report="attendance">
+              Export Excel
+            </button>
+          </article>
+          <article class="report-card">
+            <h3>Financial Snapshot</h3>
+            <p>High-level figures for owner briefings.</p>
+            <button class="btn btn-primary" data-report="financial">
+              Export Excel
+            </button>
+          </article>
+        </section>
+
+        <p class="footer-note">
+          Reports are generated locally using SheetJS and download as .xlsx
+          files.
+        </p>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body data-page="inventory">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Sweet Box</strong>
+        </div>
+        <nav class="nav">
+          <a href="dashboard.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Team</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+        </nav>
+        <div class="user-session">
+          <div>
+            <strong id="session-name">Guest</strong>
+            <small id="session-role">Sign in required</small>
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+        <div class="meta">
+          Track cakes, ingredients, supplies, and beverages.
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">Production control</span>
+            <h1>Inventory Management</h1>
+            <p class="meta">
+              Centralized catalog with live quantities and reorder alerts.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-data">
+              Refresh data
+            </button>
+            <button class="btn btn-primary" id="reset-data" data-role="admin">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <section class="alert-panel" id="inventory-alert"></section>
+
+        <section class="split">
+          <article class="card">
+            <div class="section-heading">
+              <h2>Add or Update Item</h2>
+              <span class="pill">CRUD enabled</span>
+            </div>
+            <form id="inventory-form" data-role="admin">
+              <input type="hidden" name="itemId" />
+              <label for="item-category">Category</label>
+              <select id="item-category" name="category" required>
+                <option value="">Select category</option>
+                <option value="cakes">Cakes & Pastries</option>
+                <option value="ingredients">Ingredients</option>
+                <option value="supplies">Supplies</option>
+                <option value="beverages">Beverages</option>
+              </select>
+
+              <label for="item-name">Item name</label>
+              <input
+                id="item-name"
+                name="name"
+                placeholder="Chocolate Mousse Slice"
+                required
+              />
+
+              <label for="item-qty">Quantity on hand</label>
+              <input
+                id="item-qty"
+                name="quantity"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+
+              <!-- unit field removed per request: unit of measure is kept in data but not editable in UI -->
+
+              <label for="item-cost">Unit cost (₱)</label>
+              <input
+                id="item-cost"
+                name="cost"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+
+              <button class="btn btn-primary" type="submit">Save Item</button>
+            </form>
+          </article>
+
+          <article class="card">
+            <div class="section-heading">
+              <h2>Inventory Snapshot</h2>
+              <span class="pill">Auto</span>
+            </div>
+            <ul class="list">
+              <li>
+                <span>Total SKUs</span
+                ><strong id="inventory-total">0 products</strong>
+              </li>
+              <li>
+                <span>Low stock alerts</span
+                ><strong id="inventory-low">0 low stock</strong>
+              </li>
+              <li>
+                <span>On-hand value</span
+                ><strong id="inventory-value">₱0.00</strong>
+              </li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="grid grid-2" style="margin-top: 2rem">
+          <article class="table-wrapper">
+            <div class="section-heading">
+              <h2>Cakes & Pastries</h2>
+              <span class="pill">Finished goods</span>
+            </div>
+            <table class="inventory-table" data-category="cakes">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+
+          <article class="table-wrapper">
+            <div class="section-heading">
+              <h2>Ingredients</h2>
+              <span class="pill">Kitchen</span>
+            </div>
+            <table class="inventory-table" data-category="ingredients">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+        </section>
+
+        <section class="grid grid-2" style="margin-top: 1.5rem">
+          <article class="table-wrapper">
+            <div class="section-heading">
+              <h2>Supplies</h2>
+              <span class="pill">Packaging</span>
+            </div>
+            <table class="inventory-table" data-category="supplies">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+
+          <article class="table-wrapper">
+            <div class="section-heading">
+              <h2>Beverages</h2>
+              <span class="pill">Liquid inventory</span>
+            </div>
+            <table class="inventory-table" data-category="beverages">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+        </section>
+
+        <p class="footer-note">
+          Use the form on the left to add new SKUs or update existing counts.
+        </p>
+      </main>
+    </div>
+
+    <div class="modal-overlay" id="inventory-edit-modal">
+      <div class="modal-card">
+        <div class="modal-card__header">
+          <h2>Edit Inventory Item</h2>
+          <button
+            class="btn btn-outline"
+            type="button"
+            id="inventory-edit-close"
+          >
+            Close
+          </button>
+        </div>
+        <form id="inventory-edit-form" data-role="admin">
+          <label for="edit-item-category">Category</label>
+          <select id="edit-item-category" name="category" required>
+            <option value="">Select category</option>
+            <option value="cakes">Cakes & Pastries</option>
+            <option value="ingredients">Ingredients</option>
+            <option value="supplies">Supplies</option>
+            <option value="beverages">Beverages</option>
+          </select>
+
+          <label for="edit-item-name">Item name</label>
+          <input id="edit-item-name" name="name" required />
+
+          <label for="edit-item-qty">Quantity on hand</label>
+          <input
+            id="edit-item-qty"
+            name="quantity"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+          />
+
+          <!-- edit unit of measure removed from UI; units are kept in data but not editable here -->
+
+          <label for="edit-item-cost">Unit cost (₱)</label>
+          <input
+            id="edit-item-cost"
+            name="cost"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+          />
+
+          <div class="modal-card__actions">
+            <button
+              class="btn btn-secondary"
+              type="button"
+              id="inventory-edit-cancel"
+            >
+              Cancel
+            </button>
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="java.js"></script>
+  </body>
+</html>
