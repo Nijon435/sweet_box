@@ -113,8 +113,10 @@ img {
 
 .brand {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .brand span {
@@ -125,6 +127,78 @@ img {
 .brand strong {
   font-size: 1.4rem;
   color: var(--brown);
+}
+
+.brand-logo {
+  height: 5rem; /* increased size per request */
+  width: auto;
+  display: inline-block;
+}
+
+.auth-logo {
+  height: 1.6rem;
+  width: auto;
+  display: inline-block;
+}
+
+.auth-logo-top {
+  display: block;
+  height: 9rem; /* larger login logo at top */
+  width: auto;
+}
+
+/* Themed confirmation modal (matches system theme) */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 7, 3, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.confirm-overlay.active {
+  display: flex;
+}
+.confirm-dialog {
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1rem 1.25rem;
+  width: 380px;
+  max-width: calc(100% - 32px);
+}
+.confirm-dialog__header h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--brown-dark);
+}
+.confirm-dialog__body {
+  color: var(--gray-500);
+  margin-bottom: 0.75rem;
+}
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Status breakdown chips (stack vertically and compact) */
+#order-status-breakdown {
+  display: block;
+  max-width: 240px;
+}
+.chip {
+  background: rgba(246, 195, 67, 0.08);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.chip .muted {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+.chip-details div {
+  margin-bottom: 0.25rem;
 }
 
 .nav {
@@ -1109,5 +1183,77 @@ textarea {
 
   .nav a {
     flex: 1 1 100%;
+  }
+}
+
+/* Mobile sidebar overlay + toggle */
+@media (max-width: 1100px) {
+  .sidebar {
+    /* keep visual styling but remove from flow and hide by default */
+    position: fixed;
+    left: 1rem;
+    top: 1.5rem;
+    bottom: 1.5rem;
+    width: 280px;
+    transform: translateX(-110%);
+    transition: transform 0.24s ease;
+    z-index: 6001;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    border-radius: 16px;
+  }
+
+  .sidebar.mobile-visible {
+    transform: translateX(0);
+  }
+
+  .mobile-hamburger {
+    display: none; /* enabled via inline JS on relevant pages */
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 7000;
+    background: var(--white);
+    border-radius: 10px;
+    padding: 0.4rem 0.5rem;
+    box-shadow: var(--shadow);
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 6000;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar .close-mobile {
+    display: none; /* toggled via JS on small screens */
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--brown-dark);
+    padding: 0.35rem;
+    margin-left: auto;
+  }
+
+  /* keep main content comfortable when overlay is hidden by default */
+  .main-content {
+    padding-top: 1.75rem;
   }
 }

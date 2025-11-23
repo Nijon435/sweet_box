@@ -1,267 +1,45 @@
 const STORAGE_KEY = "cake_restaurant_suite_v1";
 const SESSION_KEY = "cake_restaurant_active_user";
 
+const PREFER_SERVER_DATA = true;
+
 const ACCOUNTS = [
-  { id: "admin-1", name: "Sofia Morales", role: "admin", pin: "4321" },
-  { id: "staff-1", name: "Front Desk", role: "staff", pin: "1111" },
-  { id: "staff-2", name: "Dining Captain", role: "staff", pin: "2222" },
+  { id: "admin-1", name: "", role: "admin", pin: "4321" },
+  { id: "staff-1", name: "", role: "inventory_manager", pin: "1111" },
+  { id: "staff-2", name: "", role: "staff", pin: "2222" },
 ];
 
-const getDefaultData = () => ({
-  employees: [
-    {
-      id: "emp-1",
-      name: "Ava Santos",
-      role: "Head Baker",
-      shiftStart: "07:30",
-    },
-    {
-      id: "emp-2",
-      name: "Luis Mercado",
-      role: "Sous Chef",
-      shiftStart: "08:00",
-    },
-    { id: "emp-3", name: "Mia Reyes", role: "Cashier", shiftStart: "09:00" },
-    { id: "emp-4", name: "Daniel Cruz", role: "Barista", shiftStart: "09:00" },
-    {
-      id: "emp-5",
-      name: "Carina Uy",
-      role: "Pastry Assistant",
-      shiftStart: "08:00",
-    },
-    {
-      id: "emp-6",
-      name: "Jasper Lim",
-      role: "Dining Captain",
-      shiftStart: "10:00",
-    },
-  ],
-  attendanceLogs: [
-    {
-      id: "att-101",
-      employeeId: "emp-1",
-      action: "in",
-      timestamp: "2025-11-20T07:24:00",
-      note: "Opened kitchen",
-    },
-    {
-      id: "att-102",
-      employeeId: "emp-2",
-      action: "in",
-      timestamp: "2025-11-20T07:55:00",
-      note: "Prep",
-    },
-    {
-      id: "att-103",
-      employeeId: "emp-3",
-      action: "in",
-      timestamp: "2025-11-20T09:08:00",
-      note: "Traffic",
-    },
-    {
-      id: "att-104",
-      employeeId: "emp-4",
-      action: "in",
-      timestamp: "2025-11-20T08:55:00",
-      note: "Bar set",
-    },
-    {
-      id: "att-105",
-      employeeId: "emp-5",
-      action: "in",
-      timestamp: "2025-11-20T08:10:00",
-      note: "",
-    },
-    {
-      id: "att-106",
-      employeeId: "emp-6",
-      action: "in",
-      timestamp: "2025-11-20T09:58:00",
-      note: "Floor walk",
-    },
-    {
-      id: "att-107",
-      employeeId: "emp-1",
-      action: "out",
-      timestamp: "2025-11-19T16:02:00",
-      note: "",
-    },
-  ],
-  inventory: [
-    {
-      id: "inv-1",
-      category: "cakes",
-      name: "Chocolate Truffle Cake",
-      quantity: 12,
-      unit: "whole",
-      reorderPoint: 5,
-      cost: 28,
-    },
-    {
-      id: "inv-2",
-      category: "cakes",
-      name: "Ube Macapuno Cake",
-      quantity: 8,
-      unit: "whole",
-      reorderPoint: 4,
-      cost: 32,
-    },
-    {
-      id: "inv-3",
-      category: "cakes",
-      name: "Mango Cream Slice",
-      quantity: 48,
-      unit: "slice",
-      reorderPoint: 24,
-      cost: 5,
-    },
-    {
-      id: "inv-4",
-      category: "ingredients",
-      name: "Cake Flour",
-      quantity: 32,
-      unit: "kg",
-      reorderPoint: 15,
-      cost: 2.4,
-    },
-    {
-      id: "inv-5",
-      category: "ingredients",
-      name: "Butter",
-      quantity: 18,
-      unit: "kg",
-      reorderPoint: 10,
-      cost: 3.5,
-    },
-    {
-      id: "inv-6",
-      category: "supplies",
-      name: "Cake Boxes",
-      quantity: 140,
-      unit: "pcs",
-      reorderPoint: 60,
-      cost: 0.6,
-    },
-    {
-      id: "inv-7",
-      category: "supplies",
-      name: "Coffee Cups",
-      quantity: 220,
-      unit: "pcs",
-      reorderPoint: 120,
-      cost: 0.25,
-    },
-    {
-      id: "inv-8",
-      category: "beverages",
-      name: "Cold Brew Concentrate",
-      quantity: 18,
-      unit: "L",
-      reorderPoint: 8,
-      cost: 4.2,
-    },
-    {
-      id: "inv-9",
-      category: "beverages",
-      name: "House Iced Tea",
-      quantity: 25,
-      unit: "L",
-      reorderPoint: 12,
-      cost: 1.8,
-    },
-  ],
-  orders: [
-    {
-      id: "ord-201",
-      customer: "Walk-in #1051",
-      items: "Whole Ube Cake",
-      total: 45,
-      status: "ready",
-      type: "takeout",
-      timestamp: "2025-11-20T11:12:00",
-    },
-    {
-      id: "ord-202",
-      customer: "Table 7",
-      items: "Steak + Iced Tea",
-      total: 32,
-      status: "preparing",
-      type: "dine-in",
-      timestamp: "2025-11-20T11:25:00",
-    },
-    {
-      id: "ord-203",
-      customer: "Delivery #8821",
-      items: "Dozen Ensaymada",
-      total: 26,
-      status: "pending",
-      type: "delivery",
-      timestamp: "2025-11-20T11:45:00",
-    },
-    {
-      id: "ord-204",
-      customer: "Table 3",
-      items: "Latte & Croissant",
-      total: 11,
-      status: "served",
-      type: "dine-in",
-      timestamp: "2025-11-20T10:55:00",
-      servedAt: "2025-11-20T10:55:00",
-    },
-  ],
-  salesHistory: [
-    { date: "2025-11-07", total: 780 },
-    { date: "2025-11-08", total: 810 },
-    { date: "2025-11-09", total: 795 },
-    { date: "2025-11-10", total: 860 },
-    { date: "2025-11-11", total: 910 },
-    { date: "2025-11-12", total: 940 },
-    { date: "2025-11-13", total: 880 },
-    { date: "2025-11-14", total: 920 },
-    { date: "2025-11-15", total: 970 },
-    { date: "2025-11-16", total: 1010 },
-    { date: "2025-11-17", total: 985 },
-    { date: "2025-11-18", total: 1040 },
-    { date: "2025-11-19", total: 990 },
-    { date: "2025-11-20", total: 1095 },
-  ],
-  inventoryUsage: [
-    { label: "Flour (kg)", used: 36 },
-    { label: "Butter (kg)", used: 22 },
-    { label: "Sugar (kg)", used: 28 },
-    { label: "Fresh Milk (L)", used: 30 },
-    { label: "Chocolate (kg)", used: 18 },
-  ],
-  attendanceTrend: [
-    { label: "Mon", present: 12, late: 2, absent: 0 },
-    { label: "Tue", present: 11, late: 1, absent: 1 },
-    { label: "Wed", present: 13, late: 1, absent: 0 },
-    { label: "Thu", present: 12, late: 2, absent: 0 },
-    { label: "Fri", present: 14, late: 0, absent: 0 },
-    { label: "Sat", present: 15, late: 1, absent: 0 },
-    { label: "Sun", present: 10, late: 0, absent: 3 },
-  ],
-  performanceScores: [
-    { employeeId: "emp-1", rating: 4.9, completedOrders: 128 },
-    { employeeId: "emp-2", rating: 4.7, completedOrders: 118 },
-    { employeeId: "emp-3", rating: 4.5, completedOrders: 156 },
-    { employeeId: "emp-4", rating: 4.6, completedOrders: 141 },
-    { employeeId: "emp-5", rating: 4.4, completedOrders: 102 },
-    { employeeId: "emp-6", rating: 4.3, completedOrders: 96 },
-  ],
-  stockTrends: [
-    { item: "Chocolate Truffle Cake", turnover: 58 },
-    { item: "Ube Macapuno Cake", turnover: 54 },
-    { item: "Mango Cream Slice", turnover: 72 },
-    { item: "Cake Flour", turnover: 65 },
-    { item: "Cold Brew Concentrate", turnover: 49 },
-    { item: "House Iced Tea", turnover: 61 },
-  ],
+const getDefaultData = () => getEmptyData();
+
+const getEmptyData = () => ({
+  employees: [],
+  attendanceLogs: [],
+  inventory: [],
+  orders: [],
+  salesHistory: [],
+  inventoryUsage: [],
+  attendanceTrend: [],
+  performanceScores: [],
+  stockTrends: [],
 });
+
+async function fetchServerState() {
+  const endpoint =
+    (typeof window !== "undefined" && window.APP_STATE_ENDPOINT) ||
+    "/api/state";
+  const res = await fetch(endpoint, { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch server state: ${res.status} ${res.statusText}`
+    );
+  }
+  const json = await res.json();
+  return json;
+}
 
 const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
-let appState = loadState();
+let appState = getEmptyData();
 let activeUser = loadSession();
 let authCallback = null;
 let liveClockTimer = null;
@@ -275,6 +53,13 @@ function loadState() {
     }
   } catch (error) {
     console.warn("Unable to parse saved data", error);
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    (window.SERVER_HAS_DATA || PREFER_SERVER_DATA)
+  ) {
+    return getEmptyData();
   }
   return getDefaultData();
 }
@@ -581,6 +366,111 @@ const attachGlobalActions = () => {
   }
 };
 
+/* Mobile sidebar toggle: inject hamburger button and backdrop, manage open/close */
+function setupSidebarToggle() {
+  const body = document.body;
+  const sidebar = document.querySelector(".sidebar");
+  if (!sidebar) return;
+
+  // Backdrop
+  let backdrop = document.querySelector(".sidebar-backdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.className = "sidebar-backdrop";
+    document.body.appendChild(backdrop);
+  }
+
+  // Hamburger button
+  let hamb = document.querySelector(".mobile-hamburger");
+  if (!hamb) {
+    hamb = document.createElement("button");
+    hamb.className = "mobile-hamburger";
+    hamb.setAttribute("aria-label", "Toggle navigation");
+    hamb.innerHTML = "&#9776;";
+    document.body.appendChild(hamb);
+  }
+
+  // Close button inside sidebar
+  let closeBtn = sidebar.querySelector(".close-mobile");
+  if (!closeBtn) {
+    closeBtn = document.createElement("button");
+    closeBtn.className = "close-mobile";
+    closeBtn.setAttribute("aria-label", "Close navigation");
+    closeBtn.innerHTML = "✕";
+    sidebar.insertBefore(closeBtn, sidebar.firstChild);
+  }
+
+  function openSidebar() {
+    body.classList.add("sidebar-open");
+    sidebar.classList.add("mobile-visible");
+  }
+
+  function closeSidebar() {
+    body.classList.remove("sidebar-open");
+    sidebar.classList.remove("mobile-visible");
+  }
+
+  // Avoid adding duplicate handlers when this function runs multiple times
+  if (!hamb.dataset.bound) {
+    hamb.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (sidebar.classList.contains("mobile-visible")) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+    hamb.dataset.bound = "true";
+  }
+
+  if (!backdrop.dataset.bound) {
+    backdrop.addEventListener("click", closeSidebar);
+    backdrop.dataset.bound = "true";
+  }
+
+  if (!closeBtn.dataset.bound) {
+    closeBtn.addEventListener("click", closeSidebar);
+    closeBtn.dataset.bound = "true";
+  }
+
+  // Close sidebar when a navigation link is clicked (helpful before page navigation)
+  const navLinks = sidebar.querySelectorAll(".nav a[href]");
+  navLinks.forEach((link) => {
+    if (!link.dataset.closeBound) {
+      link.addEventListener("click", (e) => {
+        // close only on mobile widths
+        const isMobileNow = window.matchMedia("(max-width: 1100px)").matches;
+        if (isMobileNow) closeSidebar();
+      });
+      link.dataset.closeBound = "true";
+    }
+  });
+
+  // show/hide control based on viewport
+  const mq = window.matchMedia("(max-width: 1100px)");
+  function updateControls() {
+    const isMobile = mq.matches;
+    hamb.style.display = isMobile ? "flex" : "none";
+    closeBtn.style.display = isMobile ? "block" : "none";
+    if (!isMobile) {
+      // ensure sidebar is visible in desktop flows and reset inline transforms
+      closeSidebar();
+      sidebar.style.transform = "none";
+      sidebar.style.position = "relative";
+    } else {
+      // restore overlay style
+      sidebar.style.position = "fixed";
+    }
+  }
+  updateControls();
+  // Use addEventListener if available
+  if (typeof mq.addEventListener === "function") {
+    mq.addEventListener("change", updateControls);
+  } else if (typeof mq.addListener === "function") {
+    mq.addListener(updateControls);
+  }
+}
+
 function updateSessionDisplay(user) {
   const nameNode = document.getElementById("session-name");
   const roleNode = document.getElementById("session-role");
@@ -594,17 +484,31 @@ function updateSessionDisplay(user) {
     if (logoutButton) logoutButton.disabled = true;
     return;
   }
-  nameNode.textContent = user.name;
-  roleNode.textContent = user.role === "admin" ? "Administrator" : "Staff";
+  // Do not display personal names; show account id and role only
+  nameNode.textContent = user.id || "";
+  roleNode.textContent =
+    user.role === "admin"
+      ? "Administrator"
+      : user.role === "inventory_manager"
+      ? "Inventory Manager"
+      : "Staff";
   if (logoutButton) logoutButton.disabled = false;
 }
 
 function applyRolePermissions(user) {
   const nodes = document.querySelectorAll("[data-role]");
   nodes.forEach((node) => {
-    const required = node.dataset.role;
+    // support multiple allowed roles in the `data-role` attribute (comma-separated)
+    const requiredRaw = node.dataset.role || "";
+    const requiredRoles = requiredRaw
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean);
     const allowed =
-      Boolean(user) && (required === "admin" ? user.role === "admin" : true);
+      Boolean(user) &&
+      (requiredRoles.length === 0 ||
+        requiredRoles.includes(user.role) ||
+        (requiredRoles.includes("admin") && user.role === "admin"));
     const hideWhenDenied = node.dataset.hideWhenDenied === "true";
     if (!allowed && hideWhenDenied) {
       node.style.display = "none";
@@ -693,11 +597,34 @@ function showAuthOverlay(onAuthenticated) {
   overlay.classList.add("active");
 }
 
-function initApp() {
+async function initApp() {
   mountLiveClock();
   highlightNavigation();
   attachGlobalActions();
+  setupSidebarToggle();
   startLiveClock();
+
+  if (
+    typeof window !== "undefined" &&
+    (window.SERVER_HAS_DATA || PREFER_SERVER_DATA)
+  ) {
+    try {
+      const serverState = await fetchServerState();
+      if (serverState && typeof serverState === "object") {
+        appState = serverState;
+      } else {
+        appState = loadState();
+      }
+    } catch (err) {
+      console.warn(
+        "Failed to fetch server state, falling back to local state",
+        err
+      );
+      appState = loadState();
+    }
+  } else {
+    appState = loadState();
+  }
   const page = document.body.dataset.page;
   const renderers = {
     dashboard: renderDashboard,
@@ -1051,7 +978,21 @@ function renderAttendance() {
 
   const employeeSnapshots = appState.employees.map((employee) => {
     const snapshot = computeEmployeeStatus(employee);
-    return { employee, status: snapshot.status, timestamp: snapshot.timestamp };
+    // find latest log for today to determine whether last action was in/out
+    const todaysLogs = appState.attendanceLogs
+      .filter(
+        (log) =>
+          log.employeeId === employee.id && log.timestamp.startsWith(todayKey())
+      )
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const latestLog = todaysLogs[todaysLogs.length - 1];
+    const latestAction = latestLog ? latestLog.action : null;
+    return {
+      employee,
+      status: snapshot.status,
+      timestamp: snapshot.timestamp,
+      latestAction,
+    };
   });
 
   const summary = employeeSnapshots.reduce(
@@ -1073,18 +1014,31 @@ function renderAttendance() {
   const boardBody = document.querySelector("#attendance-status-table tbody");
   if (boardBody) {
     boardBody.innerHTML = "";
-    employeeSnapshots.forEach(({ employee, status, timestamp }) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-				<td>
-					<strong>${employee.name}</strong>
-					<small>${employee.role}</small>
-				</td>
-				<td><span class="status ${status}">${status}</span></td>
-				<td>${timestamp}</td>
-			`;
-      boardBody.appendChild(row);
-    });
+    employeeSnapshots.forEach(
+      ({ employee, status, timestamp, latestAction }) => {
+        const row = document.createElement("tr");
+
+        let displayLabel = "";
+        if (latestAction === "in") {
+          displayLabel = "Clocked in";
+          if (status === "late") displayLabel += " — Late";
+        } else if (latestAction === "out") {
+          displayLabel = "Clocked out";
+        } else {
+          displayLabel = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+        const cssClass = status || "absent";
+        row.innerHTML = `
+                <td>
+                    <strong>${employee.name}</strong>
+                    <small>${employee.role}</small>
+                </td>
+                <td><span class="status ${cssClass}">${displayLabel}</span></td>
+                <td>${timestamp}</td>
+            `;
+        boardBody.appendChild(row);
+      }
+    );
   }
 
   const logBody = document.querySelector("#attendance-log-table tbody");
@@ -1649,16 +1603,41 @@ function renderOrders() {
       event.preventDefault();
       const data = new FormData(form);
       const orderType = normalizeOrderType(data.get("type"));
+
+      let itemsArr = [];
+      try {
+        const raw = form.querySelector("#order-items-json")?.value || "[]";
+        itemsArr = JSON.parse(raw);
+      } catch (err) {
+        itemsArr = [];
+      }
+
+      itemsArr.forEach((it) => {
+        if (!it || !it.source) return;
+        if (it.source === "inventory" || it.source === "supplies") {
+          const inv = appState.inventory.find((i) => i.id === it.id);
+          if (inv) {
+            inv.quantity = Number(inv.quantity || 0) - Number(it.qty || 0);
+            if (inv.quantity < 0) inv.quantity = 0;
+          }
+        }
+      });
+
       const payload = {
         id: `ord-${Date.now()}`,
         customer: data.get("customer") || "Walk-in",
-        items: data.get("items") || "",
+        items:
+          (itemsArr || []).map((it) => `${it.qty}x ${it.name}`).join(", ") ||
+          data.get("items") ||
+          "",
+        itemsJson: itemsArr,
         total: Number(data.get("total")) || 0,
         status: data.get("status") || "pending",
         type: orderType,
         timestamp: new Date().toISOString(),
         servedAt: null,
       };
+
       appState.orders.unshift(payload);
       saveState();
       form.reset();
@@ -1772,6 +1751,8 @@ function renderOrders() {
       if (!order) return;
       order.status = select.value;
       saveState();
+
+      renderOrders();
     });
   });
 
@@ -1791,7 +1772,7 @@ function renderOrders() {
   const insightContainer = document.getElementById("order-status-breakdown");
   if (insightContainer) {
     insightContainer.innerHTML = "";
-    // group orders by status and render a chip with a small details list
+
     const statuses = ["pending", "preparing", "ready", "served"];
     statuses.forEach((status) => {
       const ordersInStatus = (appState.orders || []).filter(
@@ -1827,7 +1808,7 @@ function renderOrders() {
       }
       chip.appendChild(header);
       chip.appendChild(details);
-      // toggle details on click
+
       header.style.cursor = "pointer";
       header.addEventListener("click", () => {
         details.style.display = details.style.display === "none" ? "" : "none";
@@ -1879,16 +1860,37 @@ function renderOrders() {
     });
   });
 
-  // wire delete buttons for orders in the active list (scope to orders table)
   document.querySelectorAll("#orders-table [data-delete]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.delete;
       const idx = appState.orders.findIndex((o) => o.id === id);
       if (idx === -1) return;
-      if (!confirm("Delete order " + id + "? This cannot be undone.")) return;
-      appState.orders.splice(idx, 1);
-      saveState();
-      renderOrders();
+
+      showConfirm(
+        `Delete order ${id}? This will restore any reserved inventory.`,
+        () => {
+          const order = appState.orders[idx];
+
+          try {
+            const itemsJson = order.itemsJson || [];
+            (itemsJson || []).forEach((it) => {
+              if (!it || !it.source) return;
+              if (it.source === "inventory" || it.source === "supplies") {
+                const inv = appState.inventory.find((i) => i.id === it.id);
+                if (inv) {
+                  inv.quantity =
+                    Number(inv.quantity || 0) + Number(it.qty || 0);
+                }
+              }
+            });
+          } catch (err) {
+            console.warn("Failed to restore inventory for deleted order", err);
+          }
+          appState.orders.splice(idx, 1);
+          saveState();
+          renderOrders();
+        }
+      );
     });
   });
 
@@ -1936,18 +1938,9 @@ function renderOrders() {
     });
   }
 
-  // initializeOrderForm will wire the enhanced order UI (inventory/custom/supplies)
   if (typeof initializeOrderForm === "function") initializeOrderForm();
 }
 
-/*
-  initializeOrderForm()
-  - Populates inventory & supplies select lists
-  - Allows adding inventory, supplies, and custom items
-  - Merges duplicate items (sums quantity) when applicable
-  - Prevents adding items past available stock
-  - Keeps hidden `items` textarea and `total` input updated for existing submit handler
-*/
 function initializeOrderForm() {
   try {
     const byId = (id) => document.getElementById(id);
@@ -1970,7 +1963,7 @@ function initializeOrderForm() {
     const orderType = byId("order-type");
     const ordersForm = byId("orders-form");
 
-    if (!ordersForm) return; // nothing to wire
+    if (!ordersForm) return;
 
     let orderItems = [];
 
@@ -1990,10 +1983,17 @@ function initializeOrderForm() {
       const list = (appState.inventory || []).filter(
         (it) => it.category === cat
       );
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "-- Select item --";
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      inventoryItem.appendChild(placeholder);
       list.forEach((it) => {
         const opt = document.createElement("option");
         opt.value = it.id;
-        // show name and price only (unit removed by request)
+
         opt.textContent = `${it.name} — ₱${formatMoney(it.cost)}`;
         inventoryItem.appendChild(opt);
       });
@@ -2006,7 +2006,6 @@ function initializeOrderForm() {
       ).filter(Boolean);
       inventoryCategory.innerHTML = "";
       cats.forEach((c) => {
-        // skip supplies from the main category if you prefer; keep all to allow beverages/cakes selection
         const opt = document.createElement("option");
         opt.value = c;
         opt.textContent = c.charAt(0).toUpperCase() + c.slice(1);
@@ -2024,7 +2023,7 @@ function initializeOrderForm() {
       list.forEach((it) => {
         const opt = document.createElement("option");
         opt.value = it.id;
-        // supplies: show name and price only
+
         opt.textContent = `${it.name} — ₱${formatMoney(it.cost)}`;
         suppliesItem.appendChild(opt);
       });
@@ -2038,10 +2037,9 @@ function initializeOrderForm() {
     }
 
     function addOrMergeItem(item) {
-      // item: { source: 'inventory'|'supplies'|'custom', id?, name, qty, unitPrice }
       item.qty = Number(item.qty) || 1;
       item.unitPrice = Number(item.unitPrice) || 0;
-      // stock check for inventory and supplies
+
       if (item.source === "inventory" || item.source === "supplies") {
         const invId = item.id;
         const available = availableFor(invId);
@@ -2056,7 +2054,6 @@ function initializeOrderForm() {
         }
       }
 
-      // merge logic: inventory/supplies by id; custom by name
       if (item.source === "custom") {
         const existing = orderItems.find(
           (it) => it.source === "custom" && it.name === item.name
@@ -2122,6 +2119,9 @@ function initializeOrderForm() {
         hiddenItems.value = orderItems
           .map((it) => `${it.qty}x ${it.name}`)
           .join(", ");
+
+      const jsonField = document.getElementById("order-items-json");
+      if (jsonField) jsonField.value = JSON.stringify(orderItems);
     }
 
     // wire UI events
@@ -2140,6 +2140,13 @@ function initializeOrderForm() {
           qty,
           unitPrice: inv.cost,
         });
+
+        if (inventoryItem) {
+          inventoryItem.value = "";
+
+          inventoryItem.selectedIndex = 0;
+        }
+        if (inventoryQty) inventoryQty.value = "1";
       });
 
     if (addSuppliesBtn)
@@ -2155,6 +2162,12 @@ function initializeOrderForm() {
           qty,
           unitPrice: inv.cost,
         });
+
+        if (suppliesItem) {
+          suppliesItem.value = "";
+          suppliesItem.selectedIndex = 0;
+        }
+        if (suppliesQty) suppliesQty.value = "1";
       });
 
     if (addCustomBtn)
@@ -2169,7 +2182,6 @@ function initializeOrderForm() {
         customQty.value = "1";
       });
 
-    // show/hide supplies when order type changes
     function updateSuppliesVisibility() {
       const type = (orderType?.value || "").toLowerCase();
       if (type === "takeout" || type === "delivery") {
@@ -2181,7 +2193,6 @@ function initializeOrderForm() {
     if (orderType)
       orderType.addEventListener("change", updateSuppliesVisibility);
 
-    // toggle inventory vs custom entry mode
     const itemModeRadios = document.querySelectorAll('input[name="item-mode"]');
     function updateItemModeVisibility() {
       const mode =
@@ -2205,7 +2216,6 @@ function initializeOrderForm() {
       r.addEventListener("change", updateItemModeVisibility)
     );
 
-    // clear items after submit (java.js already handles actual order creation)
     ordersForm.addEventListener("submit", () => {
       setTimeout(() => {
         orderItems = [];
@@ -2213,7 +2223,6 @@ function initializeOrderForm() {
       }, 150);
     });
 
-    // initial population
     populateInventoryCategories();
     refreshInventoryItems();
     refreshSupplies();
@@ -2490,4 +2499,36 @@ if (typeof window !== "undefined") {
   window.getCurrentUser = getCurrentUser;
   window.clearSession = clearSession;
   window.getLandingPageForRole = getLandingPageForRole;
+}
+
+function showConfirm(message, onConfirm) {
+  const modal = document.getElementById("confirm-modal");
+  const msg = document.getElementById("confirm-message");
+  const ok = document.getElementById("confirm-ok");
+  const cancel = document.getElementById("confirm-cancel");
+  if (!modal || !msg || !ok || !cancel) {
+    // fallback
+    if (window.confirm(message)) onConfirm();
+    return;
+  }
+  msg.textContent = message;
+  modal.classList.add("active");
+  const cleanup = () => {
+    modal.classList.remove("active");
+    ok.removeEventListener("click", okHandler);
+    cancel.removeEventListener("click", cancelHandler);
+  };
+  const okHandler = () => {
+    cleanup();
+    try {
+      onConfirm();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const cancelHandler = () => {
+    cleanup();
+  };
+  ok.addEventListener("click", okHandler);
+  cancel.addEventListener("click", cancelHandler);
 }

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Order Management</title>
+    <link rel="icon" href="img/sweetbox_icon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,7 +18,7 @@
     <div class="layout">
       <aside class="sidebar">
         <div class="brand">
-          <strong>Sweet Box</strong>
+          <img src="img/sweetbox_logo.png" alt="Sweet Box" class="brand-logo" />
         </div>
         <nav class="nav">
           <a href="dashboard.html" data-section="dashboard">Dashboard</a>
@@ -76,9 +77,6 @@
           <div class="actions">
             <button class="btn btn-secondary" id="refresh-data">
               Refresh queue
-            </button>
-            <button class="btn btn-primary" id="reset-data" data-role="admin">
-              Reset demo data
             </button>
           </div>
         </header>
@@ -254,6 +252,7 @@
                 style="display: none"
                 readonly
               ></textarea>
+              <input id="order-items-json" name="items_json" type="hidden" />
               <input id="order-total" name="total" type="hidden" readonly />
 
               <button class="btn btn-primary" type="submit">Add Order</button>
@@ -385,6 +384,31 @@
         <div class="receipt-dialog__actions">
           <button id="receipt-print" class="btn btn-primary" type="button">
             Print Now
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="confirm-modal"
+      class="confirm-overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="confirm-dialog">
+        <header class="confirm-dialog__header">
+          <h3 id="confirm-title">Confirm</h3>
+        </header>
+        <div id="confirm-message" class="confirm-dialog__body">
+          Are you sure?
+        </div>
+        <div class="confirm-dialog__actions">
+          <button id="confirm-cancel" class="btn btn-outline" type="button">
+            Cancel
+          </button>
+          <button id="confirm-ok" class="btn btn-danger" type="button">
+            Delete
           </button>
         </div>
       </div>
