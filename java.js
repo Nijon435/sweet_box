@@ -83,7 +83,7 @@ const getCurrentUser = () => activeUser;
 const isAdmin = () => getCurrentUser()?.role === "admin";
 
 const getLandingPageForRole = (role) =>
-  role === "admin" ? "dashboard.html" : "attendance.html";
+  role === "admin" ? "index.html" : "attendance.html";
 
 function saveState() {
   try {
