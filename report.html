@@ -33,7 +33,7 @@
           <a
             href="inventory.html"
             data-section="inventory"
-            data-role="admin"
+            data-role="admin,inventory_manager"
             data-hide-when-denied="true"
             >Inventory</a
           >
@@ -48,7 +48,7 @@
           <a
             href="report.html"
             data-section="report"
-            data-role="admin"
+            data-role="admin,inventory_manager"
             data-hide-when-denied="true"
             >Reports</a
           >
@@ -125,6 +125,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="java.js"></script>
+    <script>
+      window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state";
+    </script>
+    <script src="js/common.js"></script>
+    <script src="js/report.js"></script>
   </body>
 </html>
