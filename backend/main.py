@@ -50,13 +50,16 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLO
     "http://localhost:3000",
 ]
 
-# Add wildcard for Render preview URLs if in production
+# Add frontend URL for Render deployment
 if os.getenv("RENDER"):
-    ALLOWED_ORIGINS.append("*")
+    ALLOWED_ORIGINS.extend([
+        "https://sweetbox-frontend.onrender.com",
+        "https://sweetbox-backend.onrender.com"
+    ])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS if "*" not in ALLOWED_ORIGINS else ["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
