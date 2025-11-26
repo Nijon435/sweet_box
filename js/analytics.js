@@ -76,16 +76,11 @@ function renderAnalytics() {
     (appState.salesHistory || [])[appState.salesHistory?.length - 1]?.total ||
     0;
   const avgTicket = latestSales / ((appState.orders || []).length || 1);
-  const productivity = (
-    (appState.performanceScores || []).reduce(
-      (acc, perf) => acc + perf.completedOrders,
-      0
-    ) / ((appState.performanceScores || []).length || 1)
-  ).toFixed(0);
+  const totalOrders = (appState.orders || []).length;
   const analyticsMap = {
     "analytics-turnover": `${turnover}x inventory turnover`,
     "analytics-ticket": `${formatCurrency(avgTicket)} avg ticket`,
-    "analytics-productivity": `${productivity} tasks / staff`,
+    "analytics-productivity": `${totalOrders} total orders`,
   };
   Object.entries(analyticsMap).forEach(([id, text]) => {
     const node = document.getElementById(id);
@@ -154,52 +149,8 @@ function renderAnalytics() {
     options: { responsive: true },
   });
 
-  ChartManager.plot("performanceChart", {
-    type: "polarArea",
-    data: {
-      labels: (appState.performanceScores || []).map(
-        (perf) => getEmployee(perf.employeeId)?.name || perf.employeeId
-      ),
-      datasets: [
-        {
-          data: (appState.performanceScores || []).map((perf) => perf.rating),
-          backgroundColor: [
-            "#f6c343",
-            "#f97316",
-            "#5c2c06",
-            "#22c55e",
-            "#c084fc",
-            "#14b8a6",
-          ],
-        },
-      ],
-    },
-  });
-
-  const stockTrendData = (
-    appState.stockTrends && appState.stockTrends.length
-      ? appState.stockTrends
-      : getDefaultData().stockTrends
-  ).slice(0, 8);
-  ChartManager.plot("stockTrendsChart", {
-    type: "bar",
-    data: {
-      labels: stockTrendData.map((entry) => entry.item),
-      datasets: [
-        {
-          label: "Turnover",
-          data: stockTrendData.map((entry) => entry.turnover),
-          backgroundColor: stockTrendData.map(() => "rgba(246, 195, 67, 0.7)"),
-          borderRadius: 8,
-        },
-      ],
-    },
-    options: {
-      indexAxis: "y",
-      plugins: { legend: { display: false } },
-      scales: { y: { ticks: { autoSkip: false } } },
-    },
-  });
+  // Performance and stock trends charts removed - data not necessary for POS system
+  // Charts can be re-added if needed with calculated data from orders/inventory
 }
 
 window.pageRenderers = window.pageRenderers || {};

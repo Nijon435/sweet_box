@@ -74,20 +74,4 @@ CREATE TABLE IF NOT EXISTS inventory_usage (
   used INT DEFAULT 0
 );
 
--- Performance scores (per employee)
-CREATE TABLE IF NOT EXISTS performance_scores (
-  id SERIAL PRIMARY KEY,
-  employee_id VARCHAR(64) NOT NULL UNIQUE,
-  rating NUMERIC(3,2) DEFAULT 0,
-  completed_orders INT DEFAULT 0,
-  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
-);
-
--- Stock trends (simple storage for reporting)
-CREATE TABLE IF NOT EXISTS stock_trends (
-  id SERIAL PRIMARY KEY,
-  item VARCHAR(255) NOT NULL UNIQUE,
-  turnover INT DEFAULT 0
-);
-
 -- End of schema

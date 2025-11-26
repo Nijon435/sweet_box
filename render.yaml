@@ -1,0 +1,53 @@
+services:
+  # Backend API Service
+  - type: web
+    name: sweetbox-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DB_HOST
+        fromDatabase:
+          name: sweetbox-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: sweetbox-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: sweetbox-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: sweetbox-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: sweetbox-db
+          property: password
+
+  # Static Frontend Service
+  - type: static
+    name: sweetbox-frontend
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://sweetbox-backend.onrender.com/api/*
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+
+databases:
+  - name: sweetbox-db
+    databaseName: sweetbox
+    user: sweetbox_user
+    plan: free

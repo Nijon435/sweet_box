@@ -14,17 +14,49 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = int(os.getenv("DB_PORT", 5432))
-DB_NAME = os.getenv("DB_NAME", "sweetbox")
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+# Database configuration - support both individual vars and DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    # Parse DATABASE_URL (postgres://user:pass@host:port/dbname)
+    import re
+    match = re.match(r'postgres://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
+    if match:
+        DB_USER = match.group(1)
+        DB_PASSWORD = match.group(2)
+        DB_HOST = match.group(3)
+        DB_PORT = int(match.group(4))
+        DB_NAME = match.group(5)
+    else:
+        # Fallback to individual env vars
+        DB_HOST = os.getenv("DB_HOST", "localhost")
+        DB_PORT = int(os.getenv("DB_PORT", 5432))
+        DB_NAME = os.getenv("DB_NAME", "sweetbox")
+        DB_USER = os.getenv("DB_USER", "postgres")
+        DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+else:
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = int(os.getenv("DB_PORT", 5432))
+    DB_NAME = os.getenv("DB_NAME", "sweetbox")
+    DB_USER = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
 app = FastAPI()
 
+# CORS configuration - allow production domains
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else [
+    "http://localhost:8000",
+    "http://127.0.0.1:5500",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+]
+
+# Add wildcard for Render preview URLs if in production
+if os.getenv("RENDER"):
+    ALLOWED_ORIGINS.append("*")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:5500", "http://127.0.0.1:3000", "http://localhost:3000", "file://"],
+    allow_origins=ALLOWED_ORIGINS if "*" not in ALLOWED_ORIGINS else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,14 +69,31 @@ TABLES = [
     "orders",
     "sales_history",
     "inventory_usage",
-    "performance_scores",
-    "stock_trends",
     "users"
 ]
 
 async def fetch_table(conn, table):
     try:
-        rows = await conn.fetch(f'SELECT * FROM {table}')
+        # Add limits to prevent overwhelming responses
+        limit_map = {
+            "attendance_logs": 1000,  # Last 1000 attendance records
+            "sales_history": 500,     # Last 500 sales records
+            "orders": 500,            # Last 500 orders
+            "inventory_usage": 1000,  # Last 1000 usage records
+            "stock_trends": 500,      # Last 500 trend records
+        }
+        
+        limit = limit_map.get(table, None)
+        
+        if limit:
+            query = f'SELECT * FROM {table} ORDER BY id DESC LIMIT {limit}'
+        else:
+            query = f'SELECT * FROM {table}'
+            
+        logger.info(f"Executing query for {table}: {query}")
+        rows = await conn.fetch(query)
+        logger.info(f"Fetched {len(rows)} rows from {table}")
+        
         result = []
         for row in rows:
             item = dict(row)
@@ -55,16 +104,13 @@ async def fetch_table(conn, table):
                 item["servedAt"] = item.pop("served_at")
             if table == "employees" and "hire_date" in item:
                 item["hireDate"] = item.pop("hire_date")
+            if table == "employees" and "shift_start" in item:
+                item["shiftStart"] = item.pop("shift_start")
             if table == "attendance_logs":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
             if table == "sales_history" and "orders_count" in item:
                 item["ordersCount"] = item.pop("orders_count")
-            if table == "performance_scores":
-                if "employee_id" in item:
-                    item["employeeId"] = item.pop("employee_id")
-                if "completed_orders" in item:
-                    item["completedOrders"] = item.pop("completed_orders")
             if table == "inventory" and "reorder_point" in item:
                 item["reorderPoint"] = item.pop("reorder_point")
             result.append(item)
@@ -81,6 +127,40 @@ class InventoryUpdate(BaseModel):
     unit: Optional[str] = None
     reorder_point: Optional[int] = None
     cost: Optional[float] = None
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "service": "Sweet Box API",
+        "version": "1.0.0"
+    }
+
+@app.get("/health")
+async def health_check():
+    """Detailed health check with database status"""
+    try:
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        await conn.close()
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 @app.get("/api/state")
 async def get_state():
@@ -108,8 +188,7 @@ async def get_state():
             "orders": data["orders"],
             "salesHistory": data["sales_history"],
             "inventoryUsage": data["inventory_usage"],
-            "performanceScores": data["performance_scores"],
-            "stockTrends": data["stock_trends"],
+            "attendanceTrend": [],
             "users": data["users"]
         }
     except Exception as e:
@@ -216,60 +295,74 @@ async def save_state(state: dict):
             database=DB_NAME
         )
         
-        # Save employees
+        # Save employees (upsert - don't delete existing)
         if "employees" in state and state["employees"]:
-            await conn.execute("DELETE FROM employees")
             for emp in state["employees"]:
                 await conn.execute(
                     """INSERT INTO employees (id, name, role, contact, hire_date, status)
-                       VALUES ($1, $2, $3, $4, $5, $6)""",
+                       VALUES ($1, $2, $3, $4, $5, $6)
+                       ON CONFLICT (id) DO UPDATE SET
+                       name = EXCLUDED.name, role = EXCLUDED.role, 
+                       contact = EXCLUDED.contact, hire_date = EXCLUDED.hire_date, 
+                       status = EXCLUDED.status""",
                     emp.get("id"), emp.get("name"), emp.get("role"), 
                     emp.get("contact"), parse_date(emp.get("hireDate")), emp.get("status", "active")
                 )
         
-        # Save attendance logs
+        # Save attendance logs (upsert - don't delete existing)
         if "attendanceLogs" in state and state["attendanceLogs"]:
-            await conn.execute("DELETE FROM attendance_logs")
             for log in state["attendanceLogs"]:
                 await conn.execute(
                     """INSERT INTO attendance_logs (id, employee_id, timestamp, action)
-                       VALUES ($1, $2, $3, $4)""",
+                       VALUES ($1, $2, $3, $4)
+                       ON CONFLICT (id) DO UPDATE SET
+                       employee_id = EXCLUDED.employee_id, 
+                       timestamp = EXCLUDED.timestamp, 
+                       action = EXCLUDED.action""",
                     log.get("id"), log.get("employeeId"), 
                     parse_timestamp(log.get("timestamp")), log.get("action")
                 )
         
-        # Save inventory
+        # Save inventory (upsert - don't delete existing)
         if "inventory" in state and state["inventory"]:
-            await conn.execute("DELETE FROM inventory")
             for item in state["inventory"]:
                 await conn.execute(
                     """INSERT INTO inventory (id, name, category, quantity, unit, reorder_point, cost)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                       VALUES ($1, $2, $3, $4, $5, $6, $7)
+                       ON CONFLICT (id) DO UPDATE SET
+                       name = EXCLUDED.name, category = EXCLUDED.category,
+                       quantity = EXCLUDED.quantity, unit = EXCLUDED.unit,
+                       reorder_point = EXCLUDED.reorder_point, cost = EXCLUDED.cost""",
                     item.get("id"), item.get("name"), item.get("category"),
                     item.get("quantity"), item.get("unit"), 
                     item.get("reorderPoint"), item.get("cost")
                 )
         
-        # Save orders
+        # Save orders (upsert - don't delete existing)
         if "orders" in state and state["orders"]:
-            await conn.execute("DELETE FROM orders")
             for order in state["orders"]:
                 items_json_str = json.dumps(order.get("itemsJson")) if order.get("itemsJson") else None
                 await conn.execute(
                     """INSERT INTO orders (id, customer, items, items_json, total, status, type, timestamp, served_at)
-                       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)""",
+                       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)
+                       ON CONFLICT (id) DO UPDATE SET
+                       customer = EXCLUDED.customer, items = EXCLUDED.items,
+                       items_json = EXCLUDED.items_json, total = EXCLUDED.total,
+                       status = EXCLUDED.status, type = EXCLUDED.type,
+                       timestamp = EXCLUDED.timestamp, served_at = EXCLUDED.served_at""",
                     order.get("id"), order.get("customer"), order.get("items"),
                     items_json_str, order.get("total"), order.get("status"),
                     order.get("type"), parse_timestamp(order.get("timestamp")), parse_timestamp(order.get("servedAt"))
                 )
         
-        # Save sales history
+        # Save sales history (upsert - don't delete existing)
         if "salesHistory" in state and state["salesHistory"]:
-            await conn.execute("DELETE FROM sales_history")
             for sale in state["salesHistory"]:
                 await conn.execute(
                     """INSERT INTO sales_history (id, date, total, orders_count)
-                       VALUES ($1, $2, $3, $4)""",
+                       VALUES ($1, $2, $3, $4)
+                       ON CONFLICT (date) DO UPDATE SET
+                       total = EXCLUDED.total, orders_count = EXCLUDED.orders_count""",
                     sale.get("id"), parse_date(sale.get("date")), 
                     sale.get("total"), sale.get("ordersCount")
                 )
@@ -282,27 +375,6 @@ async def save_state(state: dict):
                     """INSERT INTO inventory_usage (id, label, used)
                        VALUES ($1, $2, $3)""",
                     usage.get("id"), usage.get("label"), usage.get("used")
-                )
-        
-        # Save performance scores
-        if "performanceScores" in state and state["performanceScores"]:
-            await conn.execute("DELETE FROM performance_scores")
-            for perf in state["performanceScores"]:
-                await conn.execute(
-                    """INSERT INTO performance_scores (id, employee_id, rating, completed_orders)
-                       VALUES ($1, $2, $3, $4)""",
-                    perf.get("id"), perf.get("employeeId"), 
-                    perf.get("rating"), perf.get("completedOrders")
-                )
-        
-        # Save stock trends
-        if "stockTrends" in state and state["stockTrends"]:
-            await conn.execute("DELETE FROM stock_trends")
-            for trend in state["stockTrends"]:
-                await conn.execute(
-                    """INSERT INTO stock_trends (id, item, turnover)
-                       VALUES ($1, $2, $3)""",
-                    trend.get("id"), trend.get("item"), trend.get("turnover")
                 )
         
         await conn.close()
