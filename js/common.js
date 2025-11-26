@@ -124,15 +124,7 @@ async function syncStateToDatabase() {
       (typeof window !== "undefined" && window.APP_STATE_ENDPOINT) ||
       "/api/state";
 
-    // Use relative URL in production, absolute URL in local development
-    const apiUrl = endpoint.startsWith("http")
-      ? endpoint
-      : window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1"
-      ? `http://localhost:8000${endpoint}`
-      : endpoint; // Use relative URL for deployed version
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
