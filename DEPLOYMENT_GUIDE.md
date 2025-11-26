@@ -36,8 +36,8 @@ Once database is created:
 
 1. Get connection details from Render dashboard:
 
-   - **Internal Database URL** (for backend connection)
-   - **External Database URL** (for running migrations)
+   - **Internal Database URL** (for backend connection) postgresql://sweetbox_user:ffPN9al0kWbmuygYlbTs9221nlGtLjw6@dpg-d4jhnmkhg0os73bqhhl0-a/sweetbox
+   - **External Database URL** (for running migrations) postgresql://sweetbox_user:ffPN9al0kWbmuygYlbTs9221nlGtLjw6@dpg-d4jhnmkhg0os73bqhhl0-a.singapore-postgres.render.com/sweetbox
 
 2. Run schema and seeds using External URL:
 
@@ -94,10 +94,12 @@ Or use Render's PSQL console:
 4. Add Rewrite Rules (to proxy API requests):
 
    - Go to **Redirects/Rewrites** tab
+   - Click **"Add Rule"** button
    - Add rewrite rule:
      - **Source**: `/api/*`
-     - **Destination**: `https://sweetbox-backend.onrender.com/api/:splat`
-     - **Type**: `Rewrite`
+     - **Destination**: `https://sweetbox-backend.onrender.com/api/:splat` ⚠️ **IMPORTANT: Must include `/api/:splat`**
+     - **Action**: Select **`Rewrite`** from dropdown
+   - Click **"Save Changes"**
 
 5. Click **Create Static Site**
 
