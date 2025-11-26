@@ -180,7 +180,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script>
-      // window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state"; // Commented for production - uses relative URL
+      // Production: Use backend URL directly
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        window.APP_STATE_ENDPOINT = "https://sweetbox-backend.onrender.com/api/state";
+      }
     </script>
     <script src="js/common.js"></script>
     <script src="js/employees.js"></script>
