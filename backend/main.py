@@ -17,14 +17,14 @@ load_dotenv()
 # Database configuration - support both individual vars and DATABASE_URL
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
-    # Parse DATABASE_URL (postgres://user:pass@host:port/dbname)
+    # Parse DATABASE_URL (postgresql://user:pass@host:port/dbname or postgres://...)
     import re
-    match = re.match(r'postgres://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
+    match = re.match(r'postgres(?:ql)?://([^:]+):([^@]+)@([^:/]+)(?::(\d+))?/(.+)', DATABASE_URL)
     if match:
         DB_USER = match.group(1)
         DB_PASSWORD = match.group(2)
         DB_HOST = match.group(3)
-        DB_PORT = int(match.group(4))
+        DB_PORT = int(match.group(4)) if match.group(4) else 5432
         DB_NAME = match.group(5)
     else:
         # Fallback to individual env vars
