@@ -1,0 +1,609 @@
+/* ===================================
+   RESPONSIVE STYLES FOR SWEET BOX
+   Separated for better maintainability
+   =================================== */
+
+/* Tablet and below (1200px) */
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 24px 16px;
+  }
+
+  .main-content {
+    padding: 32px 24px;
+  }
+
+  .sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  /* Make 3-column layout on inventory page become 2-column */
+  body[data-page="inventory"] .split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Adjust grid layouts */
+  .grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+/* Desktop small and tablets (1100px) */
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    position: static;
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .nav a {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+  }
+
+  /* Sidebar overlay for mobile */
+  .sidebar {
+    position: fixed;
+    left: 16px;
+    top: 24px;
+    bottom: 24px;
+    width: 280px;
+    transform: translateX(-110%);
+    transition: transform 0.24s ease;
+    z-index: 6001;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    border-radius: 6px;
+    flex-direction: column;
+  }
+
+  .sidebar.mobile-visible {
+    transform: translateX(0);
+  }
+
+  .mobile-hamburger {
+    display: none;
+    position: fixed;
+    left: 16px;
+    top: 16px;
+    z-index: 7000;
+    background: var(--white);
+    border-radius: 4px;
+    padding: 6.4px 8px;
+    box-shadow: var(--shadow);
+    align-items: center;
+    justify-content: center;
+    font-size: 17.6px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 6000;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar .close-mobile {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 17.6px;
+    cursor: pointer;
+    color: var(--brown-dark);
+    padding: 5.6px;
+    margin-left: auto;
+  }
+
+  .main-content {
+    padding-top: 28px;
+  }
+
+  /* Adjust inventory table columns for better fit */
+  .inventory-table th:nth-child(1),
+  .inventory-table td:nth-child(1) {
+    width: 35%;
+  }
+
+  .inventory-table th:nth-child(2),
+  .inventory-table td:nth-child(2) {
+    width: 12%;
+  }
+
+  .inventory-table th:nth-child(3),
+  .inventory-table td:nth-child(3) {
+    width: 15%;
+  }
+
+  .inventory-table th:nth-child(4),
+  .inventory-table td:nth-child(4) {
+    width: 18%;
+  }
+
+  .inventory-table th:nth-child(5),
+  .inventory-table td:nth-child(5) {
+    width: 20%;
+  }
+}
+
+/* Tablets (900px) */
+@media (max-width: 900px) {
+  /* Convert split layouts to single column */
+  .split {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-page="inventory"] .split {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Make cards stack better */
+  .grid-3,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Adjust search bar width */
+  .section-heading input[type="search"] {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  /* Make receipt dialog wider on tablets */
+  .receipt-dialog {
+    width: min(90vw, 500px);
+  }
+
+  /* Adjust table font size */
+  table {
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Compact buttons */
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .orders-actions .btn {
+    flex: 1 1 100px;
+  }
+}
+
+/* Mobile (768px) */
+@media (max-width: 768px) {
+  .layout {
+    padding: 16px 12px;
+  }
+
+  .main-content {
+    padding: 24px 16px;
+    border-radius: 4px;
+  }
+
+  .page-header h1 {
+    font-size: 26px;
+  }
+
+  .card {
+    padding: 20px 16px;
+  }
+
+  /* Make forms more mobile-friendly */
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 14px;
+  }
+
+  /* Adjust grid gaps */
+  .grid {
+    gap: 16px;
+  }
+
+  .split {
+    gap: 16px;
+  }
+
+  /* Stack action buttons vertically */
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+
+  /* Make table scrollable horizontally if needed */
+  .table-wrapper {
+    overflow-x: auto;
+    padding: 16px;
+  }
+
+  table {
+    min-width: 600px;
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* Compact inventory table */
+  .inventory-table th:nth-child(1),
+  .inventory-table td:nth-child(1) {
+    width: 40%;
+  }
+
+  .inventory-table th:nth-child(2),
+  .inventory-table td:nth-child(2) {
+    width: 15%;
+  }
+
+  .inventory-table th:nth-child(3),
+  .inventory-table td:nth-child(3) {
+    width: 15%;
+  }
+
+  .inventory-table th:nth-child(4),
+  .inventory-table td:nth-child(4) {
+    width: 15%;
+  }
+
+  .inventory-table th:nth-child(5),
+  .inventory-table td:nth-child(5) {
+    width: 15%;
+  }
+
+  /* Reduce action button sizes in tables */
+  .inventory-table .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* Adjust search bar */
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-heading input[type="search"] {
+    width: 100%;
+    max-width: none;
+  }
+
+  .section-heading h2 {
+    font-size: 20px;
+  }
+
+  /* Compact status pills */
+  .pill {
+    font-size: 12px;
+    padding: 2px 10px;
+  }
+
+  .status {
+    font-size: 12px;
+    padding: 2px 10px;
+  }
+
+  /* Adjust receipt width */
+  .receipt {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .receipt-dialog {
+    width: calc(100vw - 32px);
+    padding: 20px 16px;
+  }
+
+  /* Compact nav on mobile overlay */
+  .sidebar .nav a {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Compact user session */
+  .user-session {
+    padding: 12px;
+  }
+
+  .user-session strong {
+    font-size: 14px;
+  }
+
+  .user-session small {
+    font-size: 12px;
+  }
+}
+
+/* Small mobile (520px) */
+@media (max-width: 520px) {
+  .layout {
+    padding: 12px 8px;
+  }
+
+  .main-content {
+    padding: 20px 12px;
+  }
+
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  .card {
+    padding: 16px 12px;
+  }
+
+  .card strong {
+    font-size: 24px;
+  }
+
+  .card h3 {
+    font-size: 14px;
+  }
+
+  /* Further reduce button sizes */
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  /* Force single column for all grids */
+  .grid-3,
+  .grid-2,
+  .chart-flex {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Compact table further */
+  table {
+    min-width: 500px;
+    font-size: 12px;
+  }
+
+  th,
+  td {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* Very compact inventory actions */
+  .inventory-table .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .orders-actions {
+    flex-direction: column;
+  }
+
+  .orders-actions .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* Adjust modal sizes */
+  .confirm-dialog {
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+
+  /* Compact form elements */
+  label {
+    font-size: 14px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
+  /* Adjust sidebar for very small screens */
+  .sidebar {
+    width: calc(100vw - 32px);
+    left: 16px;
+    right: 16px;
+  }
+
+  .nav a {
+    flex: 1 1 100%;
+  }
+
+  /* Make switcher stack */
+  .switcher {
+    width: 100%;
+  }
+
+  .switcher button {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Compact chart category tabs */
+  .chart-category-tabs {
+    gap: 8px;
+  }
+
+  .chart-category-tab {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Extra small mobile (400px) */
+@media (max-width: 400px) {
+  .layout {
+    padding: 8px;
+  }
+
+  .main-content {
+    padding: 16px 10px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .section-heading h2 {
+    font-size: 18px;
+  }
+
+  .card {
+    padding: 14px 10px;
+  }
+
+  /* Make everything more compact */
+  .btn {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  /* Extremely compact table */
+  table {
+    min-width: 400px;
+    font-size: 11px;
+  }
+
+  th,
+  td {
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+
+  /* Hide less critical table columns if needed */
+  .inventory-table th:nth-child(3),
+  .inventory-table td:nth-child(3) {
+    display: none;
+  }
+
+  /* Adjust inventory table to 4 visible columns */
+  .inventory-table th:nth-child(1),
+  .inventory-table td:nth-child(1) {
+    width: 45%;
+  }
+
+  .inventory-table th:nth-child(2),
+  .inventory-table td:nth-child(2) {
+    width: 20%;
+  }
+
+  .inventory-table th:nth-child(4),
+  .inventory-table td:nth-child(4) {
+    width: 20%;
+  }
+
+  .inventory-table th:nth-child(5),
+  .inventory-table td:nth-child(5) {
+    width: 15%;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .actions,
+  .btn,
+  .mobile-hamburger,
+  .sidebar-backdrop {
+    display: none !important;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  .main-content {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="inventory"] .split {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    page-break-inside: avoid;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 600px) {
+  .sidebar {
+    max-height: calc(100vh - 32px);
+  }
+
+  .list {
+    max-height: 300px;
+  }
+
+  .inventory-table tbody {
+    max-height: 350px;
+  }
+}
+
+/* High DPI screens - ensure sharp rendering */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
