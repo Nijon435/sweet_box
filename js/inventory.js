@@ -284,25 +284,77 @@ function renderInventory() {
       // Different thresholds: 10 for supplies/beverages, 5 for others
       const threshold =
         category === "supplies" || category === "beverages" ? 10 : 5;
-      const isLowStock = item.quantity < threshold;
+      const isOutOfStock = item.quantity === 0;
+      const isLowStock = item.quantity > 0 && item.quantity < threshold;
+      const statusClass = isOutOfStock
+        ? "out-of-stock"
+        : isLowStock
+        ? "late"
+        : "present";
+      const statusText = isOutOfStock
+        ? "Out of Stock"
+        : isLowStock
+        ? "Low Stock"
+        : "Healthy";
+      const statusSymbol = isOutOfStock ? "✖" : isLowStock ? "⚠" : "✓";
       row.innerHTML = `
       <td>${item.name}</td>
       <td>${item.quantity}</td>
       <td>${formatCurrency(item.cost)}</td>
-      <td><span class="status ${isLowStock ? "late" : "present"}">${
-        isLowStock ? "Low Stock" : "Healthy"
-      }</span></td>
-      <td class="table-actions"><button class="btn btn-outline" data-edit="${
-        item.id
-      }">Edit</button><button class="btn btn-secondary" data-delete="${
-        item.id
-      }">Delete</button></td>
+      <td><span class="status ${statusClass}"><span class="status-text">${statusText}</span><span class="status-symbol">${statusSymbol}</span></span></td>
+      <td class="table-actions">
+        <button class="btn btn-outline" data-edit="${item.id}">Edit</button>
+        <button class="btn btn-secondary" data-delete="${
+          item.id
+        }">Delete</button>
+        <div class="table-actions-mobile">
+          <button class="table-actions-toggle" data-toggle="${item.id}">
+            ⋯
+          </button>
+          <div class="table-actions-dropdown" data-dropdown="${item.id}">
+            <button class="btn btn-outline" data-edit-mobile="${
+              item.id
+            }">Edit</button>
+            <button class="btn btn-secondary" data-delete-mobile="${
+              item.id
+            }">Delete</button>
+          </div>
+        </div>
+      </td>
     `;
       tbody.appendChild(row);
     });
   });
 
   const canManageInventory = isAdmin();
+
+  // Handle dropdown toggles
+  document.querySelectorAll("[data-toggle]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.toggle;
+      const dropdown = document.querySelector(`[data-dropdown="${id}"]`);
+
+      // Close all other dropdowns
+      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
+        if (d !== dropdown) d.classList.remove("active");
+      });
+
+      // Toggle current dropdown
+      dropdown.classList.toggle("active");
+    });
+  });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".table-actions-mobile")) {
+      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
+        d.classList.remove("active");
+      });
+    }
+  });
+
+  // Desktop Edit buttons
   document.querySelectorAll("[data-edit]").forEach((btn) => {
     btn.disabled = !canManageInventory;
     if (!canManageInventory) {
@@ -317,6 +369,26 @@ function renderInventory() {
     });
   });
 
+  // Mobile Edit buttons
+  document.querySelectorAll("[data-edit-mobile]").forEach((btn) => {
+    btn.disabled = !canManageInventory;
+    if (!canManageInventory) {
+      btn.title = "Admin only";
+      return;
+    }
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.editMobile;
+      const item = appState.inventory.find((record) => record.id === id);
+      if (!item) return;
+      openEditModal(item);
+      // Close dropdown
+      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
+        d.classList.remove("active");
+      });
+    });
+  });
+
+  // Desktop Delete buttons
   document.querySelectorAll("[data-delete]").forEach((btn) => {
     btn.disabled = !canManageInventory;
     if (!canManageInventory) {
@@ -328,6 +400,25 @@ function renderInventory() {
       appState.inventory = appState.inventory.filter((item) => item.id !== id);
       saveState();
       renderInventory();
+    });
+  });
+
+  // Mobile Delete buttons
+  document.querySelectorAll("[data-delete-mobile]").forEach((btn) => {
+    btn.disabled = !canManageInventory;
+    if (!canManageInventory) {
+      btn.title = "Admin only";
+      return;
+    }
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.deleteMobile;
+      appState.inventory = appState.inventory.filter((item) => item.id !== id);
+      saveState();
+      renderInventory();
+      // Close dropdown
+      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
+        d.classList.remove("active");
+      });
     });
   });
 

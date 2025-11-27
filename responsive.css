@@ -289,9 +289,17 @@
     width: 15%;
   }
 
+  .inventory-table td:nth-child(2) {
+    padding-left: 0px;
+  }
+
   .inventory-table th:nth-child(3),
   .inventory-table td:nth-child(3) {
     width: 15%;
+  }
+
+  .inventory-table td:nth-child(3) {
+    padding-left: 0px;
   }
 
   .inventory-table th:nth-child(4),
@@ -299,15 +307,48 @@
     width: 15%;
   }
 
+  .inventory-table td:nth-child(4) {
+    padding-left: 0px;
+  }
+
   .inventory-table th:nth-child(5),
   .inventory-table td:nth-child(5) {
     width: 15%;
   }
 
+  /* Reset table-actions padding for mobile */
+  .table-actions {
+    padding-left: 17px !important;
+  }
+
+  /* Show symbols instead of text for status on mobile */
+  .status-text {
+    display: none;
+  }
+
+  .status-symbol {
+    display: inline !important;
+  }
+
+  /* Switch to dropdown menu for actions on mobile */
+  .table-actions > .btn {
+    display: none !important;
+  }
+
+  .table-actions-mobile {
+    display: block !important;
+  }
+
+  .table-actions-toggle {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
   /* Reduce action button sizes in tables */
   .inventory-table .btn {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 5px 8px;
+    font-size: 11px;
+    white-space: nowrap;
   }
 
   /* Adjust search bar */
@@ -498,20 +539,6 @@
     font-size: 20px;
   }
 
-  .section-heading h2 {
-    font-size: 18px;
-  }
-
-  .card {
-    padding: 14px 10px;
-  }
-
-  /* Make everything more compact */
-  .btn {
-    padding: 8px 14px;
-    font-size: 12px;
-  }
-
   /* Extremely compact table */
   table {
     min-width: 400px;
@@ -524,13 +551,7 @@
     font-size: 10px;
   }
 
-  /* Hide less critical table columns if needed */
-  .inventory-table th:nth-child(3),
-  .inventory-table td:nth-child(3) {
-    display: none;
-  }
-
-  /* Adjust inventory table to 4 visible columns */
+  /* Further optimize for extra small screens */
   .inventory-table th:nth-child(1),
   .inventory-table td:nth-child(1) {
     width: 45%;
@@ -538,7 +559,13 @@
 
   .inventory-table th:nth-child(2),
   .inventory-table td:nth-child(2) {
-    width: 20%;
+    width: 15%;
+  }
+
+  /* Hide cost column on extra small screens */
+  .inventory-table th:nth-child(3),
+  .inventory-table td:nth-child(3) {
+    display: none;
   }
 
   .inventory-table th:nth-child(4),
@@ -548,7 +575,12 @@
 
   .inventory-table th:nth-child(5),
   .inventory-table td:nth-child(5) {
-    width: 15%;
+    width: 20%;
+  }
+
+  .table-actions-toggle {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 }
 
