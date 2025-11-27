@@ -40,8 +40,6 @@ CREATE TABLE IF NOT EXISTS inventory (
   category VARCHAR(64),
   name VARCHAR(255) NOT NULL,
   quantity NUMERIC(12,2) DEFAULT 0,
-  unit VARCHAR(32),
-  reorder_point INT DEFAULT 0,
   cost NUMERIC(12,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
