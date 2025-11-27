@@ -72,15 +72,9 @@
           <div>
             <span class="pill">HR tools</span>
             <h1>Team Registry</h1>
-            <p class="meta">
-              Create employees once and they sync across attendance, orders, and
-              analytics.
-            </p>
           </div>
           <div class="actions">
-            <button class="btn btn-secondary" id="refresh-data">
-              Refresh view
-            </button>
+            <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
 
@@ -180,9 +174,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script>
-      // Production: Use backend URL directly
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        window.APP_STATE_ENDPOINT = "https://sweetbox-backend.onrender.com/api/state";
+      // Auto-detect: Production vs Local
+      if (
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        window.APP_STATE_ENDPOINT =
+          "https://sweetbox-backend.onrender.com/api/state";
+      } else {
+        window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state";
       }
     </script>
     <script src="js/common.js"></script>

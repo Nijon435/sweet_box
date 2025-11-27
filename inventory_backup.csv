@@ -1,0 +1,31 @@
+id,category,name,quantity,cost,created_at
+inv-1,cakes & pastries,Chocolate Mousse Slice,15.00,120.00,2025-11-27 20:16:14.029089
+inv-10,beverages,Iced Tea 350ml,36.00,45.00,2025-11-27 20:16:14.029089
+inv-11,beverages,Canned Soda 330ml,42.00,30.00,2025-11-27 20:16:14.029089
+inv-12,beverages,Orange Juice 250ml,30.00,40.00,2025-11-27 20:16:14.029089
+inv-13,beverages,Canned Coffee 240ml,24.00,55.00,2025-11-27 20:16:14.029089
+inv-14,ingredients,All-purpose Flour,25.00,40.00,2025-11-27 20:16:14.029089
+inv-15,ingredients,Granulated Sugar,20.00,35.00,2025-11-27 20:16:14.029089
+inv-16,ingredients,Unsalted Butter,5.00,180.00,2025-11-27 20:16:14.029089
+inv-17,ingredients,Whole Milk,30.00,45.00,2025-11-27 20:16:14.029089
+inv-18,ingredients,Cocoa Powder,8.00,120.00,2025-11-27 20:16:14.029089
+inv-19,ingredients,Vanilla Extract,2.00,850.00,2025-11-27 20:16:14.029089
+inv-2,cakes & pastries,Classic Cheesecake (whole),4.00,850.00,2025-11-27 20:16:14.029089
+inv-20,ingredients,Eggs,1.00,120.00,2025-11-27 20:16:14.029089
+inv-21,supplies,Cake Box (small),50.00,8.00,2025-11-27 20:16:14.029089
+inv-22,supplies,Cake Box (medium),40.00,12.00,2025-11-27 20:16:14.029089
+inv-23,supplies,Cake Box (large),30.00,18.00,2025-11-27 20:16:14.029089
+inv-24,supplies,Plastic Cups 16oz,200.00,2.50,2025-11-27 20:16:14.029089
+inv-25,supplies,Paper Bags (small),150.00,1.50,2025-11-27 20:16:14.029089
+inv-26,supplies,Paper Bags (large),9.00,3.00,2025-11-27 20:16:14.029089
+inv-27,supplies,Plastic Forks,167.00,0.50,2025-11-27 20:16:14.029089
+inv-28,supplies,Napkins (pack of 100),20.00,45.00,2025-11-27 20:16:14.029089
+inv-29,supplies,Plastic Food Containers,80.00,5.00,2025-11-27 20:16:14.029089
+inv-3,cakes & pastries,Butter Croissant,30.00,35.00,2025-11-27 20:16:14.029089
+inv-30,supplies,Aluminum Foil Roll,5.00,120.00,2025-11-27 20:16:14.029089
+inv-4,cakes & pastries,Almond Danish,2.00,45.00,2025-11-27 20:16:14.029089
+inv-5,cakes & pastries,Red Velvet Slice,3.00,110.00,2025-11-27 20:16:14.029089
+inv-6,cakes & pastries,Cinnamon Roll,20.00,50.00,2025-11-27 20:16:14.029089
+inv-7,cakes & pastries,Assorted Macarons (box of 6),18.00,220.00,2025-11-27 20:16:14.029089
+inv-8,cakes & pastries,Blueberry Muffin,24.00,55.00,2025-11-27 20:16:14.029089
+inv-9,beverages,Bottled Water 500ml,48.00,15.00,2025-11-27 20:16:14.029089

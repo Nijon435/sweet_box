@@ -62,7 +62,6 @@
             Sign out
           </button>
         </div>
-        <div class="meta">Export-ready ledgers for finance reviews.</div>
       </aside>
 
       <main class="main-content">
@@ -70,15 +69,9 @@
           <div>
             <span class="pill">Compliance</span>
             <h1>Reports & Exports</h1>
-            <p class="meta">
-              Download Excel-ready files for inventory, sales, attendance, and
-              finance.
-            </p>
           </div>
           <div class="actions">
-            <button class="btn btn-secondary" id="refresh-data">
-              Refresh data
-            </button>
+            <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
 
@@ -126,9 +119,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
-      // Production: Use backend URL directly
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        window.APP_STATE_ENDPOINT = "https://sweetbox-backend.onrender.com/api/state";
+      // Auto-detect: Production vs Local
+      if (
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        window.APP_STATE_ENDPOINT =
+          "https://sweetbox-backend.onrender.com/api/state";
+      } else {
+        window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state";
       }
     </script>
     <script src="js/common.js"></script>

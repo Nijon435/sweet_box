@@ -29,9 +29,7 @@ function renderInventory() {
     if (!editModal || !editForm) return;
     editForm.dataset.itemId = item.id;
     const categoryField = editForm.querySelector("[name=category]");
-    const unitField = editForm.querySelector("[name=unit]");
     setSelectValue(categoryField, item.category);
-    setSelectValue(unitField, item.unit);
     const nameField = editForm.querySelector("[name=name]");
     const qtyField = editForm.querySelector("[name=quantity]");
     const costField = editForm.querySelector("[name=cost]");
@@ -80,10 +78,8 @@ function renderInventory() {
         category: data.get("category"),
         name: data.get("name"),
         quantity: Number(data.get("quantity")) || 0,
-        unit: data.get("unit"),
         cost: Number(data.get("cost")) || 0,
       };
-      updated.reorderPoint = Math.max(1, Math.round(updated.quantity * 0.3));
       appState.inventory[idx] = updated;
 
       // Save to backend API
@@ -118,10 +114,8 @@ function renderInventory() {
         category: data.get("category"),
         name: data.get("name"),
         quantity: Number(data.get("quantity")) || 0,
-        unit: data.get("unit"),
         cost: Number(data.get("cost")) || 0,
       };
-      payload.reorderPoint = Math.max(1, Math.round(payload.quantity * 0.3));
       if (!payload.category || !payload.name) return;
       const idx = appState.inventory.findIndex(
         (item) => item.id === payload.id
@@ -135,14 +129,109 @@ function renderInventory() {
   }
 
   const stats = inventoryStats();
+  const categorizedInventory = categorizeInventory();
+
+  // Calculate value per category
+  const categoryValues = {
+    "cakes & pastries":
+      categorizedInventory["cakes & pastries"]?.reduce(
+        (sum, item) => sum + item.quantity * item.cost,
+        0
+      ) || 0,
+    ingredients:
+      categorizedInventory["ingredients"]?.reduce(
+        (sum, item) => sum + item.quantity * item.cost,
+        0
+      ) || 0,
+    supplies:
+      categorizedInventory["supplies"]?.reduce(
+        (sum, item) => sum + item.quantity * item.cost,
+        0
+      ) || 0,
+    beverages:
+      categorizedInventory["beverages"]?.reduce(
+        (sum, item) => sum + item.quantity * item.cost,
+        0
+      ) || 0,
+  };
+
   const inventoryStatsMap = {
     "inventory-total": `${stats.totalItems} products`,
     "inventory-low": `${stats.lowStock} low stock`,
     "inventory-value": formatCurrency(stats.value),
+    "inventory-cakes-value": formatCurrency(categoryValues["cakes & pastries"]),
+    "inventory-ingredients-value": formatCurrency(
+      categoryValues["ingredients"]
+    ),
+    "inventory-supplies-value": formatCurrency(categoryValues["supplies"]),
+    "inventory-beverages-value": formatCurrency(categoryValues["beverages"]),
   };
   Object.entries(inventoryStatsMap).forEach(([id, value]) => {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
+  });
+
+  // Populate low stock items dropdown
+  const lowStockItemsContainer = document.getElementById("low-stock-items");
+  if (lowStockItemsContainer) {
+    const lowItems = lowStockItems();
+    if (lowItems.length > 0) {
+      lowStockItemsContainer.innerHTML = lowItems
+        .map(
+          (item) =>
+            `<div style="display: flex; justify-content: space-between; padding: 4px 0;">
+              <span>${item.name}</span>
+              <strong style="color: var(--warning);">${item.quantity}</strong>
+            </div>`
+        )
+        .join("");
+    } else {
+      lowStockItemsContainer.innerHTML =
+        '<div style="color: var(--gray-500); font-size: 13px;">All items are well stocked</div>';
+    }
+  }
+
+  // Setup collapsible sections
+  const lowStockToggle = document.getElementById("low-stock-toggle");
+  const totalValueToggle = document.getElementById("total-value-toggle");
+
+  if (lowStockToggle && !lowStockToggle.dataset.bound) {
+    lowStockToggle.dataset.bound = "true";
+    lowStockToggle.addEventListener("click", () => {
+      lowStockToggle.classList.toggle("expanded");
+    });
+  }
+
+  if (totalValueToggle && !totalValueToggle.dataset.bound) {
+    totalValueToggle.dataset.bound = "true";
+    totalValueToggle.addEventListener("click", () => {
+      totalValueToggle.classList.toggle("expanded");
+    });
+  }
+
+  // Setup search functionality
+  document.querySelectorAll(".inventory-search").forEach((search) => {
+    if (search.dataset.bound) return;
+    search.dataset.bound = "true";
+    search.addEventListener("input", (e) => {
+      const category = e.target.dataset.category;
+      const searchTerm = e.target.value.toLowerCase();
+      const table = document.querySelector(
+        `.inventory-table[data-category="${category}"]`
+      );
+      if (!table) return;
+
+      const rows = table.querySelectorAll("tbody tr");
+      rows.forEach((row) => {
+        const itemName =
+          row.querySelector("td:first-child")?.textContent.toLowerCase() || "";
+        if (itemName.includes(searchTerm)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    });
   });
 
   const alertPanel = document.getElementById("inventory-alert");
@@ -192,14 +281,16 @@ function renderInventory() {
     }
     records.forEach((item) => {
       const row = document.createElement("tr");
+      // Different thresholds: 10 for supplies/beverages, 5 for others
+      const threshold =
+        category === "supplies" || category === "beverages" ? 10 : 5;
+      const isLowStock = item.quantity < threshold;
       row.innerHTML = `
       <td>${item.name}</td>
       <td>${item.quantity}</td>
       <td>${formatCurrency(item.cost)}</td>
-      <td><span class="status ${
-        item.quantity <= item.reorderPoint ? "late" : "present"
-      }">${
-        item.quantity <= item.reorderPoint ? "Reorder" : "Healthy"
+      <td><span class="status ${isLowStock ? "late" : "present"}">${
+        isLowStock ? "Low Stock" : "Healthy"
       }</span></td>
       <td class="table-actions"><button class="btn btn-outline" data-edit="${
         item.id
@@ -238,6 +329,74 @@ function renderInventory() {
       saveState();
       renderInventory();
     });
+  });
+
+  // Setup ingredient usage form
+  setupIngredientUsageForm();
+}
+
+function setupIngredientUsageForm() {
+  const form = document.getElementById("ingredient-usage-form");
+  const select = document.getElementById("ingredient-select");
+
+  if (!form || !select) return;
+
+  // Populate ingredient dropdown
+  const ingredients = appState.inventory.filter(
+    (i) => i.category === "ingredients"
+  );
+  select.innerHTML = '<option value="">Choose ingredient...</option>';
+  ingredients.forEach((ing) => {
+    const opt = document.createElement("option");
+    opt.value = ing.id;
+    opt.textContent = `${ing.name} (Available: ${ing.quantity})`;
+    select.appendChild(opt);
+  });
+
+  if (form.dataset.bound) return;
+  form.dataset.bound = "true";
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const ingredientId = data.get("ingredientId");
+    const qty = Number(data.get("quantity"));
+    const reason = data.get("reason");
+
+    const idx = appState.inventory.findIndex((i) => i.id === ingredientId);
+    if (idx < 0) {
+      alert("Ingredient not found");
+      return;
+    }
+
+    if (appState.inventory[idx].quantity < qty) {
+      alert(
+        `Insufficient quantity. Available: ${appState.inventory[idx].quantity}`
+      );
+      return;
+    }
+
+    // Deduct from inventory
+    appState.inventory[idx].quantity -= qty;
+
+    // Record usage
+    const usageRecord = {
+      id: "usage-" + Date.now(),
+      label: appState.inventory[idx].name,
+      used: qty,
+      reason: reason || "Staff usage",
+      timestamp: new Date().toISOString(),
+    };
+
+    if (!appState.inventoryUsage) appState.inventoryUsage = [];
+    appState.inventoryUsage.push(usageRecord);
+
+    saveState();
+    syncStateToDatabase();
+    renderInventory();
+    form.reset();
+
+    alert(`Recorded: ${qty} of ${appState.inventory[idx].name} used`);
   });
 }
 

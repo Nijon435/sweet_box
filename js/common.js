@@ -306,9 +306,11 @@ const inventoryStats = () => {
     (sum, item) => sum + item.quantity * item.cost,
     0
   );
-  const lowStock = appState.inventory.filter(
-    (item) => item.quantity <= item.reorderPoint
-  ).length;
+  const lowStock = appState.inventory.filter((item) => {
+    const threshold =
+      item.category === "supplies" || item.category === "beverages" ? 10 : 5;
+    return item.quantity < threshold;
+  }).length;
   return { totalItems: appState.inventory.length, lowStock, value };
 };
 
@@ -331,7 +333,11 @@ const salesYesterday = () => {
 
 const lowStockItems = () =>
   appState.inventory
-    .filter((item) => item.quantity <= item.reorderPoint)
+    .filter((item) => {
+      const threshold =
+        item.category === "supplies" || item.category === "beverages" ? 10 : 5;
+      return item.quantity < threshold;
+    })
     .sort((a, b) => a.quantity - b.quantity);
 
 const highlightNavigation = () => {

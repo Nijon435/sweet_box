@@ -72,14 +72,9 @@
           <div>
             <span class="pill">Production control</span>
             <h1>Inventory Management</h1>
-            <p class="meta">
-              Centralized catalog with live quantities and reorder alerts.
-            </p>
           </div>
           <div class="actions">
-            <button class="btn btn-secondary" id="refresh-data">
-              Refresh data
-            </button>
+            <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
 
@@ -96,7 +91,7 @@
               <label for="item-category">Category</label>
               <select id="item-category" name="category" required>
                 <option value="">Select category</option>
-                <option value="cakes">Cakes & Pastries</option>
+                <option value="cakes & pastries">Cakes & Pastries</option>
                 <option value="ingredients">Ingredients</option>
                 <option value="supplies">Supplies</option>
                 <option value="beverages">Beverages</option>
@@ -116,7 +111,7 @@
                 name="quantity"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 required
               />
 
@@ -136,6 +131,42 @@
 
           <article class="card">
             <div class="section-heading">
+              <h2>Use Ingredients</h2>
+              <span class="pill">Staff Access</span>
+            </div>
+            <form id="ingredient-usage-form">
+              <label for="ingredient-select">Select Ingredient</label>
+              <select id="ingredient-select" name="ingredientId" required>
+                <option value="">Choose ingredient...</option>
+              </select>
+
+              <label for="usage-qty">Quantity to Use</label>
+              <input
+                id="usage-qty"
+                name="quantity"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="0"
+                required
+              />
+
+              <label for="usage-reason">Reason (Optional)</label>
+              <input
+                id="usage-reason"
+                name="reason"
+                type="text"
+                placeholder="e.g., Baking batch #5"
+              />
+
+              <button class="btn btn-primary" type="submit">
+                Record Usage
+              </button>
+            </form>
+          </article>
+
+          <article class="card">
+            <div class="section-heading">
               <h2>Inventory Snapshot</h2>
               <span class="pill">Auto</span>
             </div>
@@ -144,13 +175,66 @@
                 <span>Total SKUs</span
                 ><strong id="inventory-total">0 products</strong>
               </li>
-              <li>
-                <span>Low stock alerts</span
-                ><strong id="inventory-low">0 low stock</strong>
+              <li class="expandable" id="low-stock-toggle">
+                <div class="list-header">
+                  <span>Low stock alerts</span>
+                  <div>
+                    <strong id="inventory-low">0 low stock</strong>
+                    <span class="expand-icon">▼</span>
+                  </div>
+                </div>
+                <div class="list-content" id="low-stock-items"></div>
               </li>
-              <li>
-                <span>On-hand value</span
-                ><strong id="inventory-value">₱0.00</strong>
+              <li class="expandable" id="total-value-toggle">
+                <div class="list-header">
+                  <span>Total value</span>
+                  <div>
+                    <strong id="inventory-value">₱0.00</strong>
+                    <span class="expand-icon">▼</span>
+                  </div>
+                </div>
+                <div class="list-content">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 4px 0;
+                    "
+                  >
+                    <span>Cakes & Pastries</span>
+                    <strong id="inventory-cakes-value">₱0.00</strong>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 4px 0;
+                    "
+                  >
+                    <span>Ingredients</span>
+                    <strong id="inventory-ingredients-value">₱0.00</strong>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 4px 0;
+                    "
+                  >
+                    <span>Supplies</span>
+                    <strong id="inventory-supplies-value">₱0.00</strong>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 4px 0;
+                    "
+                  >
+                    <span>Beverages</span>
+                    <strong id="inventory-beverages-value">₱0.00</strong>
+                  </div>
+                </div>
               </li>
             </ul>
           </article>
@@ -160,9 +244,15 @@
           <article class="table-wrapper">
             <div class="section-heading">
               <h2>Cakes & Pastries</h2>
+              <input
+                type="search"
+                placeholder="Search cakes..."
+                class="inventory-search"
+                data-category="cakes & pastries"
+              />
               <span class="pill">Finished goods</span>
             </div>
-            <table class="inventory-table" data-category="cakes">
+            <table class="inventory-table" data-category="cakes & pastries">
               <thead>
                 <tr>
                   <th>Item</th>
@@ -179,6 +269,12 @@
           <article class="table-wrapper">
             <div class="section-heading">
               <h2>Ingredients</h2>
+              <input
+                type="search"
+                placeholder="Search ingredients..."
+                class="inventory-search"
+                data-category="ingredients"
+              />
               <span class="pill">Kitchen</span>
             </div>
             <table class="inventory-table" data-category="ingredients">
@@ -200,6 +296,12 @@
           <article class="table-wrapper">
             <div class="section-heading">
               <h2>Supplies</h2>
+              <input
+                type="search"
+                placeholder="Search supplies..."
+                class="inventory-search"
+                data-category="supplies"
+              />
               <span class="pill">Packaging</span>
             </div>
             <table class="inventory-table" data-category="supplies">
@@ -219,6 +321,12 @@
           <article class="table-wrapper">
             <div class="section-heading">
               <h2>Beverages</h2>
+              <input
+                type="search"
+                placeholder="Search beverages..."
+                class="inventory-search"
+                data-category="beverages"
+              />
               <span class="pill">Liquid inventory</span>
             </div>
             <table class="inventory-table" data-category="beverages">
@@ -273,7 +381,7 @@
             name="quantity"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             required
           />
 
@@ -303,9 +411,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script>
-      // Production: Use backend URL directly
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        window.APP_STATE_ENDPOINT = "https://sweetbox-backend.onrender.com/api/state";
+      // Auto-detect: Production vs Local
+      if (
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        window.APP_STATE_ENDPOINT =
+          "https://sweetbox-backend.onrender.com/api/state";
+      } else {
+        window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state";
       }
     </script>
     <script src="js/common.js"></script>
