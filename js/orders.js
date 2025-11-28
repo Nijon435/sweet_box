@@ -169,9 +169,14 @@ function renderOrders() {
           }</small><div class="order-tags">${orderTypeTag}</div></td>
           <td>${formatCurrency(order.total)}</td>
           <td>${formatTime(servedTime)}</td>
-          <td><button class="btn btn-outline" data-receipt="${
-            order.id
-          }">Receipt</button></td>
+          <td>
+            <button class="btn btn-outline" data-receipt="${
+              order.id
+            }">Receipt</button>
+            <button class="btn btn-secondary" data-delete-completed="${
+              order.id
+            }">Delete</button>
+          </td>
         `;
           completedBody.appendChild(row);
         });
@@ -198,6 +203,12 @@ function renderOrders() {
       if (!order || order.status === "served") return;
       order.status = "served";
       order.servedAt = new Date().toISOString();
+
+      // Update sales history
+      if (typeof updateSalesHistory === "function") {
+        updateSalesHistory(order.total);
+      }
+
       saveState();
       renderOrders();
     });
@@ -319,6 +330,24 @@ function renderOrders() {
       );
     });
   });
+
+  document
+    .querySelectorAll("#completed-orders-table [data-delete-completed]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.deleteCompleted;
+        const idx = appState.orders.findIndex((o) => o.id === id);
+        if (idx === -1) return;
+        showConfirm(
+          `Delete completed order ${id}? This action cannot be undone.`,
+          () => {
+            appState.orders.splice(idx, 1);
+            saveState();
+            renderOrders();
+          }
+        );
+      });
+    });
 
   const closeReceipt = () => {
     selectedReceiptOrder = null;

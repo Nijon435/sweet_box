@@ -57,12 +57,16 @@ function renderDashboard() {
   ChartManager.plot("inventoryStatusChart", {
     type: "doughnut",
     data: {
-      labels: ["Safe", "Low"],
+      labels: ["Safe", "Low", "No Stock"],
       datasets: [
         {
-          data: [metrics.totalItems - metrics.lowStock, metrics.lowStock],
-          backgroundColor: ["#ffd37c", "#f97316"],
-          borderColor: ["#ffd37c", "#f97316"],
+          data: [
+            metrics.totalItems - metrics.lowStock - metrics.outOfStock,
+            metrics.lowStock,
+            metrics.outOfStock,
+          ],
+          backgroundColor: ["#ffd37c", "#f97316", "#ef4444"],
+          borderColor: ["#ffd37c", "#f97316", "#ef4444"],
         },
       ],
     },

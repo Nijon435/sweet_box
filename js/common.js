@@ -306,12 +306,15 @@ const inventoryStats = () => {
     (sum, item) => sum + item.quantity * item.cost,
     0
   );
+  const outOfStock = appState.inventory.filter(
+    (item) => item.quantity === 0
+  ).length;
   const lowStock = appState.inventory.filter((item) => {
     const threshold =
       item.category === "supplies" || item.category === "beverages" ? 10 : 5;
-    return item.quantity < threshold;
+    return item.quantity > 0 && item.quantity < threshold;
   }).length;
-  return { totalItems: appState.inventory.length, lowStock, value };
+  return { totalItems: appState.inventory.length, lowStock, outOfStock, value };
 };
 
 const orderStats = () => {
@@ -320,6 +323,35 @@ const orderStats = () => {
     buckets[order.status] = (buckets[order.status] || 0) + 1;
   });
   return buckets;
+};
+
+const updateSalesHistory = (amount, date = todayKey()) => {
+  const existing = appState.salesHistory.find((entry) => entry.date === date);
+  if (existing) {
+    existing.total += amount;
+  } else {
+    appState.salesHistory.push({ date, total: amount });
+  }
+  appState.salesHistory.sort((a, b) => a.date.localeCompare(b.date));
+};
+
+const recalculateSalesHistory = () => {
+  // Group served orders by date
+  const salesByDate = {};
+  (appState.orders || []).forEach((order) => {
+    if (order.status === "served" && order.servedAt) {
+      const date = order.servedAt.split("T")[0];
+      salesByDate[date] = (salesByDate[date] || 0) + (order.total || 0);
+    }
+  });
+
+  // Update sales history
+  appState.salesHistory = Object.entries(salesByDate)
+    .map(([date, total]) => ({
+      date,
+      total,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 };
 
 const salesToday = () =>
@@ -635,6 +667,11 @@ function initApp() {
   }
 
   function bootPageFlow() {
+    // Recalculate sales history from served orders
+    if (typeof recalculateSalesHistory === "function") {
+      recalculateSalesHistory();
+    }
+
     const page = document.body.dataset.page;
     if (page === "login") return;
     const user = getCurrentUser();
