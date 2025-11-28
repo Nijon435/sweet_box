@@ -143,6 +143,12 @@ async function syncStateToDatabase() {
       );
     } else {
       console.log("State synced to database successfully");
+      // Update localStorage to match what was synced
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        console.warn("Failed to update localStorage after database sync", e);
+      }
     }
   } catch (error) {
     console.error("Unable to sync to database:", error);
@@ -282,8 +288,19 @@ const computeEmployeeStatus = (employee) => {
   const latest = todayLogs[todayLogs.length - 1];
   if (!firstIn)
     return { status: "absent", timestamp: formatTime(latest.timestamp) };
+
+  // Handle missing or invalid shiftStart
+  if (!employee.shiftStart || typeof employee.shiftStart !== "string") {
+    return { status: "present", timestamp: formatTime(latest.timestamp) };
+  }
+
   const shift = new Date();
-  const [hours, minutes] = employee.shiftStart.split(":");
+  const shiftParts = employee.shiftStart.split(":");
+  if (shiftParts.length < 2) {
+    return { status: "present", timestamp: formatTime(latest.timestamp) };
+  }
+
+  const [hours, minutes] = shiftParts;
   shift.setHours(Number(hours), Number(minutes), 0, 0);
   const diff = (new Date(firstIn.timestamp) - shift) / 60000;
   return {
@@ -648,10 +665,17 @@ function initApp() {
   ) {
     fetchServerState()
       .then((serverState) => {
-        appState =
-          serverState && typeof serverState === "object"
-            ? serverState
-            : loadState();
+        if (serverState && typeof serverState === "object") {
+          appState = serverState;
+          // Update localStorage to match server data
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+          } catch (e) {
+            console.warn("Failed to update localStorage with server data", e);
+          }
+        } else {
+          appState = loadState();
+        }
       })
       .catch((err) => {
         console.warn(
