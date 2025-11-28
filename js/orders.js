@@ -342,6 +342,12 @@ function renderOrders() {
           `Delete completed order ${id}? This action cannot be undone.`,
           () => {
             appState.orders.splice(idx, 1);
+
+            // Recalculate sales history after deletion
+            if (typeof recalculateSalesHistory === "function") {
+              recalculateSalesHistory();
+            }
+
             saveState();
             renderOrders();
           }

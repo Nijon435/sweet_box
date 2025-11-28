@@ -86,12 +86,23 @@ async def fetch_table(conn, table):
             "stock_trends": 500,      # Last 500 trend records
         }
         
+        # Different ordering columns for different tables
+        order_by_map = {
+            "sales_history": "date DESC",
+            "orders": "timestamp DESC",
+            "attendance_logs": "timestamp DESC",
+            "inventory_usage": "id DESC",
+            "employees": "created_at DESC",
+            "users": "created_at DESC",
+        }
+        
         limit = limit_map.get(table, None)
+        order_by = order_by_map.get(table, "id DESC")
         
         if limit:
-            query = f'SELECT * FROM {table} ORDER BY id DESC LIMIT {limit}'
+            query = f'SELECT * FROM {table} ORDER BY {order_by} LIMIT {limit}'
         else:
-            query = f'SELECT * FROM {table}'
+            query = f'SELECT * FROM {table} ORDER BY {order_by}'
             
         logger.info(f"Executing query for {table}: {query}")
         rows = await conn.fetch(query)
