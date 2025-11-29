@@ -479,6 +479,6 @@ async def save_state(state: dict):
         logger.info("State saved successfully")
         return {"success": True, "message": "State saved to database"}
     except Exception as e:
-        logger.error(f("Error saving state: {e}", exc_info=True)
+        logger.error(f"Error saving state: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
