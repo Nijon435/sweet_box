@@ -838,7 +838,7 @@ function showLoadingScreen() {
     loader = document.createElement("div");
     loader.id = "app-loading-screen";
     loader.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(92, 44, 6, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(92, 44, 6, 0.75); display: flex; align-items: center; justify-content: center; z-index: 9999;";
     loader.innerHTML = `
       <div class="loading-text" style="width: 100%; height: 100px; line-height: 100px; text-align: center;">
         <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0s infinite linear alternate;">L</span>
