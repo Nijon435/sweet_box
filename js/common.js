@@ -789,7 +789,10 @@ function initApp() {
           appState = serverState;
           console.log("📦 Server state loaded:");
           console.log("  Users:", appState.users?.length || 0);
-          console.log("  Attendance Logs:", appState.attendanceLogs?.length || 0);
+          console.log(
+            "  Attendance Logs:",
+            appState.attendanceLogs?.length || 0
+          );
           console.log("  Leave Requests:", appState.leaveRequests?.length || 0);
           console.log("  Orders:", appState.orders?.length || 0);
           // Only store essential data (users) in localStorage to avoid quota issues
@@ -851,20 +854,21 @@ function initApp() {
 
     updateSessionDisplay(user);
     applyRolePermissions(user);
-    
+
     // Check for clock-in prompt flag
     const shouldPromptClockIn = localStorage.getItem("show_clock_in_prompt");
     if (shouldPromptClockIn === "true") {
       localStorage.removeItem("show_clock_in_prompt");
-      
+
       setTimeout(() => {
         const confirmClockIn = confirm(
           "You haven't clocked in today. Would you like to clock in now?"
         );
-        
+
         if (confirmClockIn) {
           const currentHour = new Date().getHours();
-          const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+          const shift =
+            currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
           const newLog = {
             id: `att-${Date.now()}`,
             employeeId: user.id,
@@ -877,15 +881,18 @@ function initApp() {
           appState.attendanceLogs.push(newLog);
           saveState();
           alert("Successfully clocked in!");
-          
+
           // Refresh page to update attendance display
-          if (typeof window.pageRenderers === "object" && typeof window.pageRenderers[page] === "function") {
+          if (
+            typeof window.pageRenderers === "object" &&
+            typeof window.pageRenderers[page] === "function"
+          ) {
             window.pageRenderers[page]();
           }
         }
       }, 500);
     }
-    
+
     try {
       const renderers = window.pageRenderers || {};
       if (renderers[page] && typeof renderers[page] === "function") {

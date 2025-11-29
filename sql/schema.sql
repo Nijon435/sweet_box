@@ -2,7 +2,7 @@
 -- PostgreSQL-compatible CREATE TABLE statements for Sweet Box
 -- Run this file first to create the database schema.
 
--- Accounts / Users (merged with employees)
+-- Users table (merged employees table into this)
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -29,6 +29,21 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
   FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Leave requests
+CREATE TABLE IF NOT EXISTS leave_requests (
+  id VARCHAR(64) NOT NULL PRIMARY KEY,
+  employee_id VARCHAR(64) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  reason TEXT,
+  status VARCHAR(32) DEFAULT 'pending',
+  requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  approved_by VARCHAR(64),
+  approved_at TIMESTAMP,
+  FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- Inventory
 CREATE TABLE IF NOT EXISTS inventory (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -43,7 +58,6 @@ CREATE TABLE IF NOT EXISTS inventory (
 CREATE TABLE IF NOT EXISTS orders (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   customer VARCHAR(255),
-  items TEXT,
   items_json JSONB,
   total NUMERIC(12,2) DEFAULT 0,
   status VARCHAR(32) DEFAULT 'pending',

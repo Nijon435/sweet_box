@@ -401,15 +401,13 @@ async def save_state(state: dict):
         if "inventory" in state and state["inventory"]:
             for item in state["inventory"]:
                 await conn.execute(
-                    """INSERT INTO inventory (id, name, category, quantity, unit, reorder_point, cost)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    """INSERT INTO inventory (id, name, category, quantity, cost)
+                       VALUES ($1, $2, $3, $4, $5)
                        ON CONFLICT (id) DO UPDATE SET
                        name = EXCLUDED.name, category = EXCLUDED.category,
-                       quantity = EXCLUDED.quantity, unit = EXCLUDED.unit,
-                       reorder_point = EXCLUDED.reorder_point, cost = EXCLUDED.cost""",
+                       quantity = EXCLUDED.quantity, cost = EXCLUDED.cost""",
                     item.get("id"), item.get("name"), item.get("category"),
-                    item.get("quantity"), item.get("unit"), 
-                    item.get("reorderPoint"), item.get("cost")
+                    item.get("quantity"), item.get("cost")
                 )
         
         # Save orders (upsert - don't delete existing)
@@ -435,14 +433,14 @@ async def save_state(state: dict):
                             items_json_str = None
                 
                 await conn.execute(
-                    """INSERT INTO orders (id, customer, items, items_json, total, status, type, timestamp, served_at)
-                       VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)
+                    """INSERT INTO orders (id, customer, items_json, total, status, type, timestamp, served_at)
+                       VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8)
                        ON CONFLICT (id) DO UPDATE SET
-                       customer = EXCLUDED.customer, items = EXCLUDED.items,
+                       customer = EXCLUDED.customer,
                        items_json = EXCLUDED.items_json, total = EXCLUDED.total,
                        status = EXCLUDED.status, type = EXCLUDED.type,
                        timestamp = EXCLUDED.timestamp, served_at = EXCLUDED.served_at""",
-                    order.get("id"), order.get("customer"), order.get("items"),
+                    order.get("id"), order.get("customer"),
                     items_json_str, order.get("total"), order.get("status"),
                     order.get("type"), parse_timestamp(order.get("timestamp")), parse_timestamp(order.get("servedAt"))
                 )
