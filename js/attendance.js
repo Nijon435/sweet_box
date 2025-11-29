@@ -53,8 +53,9 @@ function renderAttendance() {
             log.timestamp.startsWith(todayKey())
         )
         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      const currentLastLog = freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
-      
+      const currentLastLog =
+        freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+
       if (currentLastLog && currentLastLog.action === "out") {
         showAlreadyClockedOutModal();
         return;
@@ -118,8 +119,9 @@ function renderAttendance() {
             log.timestamp.startsWith(todayKey())
         )
         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      const currentLastLog = freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
-      
+      const currentLastLog =
+        freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+
       if (!currentLastLog || currentLastLog.action === "out") {
         showNeedToClockInModal();
         return;
@@ -179,11 +181,16 @@ function renderAttendance() {
           </div>
         </div>
         <div style="display: flex; justify-content: center;">
-          <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+          <button id="got-it-need-clock-in-btn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+
+    const gotItBtn = document.getElementById("got-it-need-clock-in-btn");
+    gotItBtn.addEventListener("click", () => {
+      modal.remove();
+    });
   }
 
   // Show already clocked out modal
@@ -205,11 +212,16 @@ function renderAttendance() {
           </div>
         </div>
         <div style="display: flex; justify-content: center;">
-          <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+          <button id="got-it-clocked-out-btn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+
+    const gotItBtn = document.getElementById("got-it-clocked-out-btn");
+    gotItBtn.addEventListener("click", () => {
+      modal.remove();
+    });
   }
 
   // Show already clocked in modal
@@ -231,11 +243,16 @@ function renderAttendance() {
           </div>
         </div>
         <div style="display: flex; justify-content: center;">
-          <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+          <button id="got-it-clocked-in-btn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+
+    const gotItBtn = document.getElementById("got-it-clocked-in-btn");
+    gotItBtn.addEventListener("click", () => {
+      modal.remove();
+    });
   }
 
   // Show late note dialog

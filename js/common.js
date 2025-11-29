@@ -934,13 +934,19 @@ function showClockInPromptModal(user, page) {
         </div>
       </div>
       <div style="display: flex; gap: 0.75rem; justify-content: center;">
-        <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="padding: 0.75rem 1.75rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-size: 1rem; min-width: 120px; font-weight: 500; color: #6b7280; transition: all 0.2s;">Later</button>
+        <button id="later-clock-in-btn" style="padding: 0.75rem 1.75rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-size: 1rem; min-width: 120px; font-weight: 500; color: #6b7280; transition: all 0.2s;">Later</button>
         <button id="confirm-clock-in-btn" style="padding: 0.75rem 1.75rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; min-width: 120px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.2s;">Clock In</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
+
+  // Add event listener for Later button
+  const laterBtn = document.getElementById("later-clock-in-btn");
+  laterBtn.addEventListener("click", () => {
+    modal.remove();
+  });
 
   const confirmBtn = document.getElementById("confirm-clock-in-btn");
   confirmBtn.addEventListener("click", async () => {

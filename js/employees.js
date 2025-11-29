@@ -840,17 +840,21 @@ function renderLeaveApprovals() {
   }
 
   console.log("📋 Total leave requests:", appState.leaveRequests?.length || 0);
-  console.log("🔍 Leave requests data:", JSON.stringify(appState.leaveRequests, null, 2));
-
-  const pendingLeaves = (appState.leaveRequests || []).filter(
-    (leave) => {
-      console.log("Checking leave:", leave, "Status:", leave.status);
-      return leave.status === "pending";
-    }
+  console.log(
+    "🔍 Leave requests data:",
+    JSON.stringify(appState.leaveRequests, null, 2)
   );
 
+  const pendingLeaves = (appState.leaveRequests || []).filter((leave) => {
+    console.log("Checking leave:", leave, "Status:", leave.status);
+    return leave.status === "pending";
+  });
+
   console.log("⏳ Pending leave requests:", pendingLeaves.length);
-  console.log("🔍 Pending leaves data:", JSON.stringify(pendingLeaves, null, 2));
+  console.log(
+    "🔍 Pending leaves data:",
+    JSON.stringify(pendingLeaves, null, 2)
+  );
 
   if (pendingLeaves.length === 0) {
     leaveList.innerHTML =
