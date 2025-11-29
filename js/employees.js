@@ -840,7 +840,7 @@ function renderLeaveApprovals() {
   }
 
   console.log("📋 Total leave requests:", appState.leaveRequests?.length || 0);
-  
+
   const pendingLeaves = (appState.leaveRequests || []).filter(
     (leave) => leave.status === "pending"
   );

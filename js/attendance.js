@@ -410,6 +410,8 @@ function openRequestLeaveModal(user) {
 
     appState.leaveRequests = appState.leaveRequests || [];
     appState.leaveRequests.push(newLeaveRequest);
+    console.log("📝 Leave request created:", newLeaveRequest);
+    console.log("📋 Total leave requests:", appState.leaveRequests.length);
     saveState();
 
     modal.remove();

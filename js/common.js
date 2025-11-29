@@ -662,7 +662,7 @@ function updateSessionDisplay(user) {
     return;
   }
   nameNode.textContent =
-    displayNameFromAccount(user, { lowercase: true }) || "";
+    displayNameFromAccount(user, { titleCase: true }) || "";
   roleNode.textContent = formatRole(user.role) || "";
   if (logoutButton) logoutButton.disabled = false;
 }
@@ -846,6 +846,41 @@ function initApp() {
 
     updateSessionDisplay(user);
     applyRolePermissions(user);
+    
+    // Check for clock-in prompt flag
+    const shouldPromptClockIn = localStorage.getItem("show_clock_in_prompt");
+    if (shouldPromptClockIn === "true") {
+      localStorage.removeItem("show_clock_in_prompt");
+      
+      setTimeout(() => {
+        const confirmClockIn = confirm(
+          "You haven't clocked in today. Would you like to clock in now?"
+        );
+        
+        if (confirmClockIn) {
+          const currentHour = new Date().getHours();
+          const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+          const newLog = {
+            id: `att-${Date.now()}`,
+            employeeId: user.id,
+            action: "in",
+            timestamp: new Date().toISOString(),
+            shift: shift,
+            note: null,
+          };
+          appState.attendanceLogs = appState.attendanceLogs || [];
+          appState.attendanceLogs.push(newLog);
+          saveState();
+          alert("Successfully clocked in!");
+          
+          // Refresh page to update attendance display
+          if (typeof window.pageRenderers === "object" && typeof window.pageRenderers[page] === "function") {
+            window.pageRenderers[page]();
+          }
+        }
+      }, 500);
+    }
+    
     try {
       const renderers = window.pageRenderers || {};
       if (renderers[page] && typeof renderers[page] === "function") {

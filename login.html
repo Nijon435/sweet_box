@@ -417,10 +417,7 @@
             // Set session
             if (typeof setSession === "function") {
               setSession(user.id);
-              const landing =
-                typeof getLandingPageForRole === "function"
-                  ? getLandingPageForRole(user.role)
-                  : "index.html";
+              const landing = "index.html"; // Always go to dashboard
               console.log("Redirecting to:", landing);
 
               // Check if non-admin user hasn't clocked in today
@@ -436,32 +433,8 @@
                 );
 
                 if (!hasClockedIn) {
-                  // Show clock-in prompt
-                  const shouldClockIn = confirm(
-                    "You haven't clocked in today. Would you like to clock in now?"
-                  );
-
-                  if (shouldClockIn) {
-                    const currentHour = new Date().getHours();
-                    const shift =
-                      currentHour < 12
-                        ? "Morning (7AM–12PM)"
-                        : "Afternoon (12PM–5PM)";
-                    const newLog = {
-                      id: `att-${Date.now()}`,
-                      employeeId: user.id,
-                      action: "in",
-                      timestamp: new Date().toISOString(),
-                      shift: shift,
-                      note: null,
-                    };
-                    appState.attendanceLogs = appState.attendanceLogs || [];
-                    appState.attendanceLogs.push(newLog);
-                    if (typeof saveState === "function") {
-                      saveState();
-                    }
-                    alert("Successfully clocked in!");
-                  }
+                  // Store flag to show clock-in prompt after redirect
+                  localStorage.setItem("show_clock_in_prompt", "true");
                 }
               }
 
