@@ -423,8 +423,14 @@ const updateSalesHistory = (amount, date = todayKey()) => {
   const existing = appState.salesHistory.find((entry) => entry.date === date);
   if (existing) {
     existing.total += amount;
+    existing.ordersCount = (existing.ordersCount || 0) + 1;
   } else {
-    appState.salesHistory.push({ date, total: amount });
+    appState.salesHistory.push({ 
+      id: `sale-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      date, 
+      total: amount,
+      ordersCount: 1
+    });
   }
   appState.salesHistory.sort((a, b) => a.date.localeCompare(b.date));
 };
@@ -432,18 +438,22 @@ const updateSalesHistory = (amount, date = todayKey()) => {
 const recalculateSalesHistory = () => {
   // Group served orders by date
   const salesByDate = {};
+  const ordersCountByDate = {};
   (appState.orders || []).forEach((order) => {
     if (order.status === "served" && order.servedAt) {
       const date = order.servedAt.split("T")[0];
       salesByDate[date] = (salesByDate[date] || 0) + (order.total || 0);
+      ordersCountByDate[date] = (ordersCountByDate[date] || 0) + 1;
     }
   });
 
   // Update sales history
   appState.salesHistory = Object.entries(salesByDate)
     .map(([date, total]) => ({
+      id: `sale-${date}`,
       date,
       total,
+      ordersCount: ordersCountByDate[date] || 0
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 };
