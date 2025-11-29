@@ -787,6 +787,11 @@ function initApp() {
       .then((serverState) => {
         if (serverState && typeof serverState === "object") {
           appState = serverState;
+          console.log("📦 Server state loaded:");
+          console.log("  Users:", appState.users?.length || 0);
+          console.log("  Attendance Logs:", appState.attendanceLogs?.length || 0);
+          console.log("  Leave Requests:", appState.leaveRequests?.length || 0);
+          console.log("  Orders:", appState.orders?.length || 0);
           // Only store essential data (users) in localStorage to avoid quota issues
           // Store full state in memory only
           try {
