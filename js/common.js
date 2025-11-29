@@ -378,12 +378,12 @@ const computeEmployeeStatus = (employee) => {
         log.employeeId === employee.id && log.timestamp.startsWith(todayKey())
     )
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  
+
   // Check if has shift time and past shift time
   const now = new Date();
   const shiftStart = employee.shiftStart || employee.shift_start;
   let isPastShiftTime = false;
-  
+
   if (shiftStart && typeof shiftStart === "string") {
     const shiftParts = shiftStart.split(":");
     if (shiftParts.length >= 2) {
@@ -393,20 +393,22 @@ const computeEmployeeStatus = (employee) => {
       isPastShiftTime = now > shiftTime;
     }
   }
-  
+
   if (!todayLogs.length) {
     // If past shift time and no logs, mark as absent
-    return isPastShiftTime ? { status: "absent", timestamp: "No log" } : { status: "absent", timestamp: "Not yet" };
+    return isPastShiftTime
+      ? { status: "absent", timestamp: "No log" }
+      : { status: "absent", timestamp: "Not yet" };
   }
-  
+
   const firstIn = todayLogs.find((log) => log.action === "in");
   const latest = todayLogs[todayLogs.length - 1];
-  
+
   // If clocked out, show as clocked-out (grey)
   if (latest.action === "out") {
     return { status: "clocked-out", timestamp: formatTime(latest.timestamp) };
   }
-  
+
   if (!firstIn)
     return { status: "absent", timestamp: formatTime(latest.timestamp) };
 

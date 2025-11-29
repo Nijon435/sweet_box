@@ -45,12 +45,22 @@ function renderAttendance() {
   if (clockInBtn && !clockInBtn.dataset.bound) {
     clockInBtn.dataset.bound = "true";
     clockInBtn.addEventListener("click", async () => {
-      if (lastLog && lastLog.action === "out") {
+      // Recalculate lastLog with fresh data
+      const freshLogs = appState.attendanceLogs
+        .filter(
+          (log) =>
+            log.employeeId === currentUser.id &&
+            log.timestamp.startsWith(todayKey())
+        )
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const currentLastLog = freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+      
+      if (currentLastLog && currentLastLog.action === "out") {
         showAlreadyClockedOutModal();
         return;
       }
-      
-      if (lastLog && lastLog.action === "in") {
+
+      if (currentLastLog && currentLastLog.action === "in") {
         showAlreadyClockedInModal();
         return;
       }
@@ -84,8 +94,11 @@ function renderAttendance() {
 
       // Show styled success message
       const toast = document.createElement("div");
-      toast.style.cssText = "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-      toast.textContent = isLate ? "✓ Clocked in (Late)" : "✓ Clocked in successfully!";
+      toast.style.cssText =
+        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+      toast.textContent = isLate
+        ? "✓ Clocked in (Late)"
+        : "✓ Clocked in successfully!";
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
 
@@ -97,8 +110,18 @@ function renderAttendance() {
   if (clockOutBtn && !clockOutBtn.dataset.bound) {
     clockOutBtn.dataset.bound = "true";
     clockOutBtn.addEventListener("click", async () => {
-      if (!lastLog || lastLog.action === "out") {
-        alert("You need to clock in first before clocking out.");
+      // Recalculate lastLog with fresh data
+      const freshLogs = appState.attendanceLogs
+        .filter(
+          (log) =>
+            log.employeeId === currentUser.id &&
+            log.timestamp.startsWith(todayKey())
+        )
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const currentLastLog = freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+      
+      if (!currentLastLog || currentLastLog.action === "out") {
+        showNeedToClockInModal();
         return;
       }
 
@@ -137,10 +160,37 @@ function renderAttendance() {
     });
   }
 
+  // Show need to clock in modal
+  function showNeedToClockInModal() {
+    const modal = document.createElement("div");
+    modal.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+
+    modal.innerHTML = `
+      <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+            <span style="color: white; font-size: 2rem;">⚠️</span>
+          </div>
+          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Not Clocked In</h3>
+          <p style="margin: 0; color: #666; font-size: 0.95rem;">You need to clock in first before clocking out.</p>
+          <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-radius: 8px;">
+            <div style="font-size: 0.875rem; color: #92400e;">Please use the Clock In button first.</div>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: center;">
+          <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
   // Show already clocked out modal
   function showAlreadyClockedOutModal() {
     const modal = document.createElement("div");
-    modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+    modal.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
 
     modal.innerHTML = `
       <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
@@ -165,7 +215,8 @@ function renderAttendance() {
   // Show already clocked in modal
   function showAlreadyClockedInModal() {
     const modal = document.createElement("div");
-    modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+    modal.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
 
     modal.innerHTML = `
       <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
