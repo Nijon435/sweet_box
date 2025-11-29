@@ -71,7 +71,8 @@ TABLES = [
     "inventory",
     "orders",
     "sales_history",
-    "inventory_usage"
+    "inventory_usage",
+    "leave_requests"
 ]
 
 async def fetch_table(conn, table):
@@ -214,6 +215,7 @@ async def get_state():
             "orders": data["orders"],
             "salesHistory": data["sales_history"],
             "inventoryUsage": data["inventory_usage"],
+            "leaveRequests": data["leave_requests"],
             "attendanceTrend": []
         }
     except Exception as e:
@@ -455,9 +457,28 @@ async def save_state(state: dict):
                     usage.get("id"), usage.get("label"), usage.get("used")
                 )
         
+        # Save leave requests
+        if "leaveRequests" in state and state["leaveRequests"]:
+            for leave in state["leaveRequests"]:
+                await conn.execute(
+                    """INSERT INTO leave_requests (id, employee_id, start_date, end_date, reason, status, requested_at, approved_by, approved_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                       ON CONFLICT (id) DO UPDATE SET
+                       employee_id = EXCLUDED.employee_id, start_date = EXCLUDED.start_date,
+                       end_date = EXCLUDED.end_date, reason = EXCLUDED.reason,
+                       status = EXCLUDED.status, requested_at = EXCLUDED.requested_at,
+                       approved_by = EXCLUDED.approved_by, approved_at = EXCLUDED.approved_at""",
+                    leave.get("id"), leave.get("employeeId"),
+                    parse_date(leave.get("startDate")), parse_date(leave.get("endDate")),
+                    leave.get("reason"), leave.get("status", "pending"),
+                    parse_timestamp(leave.get("requestedAt")),
+                    leave.get("approvedBy"), parse_timestamp(leave.get("approvedAt"))
+                )
+        
         await conn.close()
         logger.info("State saved successfully")
         return {"success": True, "message": "State saved to database"}
     except Exception as e:
-        logger.error(f"Error saving state: {e}", exc_info=True)
+        logger.error(f("Error saving state: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+

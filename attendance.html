@@ -116,6 +116,16 @@
                   🕐 Clock Out
                 </button>
               </div>
+              <div style="margin-bottom: 1rem">
+                <button
+                  class="btn btn-outline"
+                  id="request-leave-btn"
+                  type="button"
+                  style="width: 100%"
+                >
+                  📅 Request Leave
+                </button>
+              </div>
               <p
                 id="last-action-display"
                 style="font-size: 0.875rem; color: #888"
@@ -128,7 +138,12 @@
               <h2>Shift Snapshot</h2>
               <span class="pill">Auto-calculated</span>
             </div>
-            <div class="grid grid-3">
+            <div
+              class="grid grid-4"
+              style="
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              "
+            >
               <div class="card">
                 <h3>Present</h3>
                 <strong id="attendance-present">0 staff</strong>
@@ -140,6 +155,10 @@
               <div class="card">
                 <h3>Absent</h3>
                 <strong id="attendance-absent">0 staff</strong>
+              </div>
+              <div class="card">
+                <h3>On Leave</h3>
+                <strong id="attendance-on-leave">0 staff</strong>
               </div>
             </div>
           </article>

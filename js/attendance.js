@@ -196,16 +196,24 @@ function renderAttendance() {
       acc[snap.status] = (acc[snap.status] || 0) + 1;
       return acc;
     },
-    { present: 0, late: 0, absent: 0 }
+    { present: 0, late: 0, absent: 0, "on-leave": 0 }
   );
 
-  ["attendance-present", "attendance-late", "attendance-absent"].forEach(
-    (id, idx) => {
-      const value = [summary.present, summary.late, summary.absent][idx];
-      const node = document.getElementById(id);
-      if (node) node.textContent = `${value} staff`;
-    }
-  );
+  [
+    "attendance-present",
+    "attendance-late",
+    "attendance-absent",
+    "attendance-on-leave",
+  ].forEach((id, idx) => {
+    const value = [
+      summary.present,
+      summary.late,
+      summary.absent,
+      summary["on-leave"],
+    ][idx];
+    const node = document.getElementById(id);
+    if (node) node.textContent = `${value} staff`;
+  });
 
   const boardBody = document.querySelector("#attendance-status-table tbody");
   if (boardBody) {
@@ -253,13 +261,18 @@ function renderAttendance() {
       const employee = getEmployee(log.employeeId);
       const actionMeta = getAttendanceActionMeta(log.action);
       const row = document.createElement("tr");
+      // Show both shift and note if available
+      let detailsText = log.shift || "";
+      if (log.note) {
+        detailsText += detailsText ? ` — ${log.note}` : log.note;
+      }
       row.innerHTML = `
         <td>${employee?.name || "Unknown"}</td>
         <td><span class="status ${actionMeta.badge}">${
         actionMeta.label
       }</span></td>
         <td>${formatTime(log.timestamp)}</td>
-        <td>${log.shift || log.note || ""}</td>
+        <td>${detailsText || ""}</td>
       `;
       logBody.appendChild(row);
     });
@@ -326,6 +339,82 @@ function renderAttendance() {
       alerts.appendChild(li);
     });
   }
+
+  // Request Leave Button Handler
+  const requestLeaveBtn = document.getElementById("request-leave-btn");
+  if (requestLeaveBtn && !requestLeaveBtn.dataset.bound) {
+    requestLeaveBtn.dataset.bound = "true";
+    requestLeaveBtn.addEventListener("click", () => {
+      openRequestLeaveModal(currentUser);
+    });
+  }
+}
+
+function openRequestLeaveModal(user) {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+
+  const today = new Date().toISOString().split("T")[0];
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+      <h3 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; color: #333;">Request Leave</h3>
+      <form id="leave-request-form">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Start Date</label>
+          <input type="date" id="leave-start-date" min="${today}" required style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;" />
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">End Date</label>
+          <input type="date" id="leave-end-date" min="${today}" required style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;" />
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Reason</label>
+          <textarea id="leave-reason" rows="3" placeholder="Enter reason for leave..." style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: inherit; resize: vertical;"></textarea>
+        </div>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
+          <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const form = document.getElementById("leave-request-form");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const startDate = document.getElementById("leave-start-date").value;
+    const endDate = document.getElementById("leave-end-date").value;
+    const reason = document.getElementById("leave-reason").value;
+
+    if (startDate > endDate) {
+      alert("End date must be after start date");
+      return;
+    }
+
+    const newLeaveRequest = {
+      id: `leave-${Date.now()}`,
+      employeeId: user.id,
+      startDate,
+      endDate,
+      reason,
+      status: "pending",
+      requestedAt: new Date().toISOString(),
+      approvedBy: null,
+      approvedAt: null,
+    };
+
+    appState.leaveRequests = appState.leaveRequests || [];
+    appState.leaveRequests.push(newLeaveRequest);
+    saveState();
+
+    modal.remove();
+    alert("Leave request submitted successfully! Awaiting admin approval.");
+  });
 }
 
 window.pageRenderers = window.pageRenderers || {};

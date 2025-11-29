@@ -1033,6 +1033,10 @@ input[type="number"]::-webkit-outer-spin-button {
   background: rgba(249, 115, 22, 0.15);
   color: var(--warning);
 }
+.status.on-leave {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
 .status.pending {
   background: rgba(246, 195, 67, 0.25);
   color: var(--brown);

@@ -53,6 +53,7 @@ const getEmptyData = () => ({
   salesHistory: [],
   inventoryUsage: [],
   attendanceTrend: [],
+  leaveRequests: [],
 });
 
 async function fetchServerState() {
@@ -354,6 +355,21 @@ const getTodaysLogs = () =>
   appState.attendanceLogs.filter((log) => log.timestamp.startsWith(todayKey()));
 
 const computeEmployeeStatus = (employee) => {
+  // Check if employee is on approved leave today
+  const today = todayKey();
+  const onLeave = (appState.leaveRequests || []).some((leave) => {
+    if (leave.employeeId !== employee.id || leave.status !== "approved") {
+      return false;
+    }
+    const start = leave.startDate;
+    const end = leave.endDate;
+    return today >= start && today <= end;
+  });
+
+  if (onLeave) {
+    return { status: "on-leave", timestamp: "On Leave" };
+  }
+
   const todayLogs = appState.attendanceLogs
     .filter(
       (log) =>
@@ -425,11 +441,11 @@ const updateSalesHistory = (amount, date = todayKey()) => {
     existing.total += amount;
     existing.ordersCount = (existing.ordersCount || 0) + 1;
   } else {
-    appState.salesHistory.push({ 
+    appState.salesHistory.push({
       id: `sale-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      date, 
+      date,
       total: amount,
-      ordersCount: 1
+      ordersCount: 1,
     });
   }
   appState.salesHistory.sort((a, b) => a.date.localeCompare(b.date));
@@ -453,7 +469,7 @@ const recalculateSalesHistory = () => {
       id: `sale-${date}`,
       date,
       total,
-      ordersCount: ordersCountByDate[date] || 0
+      ordersCount: ordersCountByDate[date] || 0,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 };
