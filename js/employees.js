@@ -804,7 +804,7 @@ function openAddEmployeeModal() {
       role: formData.get("role"),
       permission: formData.get("permission"),
       shiftStart: formData.get("shiftStart") || null,
-      hireDate: new Date().toISOString().split('T')[0], // Auto-set to today
+      hireDate: new Date().toISOString().split("T")[0], // Auto-set to today
       status: formData.get("status"),
       createdAt: new Date().toISOString(),
       requirePasswordReset: true,

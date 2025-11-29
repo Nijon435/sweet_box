@@ -119,8 +119,9 @@
         <div id="password-reset-section" class="register-hidden">
           <div class="login-heading-container">
             <h2 class="login-heading">Reset Your Password</h2>
-            <p class="login-subtext" style="color: #f59e0b;">
-              ⚠️ For security reasons, please change your password before continuing.
+            <p class="login-subtext" style="color: #f59e0b">
+              ⚠️ For security reasons, please change your password before
+              continuing.
             </p>
           </div>
           <form id="password-reset-form" class="auth-form">
@@ -181,10 +182,14 @@
 
         const loginSection = document.getElementById("login-section");
         const registerSection = document.getElementById("register-section");
-        const passwordResetSection = document.getElementById("password-reset-section");
+        const passwordResetSection = document.getElementById(
+          "password-reset-section"
+        );
         const loginForm = document.getElementById("login-form");
         const registerForm = document.getElementById("register-form");
-        const passwordResetForm = document.getElementById("password-reset-form");
+        const passwordResetForm = document.getElementById(
+          "password-reset-form"
+        );
         const showRegisterBtn = document.getElementById("show-register");
         const showLoginBtn = document.getElementById("show-login");
 
@@ -398,7 +403,7 @@
             if (user.requirePasswordReset) {
               console.log("⚠️ First-time login - password reset required");
               currentUser = user;
-              
+
               // Show password reset form
               loginSection.style.display = "none";
               passwordResetSection.style.display = "block";
@@ -539,9 +544,14 @@
         if (passwordResetForm) {
           passwordResetForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            const currentPassword = document.getElementById("reset-current-password").value;
-            const newPassword = document.getElementById("reset-new-password").value;
-            const confirmPassword = document.getElementById("reset-confirm-password").value;
+            const currentPassword = document.getElementById(
+              "reset-current-password"
+            ).value;
+            const newPassword =
+              document.getElementById("reset-new-password").value;
+            const confirmPassword = document.getElementById(
+              "reset-confirm-password"
+            ).value;
             const errorNode = document.getElementById("reset-error");
 
             // Validation
@@ -566,12 +576,15 @@
             }
 
             if (newPassword === currentPassword) {
-              errorNode.textContent = "New password must be different from current password";
+              errorNode.textContent =
+                "New password must be different from current password";
               return;
             }
 
             // Update password in appState
-            const userIndex = appState.users.findIndex(u => u.id === currentUser.id);
+            const userIndex = appState.users.findIndex(
+              (u) => u.id === currentUser.id
+            );
             if (userIndex === -1) {
               errorNode.textContent = "User not found";
               return;
@@ -579,11 +592,13 @@
 
             appState.users[userIndex].password = newPassword;
             appState.users[userIndex].requirePasswordReset = false;
-            
+
             console.log("✅ Password updated for:", currentUser.email);
 
             // Disable submit button
-            const submitBtn = passwordResetForm.querySelector('button[type="submit"]');
+            const submitBtn = passwordResetForm.querySelector(
+              'button[type="submit"]'
+            );
             if (submitBtn) {
               submitBtn.disabled = true;
               submitBtn.textContent = "Updating...";
@@ -597,20 +612,22 @@
               // Log in the user after password reset
               if (typeof setSession === "function") {
                 setSession(currentUser.id);
-                const landing = typeof getLandingPageForRole === "function"
-                  ? getLandingPageForRole(currentUser.role)
-                  : "index.html";
+                const landing =
+                  typeof getLandingPageForRole === "function"
+                    ? getLandingPageForRole(currentUser.role)
+                    : "index.html";
                 console.log("Redirecting to:", landing);
                 window.location.href = landing;
               }
             } catch (error) {
               console.error("Error saving password:", error);
-              errorNode.textContent = "Failed to update password. Please try again.";
-              
+              errorNode.textContent =
+                "Failed to update password. Please try again.";
+
               // Revert changes
               appState.users[userIndex].password = currentPassword;
               appState.users[userIndex].requirePasswordReset = true;
-              
+
               if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Update Password";

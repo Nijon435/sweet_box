@@ -12,12 +12,17 @@ function renderAttendance() {
   }
 
   // Get today's logs for current user
-  const userTodayLogs = getTodaysLogs().filter(log => log.employeeId === currentUser.id);
-  const lastLog = userTodayLogs.length > 0 ? userTodayLogs[userTodayLogs.length - 1] : null;
+  const userTodayLogs = getTodaysLogs().filter(
+    (log) => log.employeeId === currentUser.id
+  );
+  const lastLog =
+    userTodayLogs.length > 0 ? userTodayLogs[userTodayLogs.length - 1] : null;
 
   // Display last action
   if (lastActionDisplay && lastLog) {
-    lastActionDisplay.textContent = `Last action: ${lastLog.action === 'in' ? 'Clocked In' : 'Clocked Out'} at ${formatTime(lastLog.timestamp)}`;
+    lastActionDisplay.textContent = `Last action: ${
+      lastLog.action === "in" ? "Clocked In" : "Clocked Out"
+    } at ${formatTime(lastLog.timestamp)}`;
   } else if (lastActionDisplay) {
     lastActionDisplay.textContent = "No clock actions today";
   }
@@ -25,12 +30,12 @@ function renderAttendance() {
   // Check if user is late (if they have a shift start time and haven't clocked in yet)
   function isUserLate(user) {
     if (!user.shiftStart) return false;
-    
+
     const now = new Date();
-    const [hours, minutes] = user.shiftStart.split(':');
+    const [hours, minutes] = user.shiftStart.split(":");
     const shiftTime = new Date();
     shiftTime.setHours(parseInt(hours), parseInt(minutes), 0);
-    
+
     // If current time is more than 15 minutes past shift start
     const lateThreshold = new Date(shiftTime.getTime() + 15 * 60000);
     return now > lateThreshold;
@@ -40,7 +45,7 @@ function renderAttendance() {
   if (clockInBtn && !clockInBtn.dataset.bound) {
     clockInBtn.dataset.bound = "true";
     clockInBtn.addEventListener("click", async () => {
-      if (lastLog && lastLog.action === 'in') {
+      if (lastLog && lastLog.action === "in") {
         alert("You've already clocked in today. Please clock out first.");
         return;
       }
@@ -56,7 +61,8 @@ function renderAttendance() {
 
       // Determine shift based on time
       const currentHour = new Date().getHours();
-      const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+      const shift =
+        currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
 
       // Create attendance log
       const newLog = {
@@ -70,8 +76,12 @@ function renderAttendance() {
 
       appState.attendanceLogs.push(newLog);
       await saveState();
-      
-      alert(isLate ? "Clocked in (Late) - Note recorded" : "Clocked in successfully!");
+
+      alert(
+        isLate
+          ? "Clocked in (Late) - Note recorded"
+          : "Clocked in successfully!"
+      );
       renderAttendance();
     });
   }
@@ -80,13 +90,14 @@ function renderAttendance() {
   if (clockOutBtn && !clockOutBtn.dataset.bound) {
     clockOutBtn.dataset.bound = "true";
     clockOutBtn.addEventListener("click", async () => {
-      if (!lastLog || lastLog.action === 'out') {
+      if (!lastLog || lastLog.action === "out") {
         alert("You need to clock in first before clocking out.");
         return;
       }
 
       const currentHour = new Date().getHours();
-      const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+      const shift =
+        currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
 
       // Create attendance log
       const newLog = {
@@ -100,7 +111,7 @@ function renderAttendance() {
 
       appState.attendanceLogs.push(newLog);
       await saveState();
-      
+
       alert("Clocked out successfully!");
       renderAttendance();
     });
@@ -110,8 +121,9 @@ function renderAttendance() {
   function showLateNoteDialog() {
     return new Promise((resolve) => {
       const modal = document.createElement("div");
-      modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
-      
+      modal.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+
       modal.innerHTML = `
         <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
           <h3 style="margin: 0 0 1rem 0; color: #f59e0b;">⚠️ Late Arrival</h3>
@@ -124,24 +136,24 @@ function renderAttendance() {
           </div>
         </div>
       `;
-      
+
       document.body.appendChild(modal);
-      
+
       const noteInput = modal.querySelector("#late-note-input");
       const cancelBtn = modal.querySelector("#cancel-late-btn");
       const skipBtn = modal.querySelector("#skip-note-btn");
       const submitBtn = modal.querySelector("#submit-note-btn");
-      
+
       cancelBtn.onclick = () => {
         modal.remove();
         resolve(null);
       };
-      
+
       skipBtn.onclick = () => {
         modal.remove();
         resolve("");
       };
-      
+
       submitBtn.onclick = () => {
         const note = noteInput.value.trim();
         modal.remove();
