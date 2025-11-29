@@ -129,6 +129,10 @@ async def fetch_table(conn, table):
             if table == "inventory" and "reorder_point" in item:
                 item["reorderPoint"] = item.pop("reorder_point")
             result.append(item)
+        
+        if table == "users" and result:
+            logger.info(f"Sample user data: {result[0]}")
+        
         return result
     except Exception as e:
         logger.error(f"Error fetching {table}: {e}")
@@ -301,6 +305,9 @@ def parse_date(date_str):
 async def save_state(state: dict):
     try:
         logger.info("Saving full state to database")
+        logger.info(f"State keys: {state.keys()}")
+        logger.info(f"Number of users to save: {len(state.get('users', []))}")
+        
         conn = await asyncpg.connect(
             host=DB_HOST,
             port=DB_PORT,
@@ -311,20 +318,28 @@ async def save_state(state: dict):
         
         # Save users (upsert - don't delete existing)
         if "users" in state and state["users"]:
-            for user in state["users"]:
-                await conn.execute(
-                    """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, created_at)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                       ON CONFLICT (id) DO UPDATE SET
-                       name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password,
-                       phone = EXCLUDED.phone, role = EXCLUDED.role, permission = EXCLUDED.permission,
-                       shift_start = EXCLUDED.shift_start, hire_date = EXCLUDED.hire_date, 
-                       status = EXCLUDED.status""",
-                    user.get("id"), user.get("name"), user.get("email"), user.get("password"),
-                    user.get("phone"), user.get("role"), user.get("permission", "kitchen_staff"),
-                    user.get("shiftStart"), parse_date(user.get("hireDate")), 
-                    user.get("status", "active"), parse_timestamp(user.get("createdAt"))
-                )
+            logger.info(f"Saving {len(state['users'])} users...")
+            for idx, user in enumerate(state["users"]):
+                try:
+                    logger.info(f"Saving user {idx + 1}: {user.get('email', 'NO_EMAIL')}")
+                    await conn.execute(
+                        """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, created_at)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                           ON CONFLICT (id) DO UPDATE SET
+                           name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password,
+                           phone = EXCLUDED.phone, role = EXCLUDED.role, permission = EXCLUDED.permission,
+                           shift_start = EXCLUDED.shift_start, hire_date = EXCLUDED.hire_date, 
+                           status = EXCLUDED.status""",
+                        user.get("id"), user.get("name"), user.get("email"), user.get("password"),
+                        user.get("phone"), user.get("role"), user.get("permission", "kitchen_staff"),
+                        user.get("shiftStart"), parse_date(user.get("hireDate")), 
+                        user.get("status", "active"), parse_timestamp(user.get("createdAt"))
+                    )
+                    logger.info(f"Successfully saved user {idx + 1}")
+                except Exception as user_error:
+                    logger.error(f"Error saving user {idx + 1} ({user.get('email', 'NO_EMAIL')}): {user_error}")
+                    logger.error(f"User data: {user}")
+                    raise
         
         # Save attendance logs (upsert - don't delete existing)
         if "attendanceLogs" in state and state["attendanceLogs"]:
