@@ -857,15 +857,17 @@ function renderLeaveApprovals() {
 
   leaveList.innerHTML = pendingLeaves
     .map((leave) => {
-      const employee = appState.users.find((u) => u.id === leave.employeeId);
+      // Support both camelCase and snake_case
+      const empId = leave.employeeId || leave.employee_id;
+      const employee = appState.users.find((u) => u.id === empId);
       const employeeName = employee ? employee.name : "Unknown";
+      const startDate = leave.startDate || leave.start_date;
+      const endDate = leave.endDate || leave.end_date;
 
       return `
       <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
         <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">${employeeName}</div>
-        <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${
-          leave.startDate
-        } to ${leave.endDate}</div>
+        <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${startDate} to ${endDate}</div>
         ${
           leave.reason
             ? `<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; font-style: italic;">"${leave.reason}"</div>`

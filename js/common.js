@@ -358,11 +358,13 @@ const computeEmployeeStatus = (employee) => {
   // Check if employee is on approved leave today
   const today = todayKey();
   const onLeave = (appState.leaveRequests || []).some((leave) => {
-    if (leave.employeeId !== employee.id || leave.status !== "approved") {
+    // Support both camelCase (frontend) and snake_case (database)
+    const empId = leave.employeeId || leave.employee_id;
+    if (empId !== employee.id || leave.status !== "approved") {
       return false;
     }
-    const start = leave.startDate;
-    const end = leave.endDate;
+    const start = leave.startDate || leave.start_date;
+    const end = leave.endDate || leave.end_date;
     return today >= start && today <= end;
   });
 
@@ -376,9 +378,35 @@ const computeEmployeeStatus = (employee) => {
         log.employeeId === employee.id && log.timestamp.startsWith(todayKey())
     )
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  if (!todayLogs.length) return { status: "absent", timestamp: "No log" };
+  
+  // Check if has shift time and past shift time
+  const now = new Date();
+  const shiftStart = employee.shiftStart || employee.shift_start;
+  let isPastShiftTime = false;
+  
+  if (shiftStart && typeof shiftStart === "string") {
+    const shiftParts = shiftStart.split(":");
+    if (shiftParts.length >= 2) {
+      const [hours, minutes] = shiftParts;
+      const shiftTime = new Date();
+      shiftTime.setHours(Number(hours), Number(minutes), 0, 0);
+      isPastShiftTime = now > shiftTime;
+    }
+  }
+  
+  if (!todayLogs.length) {
+    // If past shift time and no logs, mark as absent
+    return isPastShiftTime ? { status: "absent", timestamp: "No log" } : { status: "absent", timestamp: "Not yet" };
+  }
+  
   const firstIn = todayLogs.find((log) => log.action === "in");
   const latest = todayLogs[todayLogs.length - 1];
+  
+  // If clocked out, show as clocked-out (grey)
+  if (latest.action === "out") {
+    return { status: "clocked-out", timestamp: formatTime(latest.timestamp) };
+  }
+  
   if (!firstIn)
     return { status: "absent", timestamp: formatTime(latest.timestamp) };
 
@@ -879,13 +907,17 @@ function initApp() {
 
 function showClockInPromptModal(user, page) {
   const modal = document.createElement("div");
-  modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
 
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
-  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  
+  const timeStr = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   modal.innerHTML = `
     <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
       <div style="text-align: center; margin-bottom: 1.5rem;">
@@ -910,19 +942,20 @@ function showClockInPromptModal(user, page) {
 
   const confirmBtn = document.getElementById("confirm-clock-in-btn");
   confirmBtn.addEventListener("click", async () => {
-    const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
-    
+    const shift =
+      currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+
     // Check if user is late (>15 min past shift start)
     const shiftStart = user.shift_start || user.shiftStart;
     let isLate = false;
     let lateNote = null;
-    
+
     if (shiftStart) {
       const [shiftHour, shiftMin] = shiftStart.split(":").map(Number);
       const shiftStartMinutes = shiftHour * 60 + shiftMin;
       const currentMinutes = currentHour * 60 + currentMinute;
       const minutesLate = currentMinutes - shiftStartMinutes;
-      
+
       if (minutesLate > 15) {
         isLate = true;
         modal.remove();
@@ -932,7 +965,7 @@ function showClockInPromptModal(user, page) {
         }
       }
     }
-    
+
     const newLog = {
       id: `att-${Date.now()}`,
       employeeId: user.id,
@@ -941,22 +974,28 @@ function showClockInPromptModal(user, page) {
       shift: shift,
       note: isLate && lateNote ? `Late: ${lateNote}` : null,
     };
-    
+
     appState.attendanceLogs = appState.attendanceLogs || [];
     appState.attendanceLogs.push(newLog);
     await saveState();
-    
+
     modal.remove();
-    
+
     // Show success toast
     const toast = document.createElement("div");
-    toast.style.cssText = "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-    toast.textContent = isLate ? "✓ Clocked in (Late)" : "✓ Successfully clocked in!";
+    toast.style.cssText =
+      "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+    toast.textContent = isLate
+      ? "✓ Clocked in (Late)"
+      : "✓ Successfully clocked in!";
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 
     // Refresh page to update attendance display
-    if (typeof window.pageRenderers === "object" && typeof window.pageRenderers[page] === "function") {
+    if (
+      typeof window.pageRenderers === "object" &&
+      typeof window.pageRenderers[page] === "function"
+    ) {
       window.pageRenderers[page]();
     }
   });
@@ -965,7 +1004,8 @@ function showClockInPromptModal(user, page) {
 function showLateNoteDialog() {
   return new Promise((resolve) => {
     const modal = document.createElement("div");
-    modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);";
+    modal.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);";
 
     modal.innerHTML = `
       <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
