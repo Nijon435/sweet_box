@@ -132,6 +132,19 @@ async def fetch_table(conn, table):
             if table == "attendance_logs":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
+            if table == "leave_requests":
+                if "employee_id" in item:
+                    item["employeeId"] = item.pop("employee_id")
+                if "start_date" in item:
+                    item["startDate"] = item.pop("start_date")
+                if "end_date" in item:
+                    item["endDate"] = item.pop("end_date")
+                if "requested_at" in item:
+                    item["requestedAt"] = item.pop("requested_at")
+                if "approved_by" in item:
+                    item["approvedBy"] = item.pop("approved_by")
+                if "approved_at" in item:
+                    item["approvedAt"] = item.pop("approved_at")
             if table == "sales_history" and "orders_count" in item:
                 item["ordersCount"] = item.pop("orders_count")
             if table == "inventory" and "reorder_point" in item:

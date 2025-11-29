@@ -422,24 +422,31 @@
                   ? getLandingPageForRole(user.role)
                   : "index.html";
               console.log("Redirecting to:", landing);
-              
+
               // Check if non-admin user hasn't clocked in today
               if (user.permission !== "admin") {
                 const today = new Date().toISOString().split("T")[0];
                 const todaysLogs = (appState.attendanceLogs || []).filter(
-                  (log) => log.employeeId === user.id && log.timestamp.startsWith(today)
+                  (log) =>
+                    log.employeeId === user.id &&
+                    log.timestamp.startsWith(today)
                 );
-                const hasClockedIn = todaysLogs.some((log) => log.action === "in");
-                
+                const hasClockedIn = todaysLogs.some(
+                  (log) => log.action === "in"
+                );
+
                 if (!hasClockedIn) {
                   // Show clock-in prompt
                   const shouldClockIn = confirm(
                     "You haven't clocked in today. Would you like to clock in now?"
                   );
-                  
+
                   if (shouldClockIn) {
                     const currentHour = new Date().getHours();
-                    const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+                    const shift =
+                      currentHour < 12
+                        ? "Morning (7AM–12PM)"
+                        : "Afternoon (12PM–5PM)";
                     const newLog = {
                       id: `att-${Date.now()}`,
                       employeeId: user.id,
@@ -457,7 +464,7 @@
                   }
                 }
               }
-              
+
               window.location.href = landing;
             } else {
               errorNode.textContent = "Authentication system error";
