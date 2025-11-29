@@ -33,12 +33,14 @@ function renderAttendance() {
   syncAttendanceFormFields(actionSelect?.value || "");
   if (employeeSelect) {
     employeeSelect.innerHTML = "<option value=''>Select employee</option>";
-    appState.employees.forEach((employee) => {
-      const option = document.createElement("option");
-      option.value = employee.id;
-      option.textContent = `${employee.name} – ${employee.role}`;
-      employeeSelect.appendChild(option);
-    });
+    appState.users
+      .filter((user) => user.permission !== "admin")
+      .forEach((employee) => {
+        const option = document.createElement("option");
+        option.value = employee.id;
+        option.textContent = `${employee.name} – ${employee.role}`;
+        employeeSelect.appendChild(option);
+      });
   }
 
   if (form && !form.dataset.bound) {
@@ -78,23 +80,26 @@ function renderAttendance() {
 
   const logFilterValue = logFilter?.value || "all";
 
-  const employeeSnapshots = appState.employees.map((employee) => {
-    const snapshot = computeEmployeeStatus(employee);
-    const todaysLogs = appState.attendanceLogs
-      .filter(
-        (log) =>
-          log.employeeId === employee.id && log.timestamp.startsWith(todayKey())
-      )
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    const latestLog = todaysLogs[todaysLogs.length - 1];
-    const latestAction = latestLog ? latestLog.action : null;
-    return {
-      employee,
-      status: snapshot.status,
-      timestamp: snapshot.timestamp,
-      latestAction,
-    };
-  });
+  const employeeSnapshots = appState.users
+    .filter((user) => user.permission !== "admin")
+    .map((employee) => {
+      const snapshot = computeEmployeeStatus(employee);
+      const todaysLogs = appState.attendanceLogs
+        .filter(
+          (log) =>
+            log.employeeId === employee.id &&
+            log.timestamp.startsWith(todayKey())
+        )
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const latestLog = todaysLogs[todaysLogs.length - 1];
+      const latestAction = latestLog ? latestLog.action : null;
+      return {
+        employee,
+        status: snapshot.status,
+        timestamp: snapshot.timestamp,
+        latestAction,
+      };
+    });
 
   const summary = employeeSnapshots.reduce(
     (acc, snap) => {

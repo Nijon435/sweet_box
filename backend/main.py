@@ -66,13 +66,12 @@ app.add_middleware(
 )
 
 TABLES = [
-    "employees",
+    "users",
     "attendance_logs",
     "inventory",
     "orders",
     "sales_history",
-    "inventory_usage",
-    "users"
+    "inventory_usage"
 ]
 
 async def fetch_table(conn, table):
@@ -92,7 +91,6 @@ async def fetch_table(conn, table):
             "orders": "timestamp DESC",
             "attendance_logs": "timestamp DESC",
             "inventory_usage": "id DESC",
-            "employees": "created_at DESC",
             "users": "created_at DESC",
         }
         
@@ -116,10 +114,13 @@ async def fetch_table(conn, table):
                 item["itemsJson"] = item.pop("items_json")
             if table == "orders" and "served_at" in item:
                 item["servedAt"] = item.pop("served_at")
-            if table == "employees" and "hire_date" in item:
-                item["hireDate"] = item.pop("hire_date")
-            if table == "employees" and "shift_start" in item:
-                item["shiftStart"] = item.pop("shift_start")
+            if table == "users":
+                if "hire_date" in item:
+                    item["hireDate"] = item.pop("hire_date")
+                if "shift_start" in item:
+                    item["shiftStart"] = item.pop("shift_start")
+                if "created_at" in item:
+                    item["createdAt"] = item.pop("created_at")
             if table == "attendance_logs":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
@@ -196,14 +197,13 @@ async def get_state():
         logger.info("Returning data successfully")
         # Rename keys to match frontend expectations
         return {
-            "employees": data["employees"],
+            "users": data["users"],
             "attendanceLogs": data["attendance_logs"],
             "inventory": data["inventory"],
             "orders": data["orders"],
             "salesHistory": data["sales_history"],
             "inventoryUsage": data["inventory_usage"],
-            "attendanceTrend": [],
-            "users": data["users"]
+            "attendanceTrend": []
         }
     except Exception as e:
         logger.error(f"Error in /api/state: {e}", exc_info=True)
@@ -309,18 +309,21 @@ async def save_state(state: dict):
             database=DB_NAME
         )
         
-        # Save employees (upsert - don't delete existing)
-        if "employees" in state and state["employees"]:
-            for emp in state["employees"]:
+        # Save users (upsert - don't delete existing)
+        if "users" in state and state["users"]:
+            for user in state["users"]:
                 await conn.execute(
-                    """INSERT INTO employees (id, name, role, contact, hire_date, status)
-                       VALUES ($1, $2, $3, $4, $5, $6)
+                    """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, created_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                        ON CONFLICT (id) DO UPDATE SET
-                       name = EXCLUDED.name, role = EXCLUDED.role, 
-                       contact = EXCLUDED.contact, hire_date = EXCLUDED.hire_date, 
+                       name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password,
+                       phone = EXCLUDED.phone, role = EXCLUDED.role, permission = EXCLUDED.permission,
+                       shift_start = EXCLUDED.shift_start, hire_date = EXCLUDED.hire_date, 
                        status = EXCLUDED.status""",
-                    emp.get("id"), emp.get("name"), emp.get("role"), 
-                    emp.get("contact"), parse_date(emp.get("hireDate")), emp.get("status", "active")
+                    user.get("id"), user.get("name"), user.get("email"), user.get("password"),
+                    user.get("phone"), user.get("role"), user.get("permission", "kitchen_staff"),
+                    user.get("shiftStart"), parse_date(user.get("hireDate")), 
+                    user.get("status", "active"), parse_timestamp(user.get("createdAt"))
                 )
         
         # Save attendance logs (upsert - don't delete existing)

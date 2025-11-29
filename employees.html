@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Team Registry</title>
+    <title>Staff Management</title>
     <link rel="icon" href="img/sweetbox_icon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,7 +34,7 @@
           <a
             href="inventory.html"
             data-section="inventory"
-            data-role="admin,inventory_manager"
+            data-role="admin,inventory_manager,kitchen_staff"
             data-hide-when-denied="true"
             >Inventory</a
           >
@@ -55,16 +55,25 @@
           >
         </nav>
         <div class="user-session">
-          <div>
-            <strong id="session-name">Guest</strong>
-            <small id="session-role">Sign in required</small>
+          <div class="user-session-info">
+            <div class="user-session-row">
+              <strong id="session-name" class="user-session-name">Guest</strong>
+              <button
+                id="edit-profile-btn"
+                type="button"
+                class="user-session-edit-btn"
+                title="Edit Profile"
+              >
+                ✏️
+              </button>
+            </div>
+            <small id="session-role" class="user-session-role"
+              >Sign in required</small
+            >
           </div>
           <button class="btn btn-outline" id="logout-btn" type="button">
             Sign out
           </button>
-        </div>
-        <div class="meta">
-          Manage hiring, roles, and shift baselines in one workspace.
         </div>
       </aside>
 
@@ -72,94 +81,325 @@
         <header class="page-header">
           <div>
             <span class="pill">HR tools</span>
-            <h1>Team Registry</h1>
+            <h1>Staff Management</h1>
           </div>
           <div class="actions">
             <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
 
-        <section class="split">
-          <article class="card">
-            <div class="section-heading">
-              <h2>Register Team Member</h2>
-              <span class="pill">Admin only</span>
+        <!-- Live Metrics -->
+        <section class="card live-metrics-card">
+          <div class="live-metrics-grid">
+            <div class="live-metric-item">
+              <small>Total Staff</small>
+              <div class="live-metric-value" id="quick-total-staff">0</div>
             </div>
-            <form id="employee-form" data-role="admin">
-              <label for="employee-name">Full name</label>
-              <input
-                id="employee-name"
-                name="name"
-                placeholder="e.g., Sofia Dela Cruz"
-                required
-              />
-
-              <label for="employee-role">Role</label>
-              <select id="employee-role" name="role" required></select>
-              <div id="custom-role-field" class="custom-role-field hidden">
-                <label for="employee-role-custom">Custom role</label>
-                <input
-                  id="employee-role-custom"
-                  name="customRole"
-                  placeholder="Enter role name"
-                />
+            <div class="live-metric-item">
+              <small>Active</small>
+              <div class="live-metric-value active" id="active-today-count">
+                0
               </div>
+            </div>
+            <div class="live-metric-item">
+              <small>Inactive</small>
+              <div class="live-metric-value inactive" id="inactive-count">
+                0
+              </div>
+            </div>
+            <div class="live-metric-item">
+              <small>On Shift</small>
+              <div class="live-metric-value on-shift" id="on-shift-count">
+                0
+              </div>
+            </div>
+            <div class="live-metric-item">
+              <small>Off Shift</small>
+              <div class="live-metric-value off-shift" id="off-shift-count">
+                0
+              </div>
+            </div>
+            <div class="live-metric-item">
+              <small>Absent</small>
+              <div class="live-metric-value absent" id="absent-count">0</div>
+            </div>
+            <div class="live-metric-item">
+              <small>On Leave</small>
+              <div class="live-metric-value on-leave" id="on-leave-count">
+                0
+              </div>
+            </div>
+          </div>
+        </section>
 
-              <label for="employee-shift">Shift start</label>
-              <input
-                id="employee-shift"
-                name="shiftStart"
-                type="time"
-                value="08:00"
-                required
-              />
+        <!-- Team Snapshot - Compact Summary -->
+        <section class="card section-mt-1-5">
+          <div class="section-heading">
+            <h2>Team Overview</h2>
+            <span class="pill">Live</span>
+          </div>
 
-              <button class="btn btn-primary" type="submit">
-                Add Employee
-              </button>
-            </form>
-            <small class="meta"
-              >New team members are immediately available everywhere.</small
+          <div style="margin-bottom: 1.5rem">
+            <strong style="display: block; margin-bottom: 0.75rem; color: #555"
+              >Permission Distribution</strong
             >
-          </article>
+            <div
+              style="
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+                height: 32px;
+                border-radius: 6px;
+                overflow: hidden;
+              "
+            >
+              <div
+                id="permission-bar-admin"
+                style="
+                  background: #f6c343;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 0.875rem;
+                  font-weight: 600;
+                  color: #333;
+                  transition: all 0.3s;
+                "
+                title="Admin"
+              ></div>
+              <div
+                id="permission-bar-kitchen"
+                style="
+                  background: #ff9800;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 0.875rem;
+                  font-weight: 600;
+                  color: white;
+                  transition: all 0.3s;
+                "
+                title="Kitchen Staff"
+              ></div>
+              <div
+                id="permission-bar-front"
+                style="
+                  background: #2196f3;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 0.875rem;
+                  font-weight: 600;
+                  color: white;
+                  transition: all 0.3s;
+                "
+                title="Front Staff"
+              ></div>
+              <div
+                id="permission-bar-delivery"
+                style="
+                  background: #4caf50;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 0.875rem;
+                  font-weight: 600;
+                  color: white;
+                  transition: all 0.3s;
+                "
+                title="Delivery Staff"
+              ></div>
+            </div>
+            <div
+              style="
+                display: flex;
+                gap: 1.5rem;
+                flex-wrap: wrap;
+                margin-top: 0.75rem;
+                font-size: 0.875rem;
+              "
+            >
+              <div style="display: flex; align-items: center; gap: 0.5rem">
+                <span
+                  style="
+                    width: 12px;
+                    height: 12px;
+                    background: #f6c343;
+                    border-radius: 2px;
+                    display: inline-block;
+                  "
+                ></span>
+                <span id="permission-legend-admin">0 Admin</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem">
+                <span
+                  style="
+                    width: 12px;
+                    height: 12px;
+                    background: #ff9800;
+                    border-radius: 2px;
+                    display: inline-block;
+                  "
+                ></span>
+                <span id="permission-legend-kitchen">0 Kitchen</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem">
+                <span
+                  style="
+                    width: 12px;
+                    height: 12px;
+                    background: #2196f3;
+                    border-radius: 2px;
+                    display: inline-block;
+                  "
+                ></span>
+                <span id="permission-legend-front">0 Front</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem">
+                <span
+                  style="
+                    width: 12px;
+                    height: 12px;
+                    background: #4caf50;
+                    border-radius: 2px;
+                    display: inline-block;
+                  "
+                ></span>
+                <span id="permission-legend-delivery">0 Delivery</span>
+              </div>
+            </div>
+          </div>
 
-          <article class="card">
-            <div class="section-heading">
-              <h2>Team Snapshot</h2>
-              <span class="pill">Auto-updated</span>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 1rem;
+              padding-top: 1rem;
+              border-top: 1px solid #eee;
+            "
+          >
+            <div>
+              <small
+                style="
+                  color: #666;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+                >Active Rate</small
+              >
+              <strong
+                style="font-size: 1.25rem; color: #4caf50"
+                id="active-rate"
+                >0%</strong
+              >
             </div>
-            <div class="grid grid-3">
-              <div class="card card-compact">
-                <h3>Total staff</h3>
-                <strong id="employee-total">0</strong>
-              </div>
-              <div class="card card-compact">
-                <h3>Distinct roles</h3>
-                <strong id="employee-roles">0</strong>
-              </div>
-              <div class="card card-compact">
-                <h3>Earliest shift</h3>
-                <strong id="employee-earliest">--:--</strong>
-              </div>
+            <div>
+              <small
+                style="
+                  color: #666;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+                >Newest Hire</small
+              >
+              <strong style="font-size: 1rem; color: #333" id="newest-hire"
+                >--</strong
+              >
             </div>
-            <div style="margin-top: 1rem">
-              <strong>Role directory</strong>
-              <div class="chips" id="employee-role-list"></div>
+            <div>
+              <small
+                style="
+                  color: #666;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.25rem;
+                "
+                >Average Tenure</small
+              >
+              <strong style="font-size: 1rem; color: #333" id="average-tenure"
+                >--</strong
+              >
             </div>
-          </article>
+          </div>
         </section>
 
         <section class="table-wrapper" style="margin-top: 2rem">
-          <div class="section-heading">
-            <h2>Employee Roster</h2>
-            <span class="pill">System of record</span>
+          <div
+            class="section-heading"
+            style="margin-bottom: 1rem; align-items: center"
+          >
+            <div>
+              <h2>Employee Roster</h2>
+              <span class="pill">System of record</span>
+            </div>
+            <div
+              style="
+                display: flex;
+                gap: 0.75rem;
+                align-items: center;
+                flex-wrap: nowrap;
+              "
+            >
+              <input
+                type="text"
+                id="staff-search"
+                placeholder="Search by name, email, or role..."
+                style="
+                  padding: 0.5rem 1rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  min-width: 250px;
+                "
+              />
+              <select
+                id="permission-filter"
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              >
+                <option value="">All Permissions</option>
+                <option value="admin">Admin</option>
+                <option value="kitchen_staff">Kitchen Staff</option>
+                <option value="front_staff">Front Staff</option>
+                <option value="delivery_staff">Delivery Staff</option>
+              </select>
+              <select
+                id="status-filter"
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <button
+                class="btn btn-primary"
+                id="add-employee-btn"
+                style="white-space: nowrap"
+              >
+                + Add Employee
+              </button>
+            </div>
           </div>
           <table id="employee-table">
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
                 <th>Role</th>
+                <th>Permission</th>
                 <th>Shift Start</th>
+                <th>Hire Date</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>

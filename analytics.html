@@ -34,7 +34,7 @@
           <a
             href="inventory.html"
             data-section="inventory"
-            data-role="admin,inventory_manager"
+            data-role="admin,inventory_manager,kitchen_staff"
             data-hide-when-denied="true"
             >Inventory</a
           >
@@ -55,9 +55,21 @@
           >
         </nav>
         <div class="user-session">
-          <div>
-            <strong id="session-name">Guest</strong>
-            <small id="session-role">Sign in required</small>
+          <div class="user-session-info">
+            <div class="user-session-row">
+              <strong id="session-name" class="user-session-name">Guest</strong>
+              <button
+                id="edit-profile-btn"
+                type="button"
+                class="user-session-edit-btn"
+                title="Edit Profile"
+              >
+                ✏️
+              </button>
+            </div>
+            <small id="session-role" class="user-session-role"
+              >Sign in required</small
+            >
           </div>
           <button class="btn btn-outline" id="logout-btn" type="button">
             Sign out
@@ -153,10 +165,7 @@
           </div>
         </section>
 
-        <section
-          class="chart-flex analytics-compact-row"
-          style="margin-top: 2rem"
-        >
+        <section class="chart-flex analytics-compact-row section-mt-2">
           <article
             class="chart-card chart-card--compact"
             data-chart-category="sales"
@@ -179,7 +188,7 @@
           </article>
         </section>
 
-        <section class="chart-flex" style="margin-top: 1.5rem">
+        <section class="chart-flex section-mt-1-5">
           <article class="chart-card" data-chart-category="people">
             <div class="section-heading">
               <h2>Attendance Trend</h2>
@@ -201,8 +210,7 @@
         </section>
 
         <section
-          class="chart-card"
-          style="margin-top: 1.5rem"
+          class="chart-card section-mt-1-5"
           data-chart-category="inventory"
         >
           <div class="section-heading">
@@ -210,7 +218,7 @@
             <span class="pill">Fast movers</span>
           </div>
           <canvas id="stockTrendsChart" height="320"></canvas>
-          <p class="meta" style="margin-top: 0.75rem">
+          <p class="meta section-mt-0-75">
             Tracks the top items that are consumed or sold fastest so you can
             plan production.
           </p>

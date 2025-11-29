@@ -73,27 +73,32 @@ function renderDashboard() {
     options: { plugins: { legend: { position: "bottom" } } },
   });
 
-  const attendanceCounts = appState.employees.reduce(
-    (acc, emp) => {
-      const status = computeEmployeeStatus(emp).status;
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    },
-    { present: 0, late: 0, absent: 0 }
-  );
+  const attendanceCounts = appState.users
+    .filter((user) => user.permission !== "admin")
+    .reduce(
+      (acc, emp) => {
+        const status = computeEmployeeStatus(emp).status;
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      { present: 0, late: 0, absent: 0 }
+    );
 
   const overview = document.getElementById("operations-overview");
   if (overview) {
     overview.innerHTML = "";
-    const coveragePercent = appState.employees.length
-      ? Math.round((attendanceCounts.present / appState.employees.length) * 100)
+    const nonAdminUsers = appState.users.filter(
+      (user) => user.permission !== "admin"
+    );
+    const coveragePercent = nonAdminUsers.length
+      ? Math.round((attendanceCounts.present / nonAdminUsers.length) * 100)
       : 0;
     const pendingTickets = orders.pending + orders.preparing;
     const lowStockCount = metrics.lowStock;
     const insights = [
       {
         label: "Staff coverage",
-        detail: `${attendanceCounts.present} of ${appState.employees.length} on-site (${coveragePercent}%)`,
+        detail: `${attendanceCounts.present} of ${nonAdminUsers.length} on-site (${coveragePercent}%)`,
         flag: coveragePercent < 70 ? "warning" : "good",
         flagText: coveragePercent < 70 ? "Monitor" : "Stable",
       },

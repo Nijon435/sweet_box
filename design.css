@@ -101,6 +101,43 @@ img {
   gap: 8px;
 }
 
+.user-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-session-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-session-name {
+  flex: 0 0 80%;
+}
+
+.user-session-edit-btn {
+  flex: 0 0 20%;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+  text-align: right;
+}
+
+.user-session-edit-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.user-session-role {
+  font-size: 0.75rem;
+}
+
 .user-session strong {
   font-size: 16px;
 }
@@ -111,6 +148,27 @@ img {
 
 .user-session button {
   width: 100%;
+}
+
+/* Spacing utilities */
+.section-mt-2 {
+  margin-top: 2rem;
+}
+
+.section-mt-1-5 {
+  margin-top: 1.5rem;
+}
+
+.section-mt-1-25 {
+  margin-top: 1.25rem;
+}
+
+.section-mt-0-75 {
+  margin-top: 0.75rem;
+}
+
+.section-mb-1 {
+  margin-bottom: 1rem;
 }
 
 .brand {
@@ -1447,4 +1505,103 @@ body[data-page="inventory"] .split {
   text-align: center;
   color: var(--gray-500);
   font-size: 13.6px;
+}
+
+/* Login page specific styles */
+.login-container {
+  position: relative;
+  min-height: 100vh;
+}
+
+.login-heading-container {
+  margin-bottom: 0.5rem;
+}
+
+.login-heading {
+  margin: 0;
+}
+
+.login-subtext {
+  margin: 0.25rem 0 0 0;
+}
+
+.login-meta-text {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.login-link {
+  color: #f6c343;
+  text-decoration: underline;
+}
+
+.register-hidden {
+  display: none;
+}
+
+/* Section spacing utilities */
+.section-mt-2 {
+  margin-top: 2rem;
+}
+
+.section-mt-1-5 {
+  margin-top: 1.5rem;
+}
+
+.section-mt-1-25 {
+  margin-top: 1.25rem;
+}
+
+/* Live metrics grid */
+.live-metrics-card {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+}
+
+.live-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.live-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.live-metric-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.live-metric-value.active {
+  color: #4caf50;
+}
+
+.live-metric-value.inactive {
+  color: #ff9800;
+}
+
+.live-metric-value.on-shift {
+  color: #2196f3;
+}
+
+.live-metric-value.off-shift {
+  color: #9e9e9e;
+}
+
+.live-metric-value.absent {
+  color: #f44336;
+}
+
+.live-metric-value.on-leave {
+  color: #9c27b0;
+}
+
+/* Attendance specific styles */
+.action-description {
+  margin-bottom: 1rem;
 }

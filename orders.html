@@ -34,7 +34,7 @@
           <a
             href="inventory.html"
             data-section="inventory"
-            data-role="admin,inventory_manager"
+            data-role="admin,inventory_manager,kitchen_staff"
             data-hide-when-denied="true"
             >Inventory</a
           >
@@ -55,9 +55,21 @@
           >
         </nav>
         <div class="user-session">
-          <div>
-            <strong id="session-name">Guest</strong>
-            <small id="session-role">Sign in required</small>
+          <div class="user-session-info">
+            <div class="user-session-row">
+              <strong id="session-name" class="user-session-name">Guest</strong>
+              <button
+                id="edit-profile-btn"
+                type="button"
+                class="user-session-edit-btn"
+                title="Edit Profile"
+              >
+                ✏️
+              </button>
+            </div>
+            <small id="session-role" class="user-session-role"
+              >Sign in required</small
+            >
           </div>
           <button class="btn btn-outline" id="logout-btn" type="button">
             Sign out

@@ -2,26 +2,29 @@
 -- Sample INSERT statements (pre-made data). Run this after `schema.sql`.
 -- 1 week simulation for small bakery business
 
--- Users (admin + staff)
-INSERT INTO users (id, name, role, pin, created_at) VALUES
-  ('admin-1', 'Sofia Morales', 'admin', '4321', NOW()),
-  ('staff-1', 'Front Desk', 'inventory_manager', '1111', NOW()),
-  ('staff-2', 'Counter Staff', 'staff', '2222', NOW())
-ON CONFLICT (id) DO NOTHING;
-
--- Employees
-INSERT INTO employees (id, name, role, shift_start, created_at) VALUES
-  ('emp-1', 'Sofia Morales', 'manager', '08:00', NOW()),
-  ('emp-2', 'Juan Dela Cruz', 'cashier', '09:00', NOW()),
-  ('emp-3', 'Maria Santos', 'baker', '06:00', NOW()),
-  ('emp-4', 'Luis Navarro', 'barista', '07:00', NOW()),
-  ('emp-5', 'Anne Lopez', 'cook', '05:30', NOW()),
-  ('emp-6', 'Lair Broz Timothy Balmes', 'barista', '07:30', NOW()),
-  ('emp-7', 'John Paulo Claveria', 'cook', '05:30', NOW()),
-  ('emp-8', 'Carmen Reyes', 'cashier', '09:00', NOW()),
-  ('emp-9', 'Pedro Gonzales', 'delivery_staff', '10:00', NOW()),
-  ('emp-10', 'Elena Cruz', 'baker', '06:30', NOW())
-ON CONFLICT (id) DO NOTHING;
+-- Users (merged with employees) - with email, password, phone, and permission
+INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, created_at) VALUES
+  ('user-1', 'John Paul Arvesu', 'arvesujohnpaul@gmail.com', 'april435', '0992 867 0457', 'manager', 'admin', NULL, NOW()::DATE, 'active', NOW()),
+  ('user-2', 'Sofia Morales', 'admin@sweetbox.com', 'admin123', '0917 123 4567', 'manager', 'admin', NULL, NOW()::DATE, 'active', NOW()),
+  ('user-3', 'Juan Dela Cruz', 'juan@sweetbox.com', 'cashier123', '0918 234 5678', 'cashier', 'front_staff', '09:00', NOW()::DATE - INTERVAL '2 years', 'active', NOW()),
+  ('user-4', 'Maria Santos', 'maria@sweetbox.com', 'baker123', '0919 345 6789', 'baker', 'kitchen_staff', '06:00', NOW()::DATE - INTERVAL '3 years', 'active', NOW()),
+  ('user-5', 'Luis Navarro', 'luis@sweetbox.com', 'barista123', '0920 456 7890', 'barista', 'kitchen_staff', '07:00', NOW()::DATE - INTERVAL '1 year', 'active', NOW()),
+  ('user-6', 'Anne Lopez', 'anne@sweetbox.com', 'cook123', '0921 567 8901', 'cook', 'kitchen_staff', '05:30', NOW()::DATE - INTERVAL '4 years', 'active', NOW()),
+  ('user-7', 'Lair Broz Timothy Balmes', 'lair@sweetbox.com', 'barista123', '0922 678 9012', 'barista', 'kitchen_staff', '07:30', NOW()::DATE - INTERVAL '6 months', 'active', NOW()),
+  ('user-8', 'John Paulo Claveria', 'johnpaulo@sweetbox.com', 'cook123', '0923 789 0123', 'cook', 'kitchen_staff', '05:30', NOW()::DATE - INTERVAL '1 year', 'active', NOW()),
+  ('user-9', 'Carmen Reyes', 'carmen@sweetbox.com', 'cashier123', '0924 890 1234', 'cashier', 'front_staff', '09:00', NOW()::DATE - INTERVAL '8 months', 'active', NOW()),
+  ('user-10', 'Pedro Gonzales', 'pedro@sweetbox.com', 'delivery123', '0925 901 2345', 'delivery_staff', 'delivery_staff', '10:00', NOW()::DATE - INTERVAL '5 months', 'active', NOW()),
+  ('user-11', 'Elena Cruz', 'elena@sweetbox.com', 'baker123', '0926 012 3456', 'baker', 'kitchen_staff', '06:30', NOW()::DATE - INTERVAL '2 years', 'active', NOW())
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  phone = EXCLUDED.phone,
+  role = EXCLUDED.role,
+  permission = EXCLUDED.permission,
+  shift_start = EXCLUDED.shift_start,
+  hire_date = EXCLUDED.hire_date,
+  status = EXCLUDED.status;
 
 -- Inventory (small business - 4 categories: cakes & pastries, beverages, ingredients, supplies)
 -- Note: removed unit and reorder_point columns
@@ -126,38 +129,37 @@ INSERT INTO sales_history (id, date, total, orders_count) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Attendance logs (7 days, 31 entries)
+-- Attendance logs (exclude admin users - only track non-admin staff)
 INSERT INTO attendance_logs (id, employee_id, action, timestamp, shift, note) VALUES
-  ('att-1', 'emp-1', 'clock-in', NOW() - INTERVAL '7 days' + INTERVAL '8 hours', 'morning', NULL),
-  ('att-2', 'emp-2', 'clock-in', NOW() - INTERVAL '7 days' + INTERVAL '9 hours', 'morning', NULL),
-  ('att-3', 'emp-3', 'clock-in', NOW() - INTERVAL '7 days' + INTERVAL '6 hours', 'morning', NULL),
-  ('att-4', 'emp-1', 'clock-out', NOW() - INTERVAL '7 days' + INTERVAL '17 hours', 'morning', NULL),
-  ('att-5', 'emp-2', 'clock-out', NOW() - INTERVAL '7 days' + INTERVAL '18 hours', 'morning', NULL),
-  ('att-6', 'emp-4', 'clock-in', NOW() - INTERVAL '6 days' + INTERVAL '7 hours', 'morning', NULL),
-  ('att-7', 'emp-5', 'clock-in', NOW() - INTERVAL '6 days' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
-  ('att-8', 'emp-6', 'clock-in', NOW() - INTERVAL '6 days' + INTERVAL '7 hours 30 minutes', 'morning', NULL),
-  ('att-9', 'emp-4', 'clock-out', NOW() - INTERVAL '6 days' + INTERVAL '16 hours', 'morning', NULL),
-  ('att-10', 'emp-7', 'clock-in', NOW() - INTERVAL '5 days' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
-  ('att-11', 'emp-8', 'clock-in', NOW() - INTERVAL '5 days' + INTERVAL '9 hours', 'morning', NULL),
-  ('att-12', 'emp-1', 'clock-in', NOW() - INTERVAL '5 days' + INTERVAL '8 hours', 'morning', NULL),
-  ('att-13', 'emp-1', 'clock-out', NOW() - INTERVAL '5 days' + INTERVAL '17 hours', 'morning', NULL),
-  ('att-14', 'emp-9', 'clock-in', NOW() - INTERVAL '4 days' + INTERVAL '10 hours', 'morning', NULL),
-  ('att-15', 'emp-10', 'clock-in', NOW() - INTERVAL '4 days' + INTERVAL '6 hours 30 minutes', 'morning', NULL),
-  ('att-16', 'emp-2', 'clock-in', NOW() - INTERVAL '4 days' + INTERVAL '9 hours', 'morning', NULL),
-  ('att-17', 'emp-9', 'clock-out', NOW() - INTERVAL '4 days' + INTERVAL '18 hours', 'morning', NULL),
-  ('att-18', 'emp-3', 'clock-in', NOW() - INTERVAL '3 days' + INTERVAL '6 hours', 'morning', NULL),
-  ('att-19', 'emp-4', 'clock-in', NOW() - INTERVAL '3 days' + INTERVAL '7 hours', 'morning', NULL),
-  ('att-20', 'emp-1', 'clock-in', NOW() - INTERVAL '3 days' + INTERVAL '8 hours', 'morning', NULL),
-  ('att-21', 'emp-3', 'clock-out', NOW() - INTERVAL '3 days' + INTERVAL '15 hours', 'morning', NULL),
-  ('att-22', 'emp-5', 'clock-in', NOW() - INTERVAL '2 days' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
-  ('att-23', 'emp-6', 'clock-in', NOW() - INTERVAL '2 days' + INTERVAL '7 hours 30 minutes', 'morning', NULL),
-  ('att-24', 'emp-8', 'clock-in', NOW() - INTERVAL '2 days' + INTERVAL '9 hours', 'morning', NULL),
-  ('att-25', 'emp-5', 'clock-out', NOW() - INTERVAL '2 days' + INTERVAL '14 hours', 'morning', NULL),
-  ('att-26', 'emp-7', 'clock-in', NOW() - INTERVAL '1 day' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
-  ('att-27', 'emp-10', 'clock-in', NOW() - INTERVAL '1 day' + INTERVAL '6 hours 30 minutes', 'morning', NULL),
-  ('att-28', 'emp-2', 'clock-in', NOW() - INTERVAL '1 day' + INTERVAL '9 hours', 'morning', NULL),
-  ('att-29', 'emp-1', 'clock-in', NOW() - INTERVAL '4 hours', 'morning', NULL),
-  ('att-30', 'emp-3', 'clock-in', NOW() - INTERVAL '6 hours', 'morning', NULL),
-  ('att-31', 'emp-4', 'clock-in', NOW() - INTERVAL '5 hours', 'morning', NULL)
+  ('att-1', 'user-3', 'in', NOW() - INTERVAL '7 days' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-2', 'user-4', 'in', NOW() - INTERVAL '7 days' + INTERVAL '6 hours', 'morning', NULL),
+  ('att-3', 'user-3', 'out', NOW() - INTERVAL '7 days' + INTERVAL '18 hours', 'morning', NULL),
+  ('att-4', 'user-5', 'in', NOW() - INTERVAL '6 days' + INTERVAL '7 hours', 'morning', NULL),
+  ('att-5', 'user-6', 'in', NOW() - INTERVAL '6 days' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
+  ('att-6', 'user-7', 'in', NOW() - INTERVAL '6 days' + INTERVAL '7 hours 30 minutes', 'morning', NULL),
+  ('att-7', 'user-5', 'out', NOW() - INTERVAL '6 days' + INTERVAL '16 hours', 'morning', NULL),
+  ('att-8', 'user-8', 'in', NOW() - INTERVAL '5 days' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
+  ('att-9', 'user-9', 'in', NOW() - INTERVAL '5 days' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-10', 'user-3', 'in', NOW() - INTERVAL '5 days' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-11', 'user-3', 'out', NOW() - INTERVAL '5 days' + INTERVAL '17 hours', 'morning', NULL),
+  ('att-12', 'user-10', 'in', NOW() - INTERVAL '4 days' + INTERVAL '10 hours', 'morning', NULL),
+  ('att-13', 'user-11', 'in', NOW() - INTERVAL '4 days' + INTERVAL '6 hours 30 minutes', 'morning', NULL),
+  ('att-14', 'user-3', 'in', NOW() - INTERVAL '4 days' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-15', 'user-10', 'out', NOW() - INTERVAL '4 days' + INTERVAL '18 hours', 'morning', NULL),
+  ('att-16', 'user-4', 'in', NOW() - INTERVAL '3 days' + INTERVAL '6 hours', 'morning', NULL),
+  ('att-17', 'user-5', 'in', NOW() - INTERVAL '3 days' + INTERVAL '7 hours', 'morning', NULL),
+  ('att-18', 'user-3', 'in', NOW() - INTERVAL '3 days' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-19', 'user-4', 'out', NOW() - INTERVAL '3 days' + INTERVAL '15 hours', 'morning', NULL),
+  ('att-20', 'user-6', 'in', NOW() - INTERVAL '2 days' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
+  ('att-21', 'user-7', 'in', NOW() - INTERVAL '2 days' + INTERVAL '7 hours 30 minutes', 'morning', NULL),
+  ('att-22', 'user-9', 'in', NOW() - INTERVAL '2 days' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-23', 'user-6', 'out', NOW() - INTERVAL '2 days' + INTERVAL '14 hours', 'morning', NULL),
+  ('att-24', 'user-8', 'in', NOW() - INTERVAL '1 day' + INTERVAL '5 hours 30 minutes', 'morning', NULL),
+  ('att-25', 'user-11', 'in', NOW() - INTERVAL '1 day' + INTERVAL '6 hours 30 minutes', 'morning', NULL),
+  ('att-26', 'user-3', 'in', NOW() - INTERVAL '1 day' + INTERVAL '9 hours', 'morning', NULL),
+  ('att-27', 'user-3', 'in', NOW() - INTERVAL '4 hours', 'morning', NULL),
+  ('att-28', 'user-4', 'in', NOW() - INTERVAL '6 hours', 'morning', NULL),
+  ('att-29', 'user-5', 'in', NOW() - INTERVAL '5 hours', 'morning', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- Inventory usage (sample weekly metrics)

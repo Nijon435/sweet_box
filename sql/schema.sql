@@ -2,24 +2,18 @@
 -- PostgreSQL-compatible CREATE TABLE statements for Sweet Box
 -- Run this file first to create the database schema.
 
--- Accounts / Users
+-- Accounts / Users (merged with employees)
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
-  role VARCHAR(32) NOT NULL,
-  pin VARCHAR(128), -- store hashed PINs in production
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Employees
-CREATE TABLE IF NOT EXISTS employees (
-  id VARCHAR(64) NOT NULL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  phone VARCHAR(32),
   role VARCHAR(128) NOT NULL,
-  contact VARCHAR(255),
+  permission VARCHAR(32) NOT NULL DEFAULT 'kitchen_staff',
+  shift_start TIME,
   hire_date DATE,
   status VARCHAR(32) DEFAULT 'active',
-  shift_start TIME,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -31,7 +25,7 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
   timestamp TIMESTAMP NOT NULL,
   shift VARCHAR(64),
   note TEXT,
-  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+  FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Inventory

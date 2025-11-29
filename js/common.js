@@ -46,7 +46,7 @@ window.formatAccountLabel = function (account) {
 const getDefaultData = () => getEmptyData();
 
 const getEmptyData = () => ({
-  employees: [],
+  users: [],
   attendanceLogs: [],
   inventory: [],
   orders: [],
@@ -93,12 +93,30 @@ function loadState() {
 
 function loadSession() {
   const id = localStorage.getItem(SESSION_KEY);
+  if (!id) return null;
+
+  // Try to find in appState.users first (from database)
+  if (appState && appState.users) {
+    const user = appState.users.find((u) => u.id === id);
+    if (user) return user;
+  }
+
+  // Fallback to hardcoded ACCOUNTS for backward compatibility
   return ACCOUNTS.find((account) => account.id === id) || null;
 }
 
 function setSession(userId) {
   localStorage.setItem(SESSION_KEY, userId);
-  activeUser = ACCOUNTS.find((account) => account.id === userId) || null;
+
+  // Try to find in appState.users first
+  if (appState && appState.users) {
+    activeUser = appState.users.find((u) => u.id === userId);
+  }
+
+  // Fallback to ACCOUNTS
+  if (!activeUser) {
+    activeUser = ACCOUNTS.find((account) => account.id === userId) || null;
+  }
 }
 
 function clearSession() {
@@ -106,10 +124,28 @@ function clearSession() {
   activeUser = null;
 }
 
-const getCurrentUser = () => activeUser;
-const isAdmin = () => getCurrentUser()?.role === "admin";
-const getLandingPageForRole = (role) =>
-  role === "admin" ? "index.html" : "attendance.html";
+const getCurrentUser = () => {
+  if (activeUser) return activeUser;
+
+  // Try to reload from session
+  const id = localStorage.getItem(SESSION_KEY);
+  if (id && appState && appState.users) {
+    activeUser = appState.users.find((u) => u.id === id);
+    if (activeUser) return activeUser;
+  }
+
+  return null;
+};
+
+const isAdmin = () => getCurrentUser()?.permission === "admin";
+
+const getLandingPageForRole = (role) => {
+  if (role === "admin") return "index.html";
+  if (role === "kitchen_staff") return "orders.html";
+  if (role === "front_staff") return "orders.html";
+  if (role === "delivery_staff") return "orders.html";
+  return "attendance.html";
+};
 
 // Database sync functionality
 let saveTimeout = null;
@@ -272,7 +308,7 @@ const getOrderTypeService = (type) =>
 
 const todayKey = () => new Date().toISOString().split("T")[0];
 
-const getEmployee = (id) => appState.employees.find((emp) => emp.id === id);
+const getEmployee = (id) => appState.users.find((emp) => emp.id === id);
 const getTodaysLogs = () =>
   appState.attendanceLogs.filter((log) => log.timestamp.startsWith(todayKey()));
 
@@ -446,6 +482,15 @@ const attachGlobalActions = () => {
       resetDemoData();
     });
   }
+
+  const editProfileBtn = document.getElementById("edit-profile-btn");
+  if (editProfileBtn && !editProfileBtn.dataset.bound) {
+    editProfileBtn.dataset.bound = "true";
+    editProfileBtn.addEventListener("click", () => {
+      openEditProfileModal();
+    });
+  }
+
   const logoutButton = document.getElementById("logout-btn");
   if (logoutButton && !logoutButton.dataset.bound) {
     logoutButton.dataset.bound = "true";
@@ -563,11 +608,13 @@ function applyRolePermissions(user) {
       .split(",")
       .map((r) => r.trim())
       .filter(Boolean);
+    // Admin permission grants access to everything
     const allowed =
       Boolean(user) &&
-      (requiredRoles.length === 0 ||
+      (user.permission === "admin" ||
+        requiredRoles.length === 0 ||
         requiredRoles.includes(user.role) ||
-        (requiredRoles.includes("admin") && user.role === "admin"));
+        requiredRoles.includes(user.permission));
     const hideWhenDenied = node.dataset.hideWhenDenied === "true";
     if (!allowed && hideWhenDenied) {
       node.style.display = "none";
@@ -653,6 +700,12 @@ function showAuthOverlay(onAuthenticated) {
 }
 
 function initApp() {
+  // Session persistence - only clear on explicit logout
+  // No automatic clearing to allow navigation between pages
+
+  // Show loading screen
+  showLoadingScreen();
+
   mountLiveClock();
   highlightNavigation();
   attachGlobalActions();
@@ -684,10 +737,14 @@ function initApp() {
         );
         appState = loadState();
       })
-      .finally(() => bootPageFlow());
+      .finally(() => {
+        bootPageFlow();
+        hideLoadingScreen();
+      });
   } else {
     appState = loadState();
     bootPageFlow();
+    hideLoadingScreen();
   }
 
   function bootPageFlow() {
@@ -698,11 +755,13 @@ function initApp() {
 
     const page = document.body.dataset.page;
     if (page === "login") return;
+
     const user = getCurrentUser();
     if (!user) {
       window.location.href = "login.html";
       return;
     }
+
     updateSessionDisplay(user);
     applyRolePermissions(user);
     try {
@@ -714,6 +773,44 @@ function initApp() {
     } catch (err) {
       console.warn("Error while rendering page", err);
     }
+  }
+}
+
+function showLoadingScreen() {
+  let loader = document.getElementById("app-loading-screen");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "app-loading-screen";
+    loader.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(92, 44, 6, 0.85); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+    loader.innerHTML = `
+      <div class="loading-text" style="width: 100%; height: 100px; line-height: 100px; text-align: center;">
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0s infinite linear alternate;">L</span>
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.2s infinite linear alternate;">O</span>
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.4s infinite linear alternate;">A</span>
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.6s infinite linear alternate;">D</span>
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.8s infinite linear alternate;">I</span>
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 1s infinite linear alternate;">N</span>
+        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 1.2s infinite linear alternate;">G</span>
+      </div>
+      <style>
+        @import url('https://fonts.googleapis.com/css?family=Quattrocento+Sans');
+        
+        @keyframes blur-text {
+          0% { filter: blur(0px); }
+          100% { filter: blur(4px); }
+        }
+      </style>
+    `;
+    document.body.appendChild(loader);
+  }
+  loader.style.display = "flex";
+}
+
+function hideLoadingScreen() {
+  const loader = document.getElementById("app-loading-screen");
+  if (loader) {
+    loader.style.display = "none";
   }
 }
 
@@ -740,6 +837,8 @@ if (typeof window !== "undefined") {
   window.getCurrentUser = getCurrentUser;
   window.clearSession = clearSession;
   window.getLandingPageForRole = getLandingPageForRole;
+  window.saveState = saveState;
+  window.syncStateToDatabase = syncStateToDatabase;
   window.pageRenderers = window.pageRenderers || {};
 }
 
@@ -772,4 +871,127 @@ function showConfirm(message, onConfirm) {
   };
   ok.addEventListener("click", okHandler);
   cancel.addEventListener("click", cancelHandler);
+}
+
+// Edit profile modal for current user
+function openEditProfileModal() {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    alert("Please log in to edit your profile");
+    return;
+  }
+
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0; font-size: 1.5rem; color: #333;">Edit Profile</h3>
+        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+      </div>
+      <form id="edit-profile-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div style="grid-column: 1 / -1;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Name</label>
+            <input type="text" name="name" value="${
+              currentUser.name
+            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Email *</label>
+            <input type="email" name="email" value="${
+              currentUser.email
+            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Phone</label>
+            <input type="text" name="phone" value="${
+              currentUser.phone || ""
+            }" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">New Password (leave blank to keep current)</label>
+            <input type="password" name="password" placeholder="Enter new password..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Role</label>
+            <input type="text" value="${
+              currentUser.role
+            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Permission</label>
+            <input type="text" value="${(
+              currentUser.permission || "kitchen_staff"
+            ).replace(
+              "_",
+              " "
+            )}" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Shift Start</label>
+            <input type="text" value="${
+              currentUser.shiftStart || "--"
+            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Hire Date</label>
+            <input type="text" value="${
+              currentUser.hireDate
+                ? new Date(currentUser.hireDate).toISOString().split("T")[0]
+                : "--"
+            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+          </div>
+        </div>
+        <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 0.875rem; color: #856404;">
+          <strong>Note:</strong> To change Name, Role, Permission, Shift Start, Hire Date, or Status, please contact your administrator.
+        </div>
+        <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
+          <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const form = modal.querySelector("#edit-profile-form");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+
+    // Update current user in appState
+    const userIndex = appState.users.findIndex((u) => u.id === currentUser.id);
+    if (userIndex !== -1) {
+      appState.users[userIndex].email = formData.get("email");
+      appState.users[userIndex].phone = formData.get("phone");
+
+      const newPassword = formData.get("password");
+      if (newPassword && newPassword.trim() !== "") {
+        appState.users[userIndex].password = newPassword;
+      }
+
+      // Update session storage
+      sessionStorage.setItem(
+        "currentUser",
+        JSON.stringify(appState.users[userIndex])
+      );
+
+      saveState();
+      modal.remove();
+
+      // Update UI
+      updateUserSessionUI();
+
+      const toast = document.createElement("div");
+      toast.style.cssText =
+        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+      toast.textContent = "Profile updated successfully!";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  });
 }

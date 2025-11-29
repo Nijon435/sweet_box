@@ -34,7 +34,7 @@
           <a
             href="inventory.html"
             data-section="inventory"
-            data-role="admin,inventory_manager"
+            data-role="admin,inventory_manager,kitchen_staff"
             data-hide-when-denied="true"
             >Inventory</a
           >
@@ -55,10 +55,21 @@
           >
         </nav>
         <div class="user-session">
-          <div>
-            <strong id="session-name">Guest</strong>
-
-            <small id="session-role">Sign in required</small>
+          <div class="user-session-info">
+            <div class="user-session-row">
+              <strong id="session-name" class="user-session-name">Guest</strong>
+              <button
+                id="edit-profile-btn"
+                type="button"
+                class="user-session-edit-btn"
+                title="Edit Profile"
+              >
+                ✏️
+              </button>
+            </div>
+            <small id="session-role" class="user-session-role"
+              >Sign in required</small
+            >
           </div>
           <button class="btn btn-outline" id="logout-btn" type="button">
             Sign out
@@ -94,7 +105,7 @@
           </article>
         </section>
 
-        <section class="card highlight-card" style="margin-top: 2rem">
+        <section class="card highlight-card section-mt-2">
           <div class="section-heading">
             <h2>Operations Overview</h2>
             <span class="pill">Key alerts</span>
@@ -102,7 +113,7 @@
           <ul class="overview-list" id="operations-overview"></ul>
         </section>
 
-        <section class="split" style="margin-top: 2rem">
+        <section class="split section-mt-2">
           <article class="chart-card">
             <div class="section-heading">
               <h2>Sales Trend</h2>
@@ -120,12 +131,12 @@
               <span class="pill" id="inventory-status-note">Stable</span>
             </div>
             <canvas id="inventoryStatusChart" height="220"></canvas>
-            <h3 style="margin-top: 1.25rem">Low stock watch</h3>
+            <h3 class="section-mt-1-25">Low stock watch</h3>
             <ul class="list" id="low-stock-list"></ul>
           </article>
         </section>
 
-        <section class="grid grid-2" style="margin-top: 2rem">
+        <section class="grid grid-2 section-mt-2">
           <article class="chart-card">
             <div class="section-heading">
               <h2>Attendance Pulse</h2>
@@ -147,7 +158,7 @@
           </article>
         </section>
 
-        <section class="card" style="margin-top: 2rem">
+        <section class="card section-mt-2">
           <div class="section-heading">
             <h2>Recent Activity</h2>
             <span class="pill">Live feed</span>
