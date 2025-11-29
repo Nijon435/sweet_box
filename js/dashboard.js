@@ -81,7 +81,7 @@ function renderDashboard() {
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       },
-      { present: 0, late: 0, absent: 0 }
+      { present: 0, late: 0, absent: 0, "on-leave": 0 }
     );
 
   const overview = document.getElementById("operations-overview");
@@ -147,15 +147,16 @@ function renderDashboard() {
   ChartManager.plot("attendanceDonutChart", {
     type: "pie",
     data: {
-      labels: ["Present", "Late", "Absent"],
+      labels: ["Present", "Late", "Absent", "On Leave"],
       datasets: [
         {
           data: [
             attendanceCounts.present,
             attendanceCounts.late,
             attendanceCounts.absent,
+            attendanceCounts["on-leave"],
           ],
-          backgroundColor: ["#22c55e", "#f97316", "#ef4444"],
+          backgroundColor: ["#22c55e", "#f97316", "#ef4444", "#2563eb"],
           borderWidth: 0,
         },
       ],

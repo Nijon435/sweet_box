@@ -827,6 +827,85 @@ function openAddEmployeeModal() {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
   });
+
+  // Render leave approval list
+  renderLeaveApprovals();
+}
+
+function renderLeaveApprovals() {
+  const leaveList = document.getElementById("leave-approval-list");
+  if (!leaveList) return;
+
+  const pendingLeaves = (appState.leaveRequests || []).filter(
+    (leave) => leave.status === "pending"
+  );
+
+  if (pendingLeaves.length === 0) {
+    leaveList.innerHTML =
+      '<p style="color: #888; font-size: 0.875rem; text-align: center; padding: 1rem;">No pending requests</p>';
+    return;
+  }
+
+  leaveList.innerHTML = pendingLeaves
+    .map((leave) => {
+      const employee = appState.users.find((u) => u.id === leave.employeeId);
+      const employeeName = employee ? employee.name : "Unknown";
+
+      return `
+      <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
+        <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">${employeeName}</div>
+        <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${leave.startDate} to ${leave.endDate}</div>
+        ${
+          leave.reason
+            ? `<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; font-style: italic;">"${leave.reason}"</div>`
+            : ""
+        }
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="approveLeave('${leave.id}')" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
+          <button onclick="rejectLeave('${leave.id}')" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
+        </div>
+      </div>
+    `;
+    })
+    .join("");
+}
+
+window.approveLeave = function (leaveId) {
+  if (!isAdmin()) {
+    alert("Only administrators can approve leave requests.");
+    return;
+  }
+
+  const leave = appState.leaveRequests.find((l) => l.id === leaveId);
+  if (!leave) return;
+
+  const currentUser = getCurrentUser();
+  leave.status = "approved";
+  leave.approvedBy = currentUser.id;
+  leave.approvedAt = new Date().toISOString();
+
+  saveState();
+  renderEmployees();
+  alert("Leave request approved!");
+};
+
+window.rejectLeave = function (leaveId) {
+  if (!isAdmin()) {
+    alert("Only administrators can reject leave requests.");
+    return;
+  }
+
+  const leave = appState.leaveRequests.find((l) => l.id === leaveId);
+  if (!leave) return;
+
+  const currentUser = getCurrentUser();
+  leave.status = "rejected";
+  leave.approvedBy = currentUser.id;
+  leave.approvedAt = new Date().toISOString();
+
+  saveState();
+  renderEmployees();
+  alert("Leave request rejected.");
 }
 
 window.pageRenderers = window.pageRenderers || {};
