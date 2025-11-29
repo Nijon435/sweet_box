@@ -112,8 +112,20 @@ function renderAttendance() {
       appState.attendanceLogs.push(newLog);
       await saveState();
 
-      alert("Clocked out successfully!");
+      // Show styled success message
+      const toast = document.createElement("div");
+      toast.style.cssText = "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+      toast.textContent = "✓ Clocked out successfully!";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+
+      // Force refresh attendance display
       renderAttendance();
+      
+      // Also update dashboard if we're on that page
+      if (typeof updateDashboardAttendance === "function") {
+        updateDashboardAttendance();
+      }
     });
   }
 
@@ -122,17 +134,22 @@ function renderAttendance() {
     return new Promise((resolve) => {
       const modal = document.createElement("div");
       modal.style.cssText =
-        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
 
       modal.innerHTML = `
-        <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-          <h3 style="margin: 0 0 1rem 0; color: #f59e0b;">⚠️ Late Arrival</h3>
-          <p style="margin-bottom: 1rem; color: #666;">You're arriving late. Would you like to add a note explaining why?</p>
-          <textarea id="late-note-input" placeholder="Optional: Reason for late arrival..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; min-height: 80px; margin-bottom: 1rem;"></textarea>
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);">
+              <span style="color: white; font-size: 2rem;">⚠️</span>
+            </div>
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Late Arrival</h3>
+            <p style="margin: 0; color: #666; font-size: 0.95rem;">You're arriving late. Please provide a reason.</p>
+          </div>
+          <textarea id="late-note-input" placeholder="Reason for late arrival..." style="width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 100px; margin-bottom: 1.5rem; font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f6c343'"></textarea>
           <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-            <button id="cancel-late-btn" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
-            <button id="skip-note-btn" style="padding: 0.625rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Skip Note</button>
-            <button id="submit-note-btn" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Clock In</button>
+            <button id="cancel-late-btn" style="padding: 0.75rem 1.5rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #6b7280;">Cancel</button>
+            <button id="skip-note-btn" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Skip Note</button>
+            <button id="submit-note-btn" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Clock In</button>
           </div>
         </div>
       `;

@@ -1609,3 +1609,24 @@ body[data-page="inventory"] .split {
 .action-description {
   margin-bottom: 1rem;
 }
+
+/* Modal animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

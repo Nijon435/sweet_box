@@ -840,12 +840,14 @@ function renderLeaveApprovals() {
   }
 
   console.log("📋 Total leave requests:", appState.leaveRequests?.length || 0);
+  console.log("🔍 Leave requests data:", appState.leaveRequests);
 
   const pendingLeaves = (appState.leaveRequests || []).filter(
     (leave) => leave.status === "pending"
   );
 
   console.log("⏳ Pending leave requests:", pendingLeaves.length);
+  console.log("🔍 Pending leaves data:", pendingLeaves);
 
   if (pendingLeaves.length === 0) {
     leaveList.innerHTML =

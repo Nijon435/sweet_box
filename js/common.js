@@ -861,35 +861,7 @@ function initApp() {
       localStorage.removeItem("show_clock_in_prompt");
 
       setTimeout(() => {
-        const confirmClockIn = confirm(
-          "You haven't clocked in today. Would you like to clock in now?"
-        );
-
-        if (confirmClockIn) {
-          const currentHour = new Date().getHours();
-          const shift =
-            currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
-          const newLog = {
-            id: `att-${Date.now()}`,
-            employeeId: user.id,
-            action: "in",
-            timestamp: new Date().toISOString(),
-            shift: shift,
-            note: null,
-          };
-          appState.attendanceLogs = appState.attendanceLogs || [];
-          appState.attendanceLogs.push(newLog);
-          saveState();
-          alert("Successfully clocked in!");
-
-          // Refresh page to update attendance display
-          if (
-            typeof window.pageRenderers === "object" &&
-            typeof window.pageRenderers[page] === "function"
-          ) {
-            window.pageRenderers[page]();
-          }
-        }
+        showClockInPromptModal(user, page);
       }, 500);
     }
 
@@ -903,6 +875,139 @@ function initApp() {
       console.warn("Error while rendering page", err);
     }
   }
+}
+
+function showClockInPromptModal(user, page) {
+  const modal = document.createElement("div");
+  modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+          <span style="color: white; font-size: 2.5rem;">🕒</span>
+        </div>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Ready to Clock In?</h3>
+        <p style="margin: 0; color: #666; font-size: 0.95rem;">You haven't clocked in today yet.</p>
+        <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 8px;">
+          <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Current Time</div>
+          <div style="font-size: 1.25rem; font-weight: 600; color: #333;">${timeStr}</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="padding: 0.75rem 1.75rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-size: 1rem; min-width: 120px; font-weight: 500; color: #6b7280; transition: all 0.2s;">Later</button>
+        <button id="confirm-clock-in-btn" style="padding: 0.75rem 1.75rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; min-width: 120px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.2s;">Clock In</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const confirmBtn = document.getElementById("confirm-clock-in-btn");
+  confirmBtn.addEventListener("click", async () => {
+    const shift = currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+    
+    // Check if user is late (>15 min past shift start)
+    const shiftStart = user.shift_start || user.shiftStart;
+    let isLate = false;
+    let lateNote = null;
+    
+    if (shiftStart) {
+      const [shiftHour, shiftMin] = shiftStart.split(":").map(Number);
+      const shiftStartMinutes = shiftHour * 60 + shiftMin;
+      const currentMinutes = currentHour * 60 + currentMinute;
+      const minutesLate = currentMinutes - shiftStartMinutes;
+      
+      if (minutesLate > 15) {
+        isLate = true;
+        modal.remove();
+        lateNote = await showLateNoteDialog();
+        if (lateNote === null) {
+          return; // User cancelled
+        }
+      }
+    }
+    
+    const newLog = {
+      id: `att-${Date.now()}`,
+      employeeId: user.id,
+      action: "in",
+      timestamp: new Date().toISOString(),
+      shift: shift,
+      note: isLate && lateNote ? `Late: ${lateNote}` : null,
+    };
+    
+    appState.attendanceLogs = appState.attendanceLogs || [];
+    appState.attendanceLogs.push(newLog);
+    await saveState();
+    
+    modal.remove();
+    
+    // Show success toast
+    const toast = document.createElement("div");
+    toast.style.cssText = "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+    toast.textContent = isLate ? "✓ Clocked in (Late)" : "✓ Successfully clocked in!";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+
+    // Refresh page to update attendance display
+    if (typeof window.pageRenderers === "object" && typeof window.pageRenderers[page] === "function") {
+      window.pageRenderers[page]();
+    }
+  });
+}
+
+function showLateNoteDialog() {
+  return new Promise((resolve) => {
+    const modal = document.createElement("div");
+    modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);";
+
+    modal.innerHTML = `
+      <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);">
+            <span style="color: white; font-size: 2rem;">⚠️</span>
+          </div>
+          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Late Arrival</h3>
+          <p style="margin: 0; color: #666; font-size: 0.95rem;">You're arriving late. Please provide a reason.</p>
+        </div>
+        <textarea id="late-note-input" placeholder="Reason for late arrival..." style="width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 100px; margin-bottom: 1.5rem; font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f6c343'"></textarea>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button id="cancel-late-btn" style="padding: 0.75rem 1.5rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #6b7280;">Cancel</button>
+          <button id="skip-note-btn" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Skip Note</button>
+          <button id="submit-note-btn" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Submit</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const noteInput = modal.querySelector("#late-note-input");
+    const cancelBtn = modal.querySelector("#cancel-late-btn");
+    const skipBtn = modal.querySelector("#skip-note-btn");
+    const submitBtn = modal.querySelector("#submit-note-btn");
+
+    cancelBtn.onclick = () => {
+      modal.remove();
+      resolve(null);
+    };
+
+    skipBtn.onclick = () => {
+      modal.remove();
+      resolve("");
+    };
+
+    submitBtn.onclick = () => {
+      const note = noteInput.value.trim();
+      modal.remove();
+      resolve(note || "");
+    };
+  });
 }
 
 function showLoadingScreen() {
