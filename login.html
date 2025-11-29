@@ -131,7 +131,16 @@
     </script>
     <script src="js/common.js"></script>
     <script>
-      (function initLoginPage() {
+      // Wait for DOM to be fully loaded
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initLoginPage);
+      } else {
+        initLoginPage();
+      }
+
+      function initLoginPage() {
+        console.log("=== LOGIN PAGE INITIALIZING ===");
+
         const loginSection = document.getElementById("login-section");
         const registerSection = document.getElementById("register-section");
         const loginForm = document.getElementById("login-form");
@@ -139,48 +148,88 @@
         const showRegisterBtn = document.getElementById("show-register");
         const showLoginBtn = document.getElementById("show-login");
 
+        console.log("Forms found:", {
+          loginForm: !!loginForm,
+          registerForm: !!registerForm,
+        });
+
         let isDataLoaded = false;
 
         // Load user data first
         async function initializeData() {
+          console.log("=== INITIALIZING DATA ===");
+          console.log("Endpoint:", window.APP_STATE_ENDPOINT);
+
           try {
             // Show loading state
             if (loginForm) {
               const submitBtn = loginForm.querySelector(
                 'button[type="submit"]'
               );
-              if (submitBtn) submitBtn.disabled = true;
+              if (submitBtn) {
+                submitBtn.disabled = true;
+                console.log("Login button disabled during load");
+              }
             }
             if (registerForm) {
               const submitBtn = registerForm.querySelector(
                 'button[type="submit"]'
               );
-              if (submitBtn) submitBtn.disabled = true;
+              if (submitBtn) {
+                submitBtn.disabled = true;
+                console.log("Register button disabled during load");
+              }
             }
 
             // Fetch data from server
+            console.log("Fetching data from server...");
             const response = await fetch(
               window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state"
             );
+
+            console.log("Server response status:", response.status);
+
             if (response.ok) {
               const data = await response.json();
               // Initialize appState globally
               window.appState = data;
-              console.log("Loaded users from server:", data.users?.length || 0);
+              console.log(
+                "✅ Loaded users from server:",
+                data.users?.length || 0
+              );
+              if (data.users && data.users.length > 0) {
+                console.log("First user sample:", {
+                  email: data.users[0].email,
+                  role: data.users[0].role,
+                });
+              }
               isDataLoaded = true;
             } else {
-              console.error("Failed to load user data from server");
+              console.error(
+                "❌ Failed to load user data from server - Status:",
+                response.status
+              );
               // Try to load from localStorage as fallback
               if (typeof loadState === "function") {
                 window.appState = loadState();
+                console.log(
+                  "Loaded from localStorage:",
+                  window.appState?.users?.length || 0,
+                  "users"
+                );
                 isDataLoaded = true;
               }
             }
           } catch (error) {
-            console.error("Error loading data:", error);
+            console.error("❌ Error loading data:", error);
             // Fallback to localStorage
             if (typeof loadState === "function") {
               window.appState = loadState();
+              console.log(
+                "Fallback to localStorage:",
+                window.appState?.users?.length || 0,
+                "users"
+              );
               isDataLoaded = true;
             }
           } finally {
@@ -189,18 +238,26 @@
               const submitBtn = loginForm.querySelector(
                 'button[type="submit"]'
               );
-              if (submitBtn) submitBtn.disabled = false;
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                console.log("Login button enabled");
+              }
             }
             if (registerForm) {
               const submitBtn = registerForm.querySelector(
                 'button[type="submit"]'
               );
-              if (submitBtn) submitBtn.disabled = false;
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                console.log("Register button enabled");
+              }
             }
+            console.log("=== DATA INITIALIZATION COMPLETE ===");
           }
         }
 
         // Initialize on page load
+        console.log("Calling initializeData...");
         initializeData();
 
         // Toggle between login and register
@@ -224,24 +281,40 @@
 
         // Handle Login
         if (loginForm) {
+          console.log("✅ Login form event listener attached");
           loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
+            console.log("=== LOGIN ATTEMPT ===");
+
             const email = document.getElementById("login-email").value.trim();
             const password = document.getElementById("login-password").value;
             const errorNode = document.getElementById("login-error");
 
+            console.log("Login attempt for:", email);
+            console.log("Password length:", password.length);
+
             if (!email || !password) {
               errorNode.textContent = "Please fill in all fields";
+              console.log("❌ Validation failed: empty fields");
               return;
             }
 
             // Check if data is loaded
+            console.log("Data loaded status:", isDataLoaded);
+            console.log("appState exists:", typeof appState !== "undefined");
+            console.log(
+              "appState.users exists:",
+              appState?.users ? "yes" : "no"
+            );
+            console.log("appState.users length:", appState?.users?.length || 0);
+
             if (
               !isDataLoaded ||
               typeof appState === "undefined" ||
               !appState.users
             ) {
               errorNode.textContent = "System loading, please wait...";
+              console.log("❌ System not ready");
               return;
             }
 
@@ -251,17 +324,32 @@
               "users"
             );
 
+            // Debug: Show all user emails
+            console.log(
+              "Available user emails:",
+              appState.users.map((u) => u.email)
+            );
+
             const user = appState.users.find(
               (u) => u.email === email && u.password === password
             );
 
             if (!user) {
               errorNode.textContent = "Invalid email or password";
-              console.log("Login failed for:", email);
+              console.log("❌ Login failed for:", email);
+              // Try to find by email only to see if email exists
+              const emailMatch = appState.users.find((u) => u.email === email);
+              if (emailMatch) {
+                console.log("Email found but password mismatch");
+                console.log("Stored password:", emailMatch.password);
+                console.log("Entered password:", password);
+              } else {
+                console.log("Email not found in database");
+              }
               return;
             }
 
-            console.log("Login successful for:", user.name);
+            console.log("✅ Login successful for:", user.name);
 
             // Set session
             if (typeof setSession === "function") {
@@ -270,11 +358,15 @@
                 typeof getLandingPageForRole === "function"
                   ? getLandingPageForRole(user.role)
                   : "index.html";
+              console.log("Redirecting to:", landing);
               window.location.href = landing;
             } else {
               errorNode.textContent = "Authentication system error";
+              console.log("❌ setSession function not found");
             }
           });
+        } else {
+          console.log("❌ Login form not found!");
         }
 
         // Handle Registration
@@ -384,7 +476,9 @@
             }
           });
         }
-      })();
+
+        console.log("=== LOGIN PAGE INITIALIZATION COMPLETE ===");
+      }
     </script>
   </body>
 </html>
