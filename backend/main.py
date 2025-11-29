@@ -110,10 +110,15 @@ async def fetch_table(conn, table):
         for row in rows:
             item = dict(row)
             # Convert snake_case to camelCase for frontend compatibility
-            if table == "orders" and "items_json" in item:
-                item["itemsJson"] = item.pop("items_json")
-            if table == "orders" and "served_at" in item:
-                item["servedAt"] = item.pop("served_at")
+            if table == "orders":
+                if "items_json" in item:
+                    # If items_json is already a dict/list (from JSONB), use as-is
+                    # Otherwise it will be None or a string that needs no processing
+                    items_json = item.pop("items_json")
+                    # Don't convert to string - keep as native Python object
+                    item["itemsJson"] = items_json
+                if "served_at" in item:
+                    item["servedAt"] = item.pop("served_at")
             if table == "users":
                 if "hire_date" in item:
                     item["hireDate"] = item.pop("hire_date")
@@ -121,6 +126,8 @@ async def fetch_table(conn, table):
                     item["shiftStart"] = item.pop("shift_start")
                 if "created_at" in item:
                     item["createdAt"] = item.pop("created_at")
+                if "require_password_reset" in item:
+                    item["requirePasswordReset"] = item.pop("require_password_reset")
             if table == "attendance_logs":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
@@ -323,17 +330,18 @@ async def save_state(state: dict):
                 try:
                     logger.info(f"Saving user {idx + 1}: {user.get('email', 'NO_EMAIL')}")
                     await conn.execute(
-                        """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, created_at)
-                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                        """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, require_password_reset, created_at)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                            ON CONFLICT (id) DO UPDATE SET
                            name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password,
                            phone = EXCLUDED.phone, role = EXCLUDED.role, permission = EXCLUDED.permission,
                            shift_start = EXCLUDED.shift_start, hire_date = EXCLUDED.hire_date, 
-                           status = EXCLUDED.status""",
+                           status = EXCLUDED.status, require_password_reset = EXCLUDED.require_password_reset""",
                         user.get("id"), user.get("name"), user.get("email"), user.get("password"),
-                        user.get("phone"), user.get("role"), user.get("permission", "kitchen_staff"),
+                        user.get("phone"), user.get("role"), user.get("permission", "front_staff"),
                         user.get("shiftStart"), parse_date(user.get("hireDate")), 
-                        user.get("status", "active"), parse_timestamp(user.get("createdAt"))
+                        user.get("status", "active"), user.get("requirePasswordReset", False),
+                        parse_timestamp(user.get("createdAt"))
                     )
                     logger.info(f"Successfully saved user {idx + 1}")
                 except Exception as user_error:
@@ -373,7 +381,25 @@ async def save_state(state: dict):
         # Save orders (upsert - don't delete existing)
         if "orders" in state and state["orders"]:
             for order in state["orders"]:
-                items_json_str = json.dumps(order.get("itemsJson")) if order.get("itemsJson") else None
+                # Handle itemsJson properly - avoid double JSON encoding
+                items_json_value = order.get("itemsJson")
+                items_json_str = None
+                
+                if items_json_value is not None:
+                    # If it's already a dict/list, convert to JSON string
+                    if isinstance(items_json_value, (dict, list)):
+                        items_json_str = json.dumps(items_json_value)
+                    # If it's a string, check if it's valid JSON
+                    elif isinstance(items_json_value, str):
+                        try:
+                            # Try to parse it to validate it's proper JSON
+                            parsed = json.loads(items_json_value)
+                            # Re-serialize to ensure clean JSON without escaping issues
+                            items_json_str = json.dumps(parsed)
+                        except:
+                            # If parsing fails, store as-is or set to None
+                            items_json_str = None
+                
                 await conn.execute(
                     """INSERT INTO orders (id, customer, items, items_json, total, status, type, timestamp, served_at)
                        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)

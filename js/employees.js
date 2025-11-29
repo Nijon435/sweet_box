@@ -761,19 +761,16 @@ function openAddEmployeeModal() {
             <select name="permission" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
               <option value="">Select Permission</option>
               <option value="admin">Admin - Full Access</option>
+              <option value="front_staff" selected>Front Staff (Default)</option>
               <option value="kitchen_staff">Kitchen Staff</option>
-              <option value="front_staff">Front Staff</option>
               <option value="delivery_staff">Delivery Staff</option>
+              <option value="inventory_manager">Inventory Manager</option>
             </select>
           </div>
-          <div>
+          <div style="grid-column: 1 / -1;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Shift Start</label>
             <input type="time" name="shiftStart" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-            <small style="color: #888; font-size: 0.875rem;">Leave empty for admins</small>
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Hire Date</label>
-            <input type="date" name="hireDate" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <small style="color: #888; font-size: 0.875rem;">Leave empty for admins. Hire date will be set to today automatically.</small>
           </div>
           <div style="grid-column: 1 / -1;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Status *</label>
@@ -807,9 +804,10 @@ function openAddEmployeeModal() {
       role: formData.get("role"),
       permission: formData.get("permission"),
       shiftStart: formData.get("shiftStart") || null,
-      hireDate: formData.get("hireDate"),
+      hireDate: new Date().toISOString().split('T')[0], // Auto-set to today
       status: formData.get("status"),
       createdAt: new Date().toISOString(),
+      requirePasswordReset: true,
     };
 
     if (newEmployee.permission === "admin") {

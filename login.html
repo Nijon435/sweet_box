@@ -114,6 +114,44 @@
             <a href="#" id="show-login" class="login-link">Sign in</a>
           </p>
         </div>
+
+        <!-- Password Reset Form (First-time login) -->
+        <div id="password-reset-section" class="register-hidden">
+          <div class="login-heading-container">
+            <h2 class="login-heading">Reset Your Password</h2>
+            <p class="login-subtext" style="color: #f59e0b;">
+              ⚠️ For security reasons, please change your password before continuing.
+            </p>
+          </div>
+          <form id="password-reset-form" class="auth-form">
+            <label for="reset-current-password">Current Password</label>
+            <input
+              id="reset-current-password"
+              type="password"
+              placeholder="Enter current password"
+              required
+            />
+            <label for="reset-new-password">New Password</label>
+            <input
+              id="reset-new-password"
+              type="password"
+              placeholder="Create a new password"
+              minlength="6"
+              required
+            />
+            <label for="reset-confirm-password">Confirm New Password</label>
+            <input
+              id="reset-confirm-password"
+              type="password"
+              placeholder="Re-enter new password"
+              required
+            />
+            <p class="auth-error" id="reset-error"></p>
+            <button class="btn btn-primary" type="submit">
+              Update Password
+            </button>
+          </form>
+        </div>
       </div>
     </section>
 
@@ -143,17 +181,21 @@
 
         const loginSection = document.getElementById("login-section");
         const registerSection = document.getElementById("register-section");
+        const passwordResetSection = document.getElementById("password-reset-section");
         const loginForm = document.getElementById("login-form");
         const registerForm = document.getElementById("register-form");
+        const passwordResetForm = document.getElementById("password-reset-form");
         const showRegisterBtn = document.getElementById("show-register");
         const showLoginBtn = document.getElementById("show-login");
 
         console.log("Forms found:", {
           loginForm: !!loginForm,
           registerForm: !!registerForm,
+          passwordResetForm: !!passwordResetForm,
         });
 
         let isDataLoaded = false;
+        let currentUser = null; // Store user during password reset
 
         // Load user data first
         async function initializeData() {
@@ -351,6 +393,22 @@
 
             console.log("✅ Login successful for:", user.name);
 
+            // Check if this is first-time login (password needs to be reset)
+            // Admin-created accounts have requirePasswordReset flag
+            if (user.requirePasswordReset) {
+              console.log("⚠️ First-time login - password reset required");
+              currentUser = user;
+              
+              // Show password reset form
+              loginSection.style.display = "none";
+              passwordResetSection.style.display = "block";
+              document.getElementById("reset-error").textContent = "";
+              document.getElementById("reset-current-password").value = "";
+              document.getElementById("reset-new-password").value = "";
+              document.getElementById("reset-confirm-password").value = "";
+              return;
+            }
+
             // Set session
             if (typeof setSession === "function") {
               setSession(user.id);
@@ -418,15 +476,15 @@
               return;
             }
 
-            // Create new user with default role: kitchen_staff
+            // Create new user with default role: front_staff
             const newUser = {
               id: "user-" + Date.now(),
               name: name,
               email: email,
               phone: phone,
               password: password, // In production, this should be hashed
-              role: "kitchen_staff",
-              permission: "kitchen_staff",
+              role: "staff",
+              permission: "front_staff",
               status: "active",
               createdAt: new Date().toISOString(),
             };
@@ -472,6 +530,90 @@
               if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Create Account";
+              }
+            }
+          });
+        }
+
+        // Handle Password Reset (First-time login)
+        if (passwordResetForm) {
+          passwordResetForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const currentPassword = document.getElementById("reset-current-password").value;
+            const newPassword = document.getElementById("reset-new-password").value;
+            const confirmPassword = document.getElementById("reset-confirm-password").value;
+            const errorNode = document.getElementById("reset-error");
+
+            // Validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+              errorNode.textContent = "Please fill in all fields";
+              return;
+            }
+
+            if (currentPassword !== currentUser.password) {
+              errorNode.textContent = "Current password is incorrect";
+              return;
+            }
+
+            if (newPassword !== confirmPassword) {
+              errorNode.textContent = "New passwords do not match";
+              return;
+            }
+
+            if (newPassword.length < 6) {
+              errorNode.textContent = "Password must be at least 6 characters";
+              return;
+            }
+
+            if (newPassword === currentPassword) {
+              errorNode.textContent = "New password must be different from current password";
+              return;
+            }
+
+            // Update password in appState
+            const userIndex = appState.users.findIndex(u => u.id === currentUser.id);
+            if (userIndex === -1) {
+              errorNode.textContent = "User not found";
+              return;
+            }
+
+            appState.users[userIndex].password = newPassword;
+            appState.users[userIndex].requirePasswordReset = false;
+            
+            console.log("✅ Password updated for:", currentUser.email);
+
+            // Disable submit button
+            const submitBtn = passwordResetForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.textContent = "Updating...";
+            }
+
+            // Save to database
+            try {
+              await syncStateToDatabase();
+              console.log("Password change saved to database");
+
+              // Log in the user after password reset
+              if (typeof setSession === "function") {
+                setSession(currentUser.id);
+                const landing = typeof getLandingPageForRole === "function"
+                  ? getLandingPageForRole(currentUser.role)
+                  : "index.html";
+                console.log("Redirecting to:", landing);
+                window.location.href = landing;
+              }
+            } catch (error) {
+              console.error("Error saving password:", error);
+              errorNode.textContent = "Failed to update password. Please try again.";
+              
+              // Revert changes
+              appState.users[userIndex].password = currentPassword;
+              appState.users[userIndex].requirePasswordReset = true;
+              
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Update Password";
               }
             }
           });

@@ -10,10 +10,11 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   phone VARCHAR(32),
   role VARCHAR(128) NOT NULL,
-  permission VARCHAR(32) NOT NULL DEFAULT 'kitchen_staff',
+  permission VARCHAR(32) NOT NULL DEFAULT 'front_staff',
   shift_start TIME,
   hire_date DATE,
   status VARCHAR(32) DEFAULT 'active',
+  require_password_reset BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

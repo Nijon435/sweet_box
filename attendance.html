@@ -92,48 +92,18 @@
           <article class="card">
             <div class="section-heading">
               <h2>Clock In / Out</h2>
-              <span class="pill">Front-desk</span>
+              <span class="pill">Quick Access</span>
             </div>
-            <form id="attendance-form">
-              <label for="attendance-employee">Team member</label>
-              <select
-                id="attendance-employee"
-                name="employee"
-                required
-              ></select>
-
-              <label for="attendance-action">Action</label>
-              <select id="attendance-action" name="action" required>
-                <option value="">Choose an action</option>
-                <option value="in">Clock In</option>
-                <option value="out">Clock Out</option>
-                <option value="sick">Sick Leave</option>
-                <option value="absent">Absent</option>
-              </select>
-
-              <div id="attendance-shift-group">
-                <label for="attendance-shift">Shift window</label>
-                <select id="attendance-shift" name="shift" required>
-                  <option value="">Select shift</option>
-                  <option value="Morning (7AM–12PM)">Morning (7AM–12PM)</option>
-                  <option value="Afternoon (12PM–5PM)">
-                    Afternoon (12PM–5PM)
-                  </option>
-                </select>
+            <div style="padding: 1rem 0;">
+              <p style="margin-bottom: 1rem; color: #666;">
+                Logged in as: <strong id="current-user-name">Loading...</strong>
+              </p>
+              <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <button class="btn btn-primary" id="clock-in-btn" type="button" style="flex: 1;">🕐 Clock In</button>
+                <button class="btn btn-secondary" id="clock-out-btn" type="button" style="flex: 1;">🕐 Clock Out</button>
               </div>
-
-              <div id="attendance-reason-group" class="hidden">
-                <label for="attendance-reason">Reason / note</label>
-                <textarea
-                  id="attendance-reason"
-                  name="reason"
-                  rows="2"
-                  placeholder="e.g., Fever, family emergency"
-                ></textarea>
-              </div>
-
-              <button class="btn btn-primary" type="submit">Record Time</button>
-            </form>
+              <p id="last-action-display" style="font-size: 0.875rem; color: #888;"></p>
+            </div>
           </article>
 
           <article class="card">
