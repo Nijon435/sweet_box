@@ -139,27 +139,64 @@
         const showRegisterBtn = document.getElementById("show-register");
         const showLoginBtn = document.getElementById("show-login");
 
+        let isDataLoaded = false;
+
         // Load user data first
         async function initializeData() {
           try {
+            // Show loading state
+            if (loginForm) {
+              const submitBtn = loginForm.querySelector(
+                'button[type="submit"]'
+              );
+              if (submitBtn) submitBtn.disabled = true;
+            }
+            if (registerForm) {
+              const submitBtn = registerForm.querySelector(
+                'button[type="submit"]'
+              );
+              if (submitBtn) submitBtn.disabled = true;
+            }
+
             // Fetch data from server
             const response = await fetch(
               window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state"
             );
             if (response.ok) {
               const data = await response.json();
-              // Initialize appState with users
-              if (typeof appState !== "undefined") {
-                appState.users = data.users || [];
-              } else {
-                window.appState = { users: data.users || [] };
-              }
-              console.log("Loaded", appState.users.length, "users");
+              // Initialize appState globally
+              window.appState = data;
+              console.log("Loaded users from server:", data.users?.length || 0);
+              isDataLoaded = true;
             } else {
-              console.error("Failed to load user data");
+              console.error("Failed to load user data from server");
+              // Try to load from localStorage as fallback
+              if (typeof loadState === "function") {
+                window.appState = loadState();
+                isDataLoaded = true;
+              }
             }
           } catch (error) {
             console.error("Error loading data:", error);
+            // Fallback to localStorage
+            if (typeof loadState === "function") {
+              window.appState = loadState();
+              isDataLoaded = true;
+            }
+          } finally {
+            // Enable forms after data loads
+            if (loginForm) {
+              const submitBtn = loginForm.querySelector(
+                'button[type="submit"]'
+              );
+              if (submitBtn) submitBtn.disabled = false;
+            }
+            if (registerForm) {
+              const submitBtn = registerForm.querySelector(
+                'button[type="submit"]'
+              );
+              if (submitBtn) submitBtn.disabled = false;
+            }
           }
         }
 
@@ -198,11 +235,21 @@
               return;
             }
 
-            // Check against appState.users
-            if (typeof appState === "undefined" || !appState.users) {
-              errorNode.textContent = "System not ready. Please try again.";
+            // Check if data is loaded
+            if (
+              !isDataLoaded ||
+              typeof appState === "undefined" ||
+              !appState.users
+            ) {
+              errorNode.textContent = "System loading, please wait...";
               return;
             }
+
+            console.log(
+              "Checking login against",
+              appState.users.length,
+              "users"
+            );
 
             const user = appState.users.find(
               (u) => u.email === email && u.password === password
@@ -210,8 +257,11 @@
 
             if (!user) {
               errorNode.textContent = "Invalid email or password";
+              console.log("Login failed for:", email);
               return;
             }
+
+            console.log("Login successful for:", user.name);
 
             // Set session
             if (typeof setSession === "function") {
@@ -260,12 +310,17 @@
               return;
             }
 
-            // Check if email already exists
-            if (typeof appState === "undefined" || !appState.users) {
-              errorNode.textContent = "System not ready. Please try again.";
+            // Check if data is loaded
+            if (
+              !isDataLoaded ||
+              typeof appState === "undefined" ||
+              !appState.users
+            ) {
+              errorNode.textContent = "System loading, please wait...";
               return;
             }
 
+            // Check if email already exists
             if (appState.users.find((u) => u.email === email)) {
               errorNode.textContent = "Email already registered";
               return;
@@ -285,37 +340,47 @@
             };
 
             appState.users.push(newUser);
+            console.log("New user created:", newUser.email);
 
-            // Save to database synchronously before navigation
-            if (
-              typeof saveState === "function" &&
-              typeof syncStateToDatabase === "function"
-            ) {
-              saveState();
+            // Disable submit button to prevent double submission
+            const submitBtn = registerForm.querySelector(
+              'button[type="submit"]'
+            );
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.textContent = "Creating Account...";
+            }
+
+            // Save to database
+            try {
               // Force immediate sync to database
-              syncStateToDatabase()
-                .then(() => {
-                  console.log("User saved to database");
-                  // Auto login after registration and save
-                  if (typeof setSession === "function") {
-                    setSession(newUser.id);
-                    const landing =
-                      typeof getLandingPageForRole === "function"
-                        ? getLandingPageForRole(
-                            newUser.permission || newUser.role
-                          )
-                        : "index.html";
-                    window.location.href = landing;
-                  }
-                })
-                .catch((err) => {
-                  console.error("Failed to save user:", err);
-                  errorNode.textContent =
-                    "Failed to create account. Please try again.";
-                });
-            } else {
+              await syncStateToDatabase();
+              console.log("User saved to database successfully");
+
+              // Auto login after registration
+              if (typeof setSession === "function") {
+                setSession(newUser.id);
+                const landing =
+                  typeof getLandingPageForRole === "function"
+                    ? getLandingPageForRole(newUser.role)
+                    : "index.html";
+                window.location.href = landing;
+              }
+            } catch (error) {
+              console.error("Error saving user:", error);
               errorNode.textContent =
-                "System error. Please refresh and try again.";
+                "Failed to create account. Please try again.";
+              // Remove user from array if save failed
+              const index = appState.users.findIndex(
+                (u) => u.id === newUser.id
+              );
+              if (index > -1) {
+                appState.users.splice(index, 1);
+              }
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Create Account";
+              }
             }
           });
         }
