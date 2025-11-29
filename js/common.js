@@ -78,9 +78,27 @@ let selectedReceiptOrder = null;
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const data = JSON.parse(raw);
+      // Handle new format (essential data only) or old format (full state)
+      if (data.users && !data.orders && !data.inventory) {
+        // New format: only essential data stored
+        // Return full state structure with loaded users
+        const fullState = getEmptyData();
+        fullState.users = data.users;
+        return fullState;
+      }
+      // Old format: full state stored
+      return data;
+    }
   } catch (error) {
     console.warn("Unable to parse saved data", error);
+    // Clear corrupted data
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.error("Could not clear corrupted localStorage", e);
+    }
   }
   if (
     typeof window !== "undefined" &&
@@ -179,9 +197,13 @@ async function syncStateToDatabase() {
       );
     } else {
       console.log("State synced to database successfully");
-      // Update localStorage to match what was synced
+      // Only store essential data in localStorage
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        const essentialData = {
+          users: appState.users || [],
+          lastSync: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(essentialData));
       } catch (e) {
         console.warn("Failed to update localStorage after database sync", e);
       }
@@ -195,7 +217,12 @@ async function syncStateToDatabase() {
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    // Only store essential data (users) in localStorage to avoid quota issues
+    const essentialData = {
+      users: appState.users || [],
+      lastSync: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(essentialData));
 
     // Debounce database sync (wait 500ms after last change)
     if (saveTimeout) clearTimeout(saveTimeout);
@@ -204,6 +231,20 @@ function saveState() {
     }, 500);
   } catch (error) {
     console.warn("Unable to save data", error);
+    // Try to clear and save again if quota exceeded
+    try {
+      localStorage.clear();
+      const essentialData = {
+        users: appState.users || [],
+        lastSync: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(essentialData));
+    } catch (retryError) {
+      console.error(
+        "Failed to save even after clearing localStorage",
+        retryError
+      );
+    }
   }
 }
 
@@ -720,11 +761,26 @@ function initApp() {
       .then((serverState) => {
         if (serverState && typeof serverState === "object") {
           appState = serverState;
-          // Update localStorage to match server data
+          // Only store essential data (users) in localStorage to avoid quota issues
+          // Store full state in memory only
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            const essentialData = {
+              users: appState.users || [],
+              lastSync: Date.now(),
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(essentialData));
+            console.log(
+              "Synced users from server:",
+              appState.users?.length || 0
+            );
           } catch (e) {
             console.warn("Failed to update localStorage with server data", e);
+            // Clear localStorage if quota exceeded
+            try {
+              localStorage.removeItem(STORAGE_KEY);
+            } catch (clearError) {
+              console.error("Could not clear localStorage", clearError);
+            }
           }
         } else {
           appState = loadState();

@@ -76,13 +76,13 @@ TABLES = [
 
 async def fetch_table(conn, table):
     try:
-        # Add limits to prevent overwhelming responses
+        # Add limits to prevent overwhelming responses and localStorage quota issues
         limit_map = {
-            "attendance_logs": 1000,  # Last 1000 attendance records
-            "sales_history": 500,     # Last 500 sales records
-            "orders": 500,            # Last 500 orders
-            "inventory_usage": 1000,  # Last 1000 usage records
-            "stock_trends": 500,      # Last 500 trend records
+            "attendance_logs": 100,  # Last 100 attendance records (reduced from 1000)
+            "sales_history": 90,     # Last 90 days sales (reduced from 500)
+            "orders": 200,           # Last 200 orders (reduced from 500)
+            "inventory_usage": 50,   # Last 50 usage records (reduced from 1000)
+            "stock_trends": 50,      # Last 50 trend records (reduced from 500)
         }
         
         # Different ordering columns for different tables
