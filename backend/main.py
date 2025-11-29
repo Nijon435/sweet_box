@@ -308,6 +308,23 @@ def parse_date(date_str):
     except:
         return None
 
+def parse_time(time_str):
+    """Parse time string (HH:MM or HH:MM:SS) to time object, or return None if invalid"""
+    if not time_str:
+        return None
+    try:
+        if isinstance(time_str, str):
+            # Handle HH:MM or HH:MM:SS format
+            parts = time_str.split(':')
+            if len(parts) == 2:
+                hour, minute = int(parts[0]), int(parts[1])
+                return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
+            elif len(parts) == 3:
+                return datetime.strptime(time_str, "%H:%M:%S").time()
+        return time_str
+    except:
+        return None
+
 @app.post("/api/state")
 async def save_state(state: dict):
     try:
@@ -339,7 +356,7 @@ async def save_state(state: dict):
                            status = EXCLUDED.status, require_password_reset = EXCLUDED.require_password_reset""",
                         user.get("id"), user.get("name"), user.get("email"), user.get("password"),
                         user.get("phone"), user.get("role"), user.get("permission", "front_staff"),
-                        user.get("shiftStart"), parse_date(user.get("hireDate")), 
+                        parse_time(user.get("shiftStart")), parse_date(user.get("hireDate")), 
                         user.get("status", "active"), user.get("requirePasswordReset", False),
                         parse_timestamp(user.get("createdAt"))
                     )
