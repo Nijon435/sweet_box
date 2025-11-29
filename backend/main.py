@@ -438,19 +438,20 @@ async def save_state(state: dict):
                 await conn.execute(
                     """INSERT INTO sales_history (id, date, total, orders_count)
                        VALUES ($1, $2, $3, $4)
-                       ON CONFLICT (date) DO UPDATE SET
-                       total = EXCLUDED.total, orders_count = EXCLUDED.orders_count""",
+                       ON CONFLICT (id) DO UPDATE SET
+                       date = EXCLUDED.date, total = EXCLUDED.total, orders_count = EXCLUDED.orders_count""",
                     sale.get("id"), parse_date(sale.get("date")), 
                     sale.get("total"), sale.get("ordersCount")
                 )
         
         # Save inventory usage
         if "inventoryUsage" in state and state["inventoryUsage"]:
-            await conn.execute("DELETE FROM inventory_usage")
             for usage in state["inventoryUsage"]:
                 await conn.execute(
                     """INSERT INTO inventory_usage (id, label, used)
-                       VALUES ($1, $2, $3)""",
+                       VALUES ($1, $2, $3)
+                       ON CONFLICT (id) DO UPDATE SET
+                       label = EXCLUDED.label, used = EXCLUDED.used""",
                     usage.get("id"), usage.get("label"), usage.get("used")
                 )
         
