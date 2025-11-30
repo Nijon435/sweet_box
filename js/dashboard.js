@@ -254,7 +254,6 @@ function renderTrendingItemsChart() {
     const total = topItemsByQty.reduce((sum, item) => sum + item.quantity, 0);
     const colors = [
       "#60a5fa",
-      "#1f2937",
       "#4ade80",
       "#fb923c",
       "#f472b6",
@@ -263,15 +262,13 @@ function renderTrendingItemsChart() {
       "#ef4444",
       "#14b8a6",
       "#8b5cf6",
+      "#06b6d4",
     ];
 
     ChartManager.plot("trendingItemsChart", {
       type: "pie",
       data: {
-        labels: topItemsByQty.map((item) => {
-          const percentage = ((item.quantity / total) * 100).toFixed(1);
-          return `${item.name}: ${percentage}%`;
-        }),
+        labels: topItemsByQty.map((item) => item.name),
         datasets: [
           {
             data: topItemsByQty.map((item) => item.quantity),
@@ -285,10 +282,27 @@ function renderTrendingItemsChart() {
         responsive: true,
         plugins: {
           legend: {
+            display: true,
             position: "right",
             labels: {
-              padding: 15,
+              padding: 12,
               font: { size: 11 },
+              generateLabels: function(chart) {
+                const data = chart.data;
+                if (data.labels.length && data.datasets.length) {
+                  return data.labels.map((label, i) => {
+                    const value = data.datasets[0].data[i];
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return {
+                      text: `${label} (${percentage}%)`,
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: false,
+                      index: i
+                    };
+                  });
+                }
+                return [];
+              }
             },
           },
           tooltip: {
@@ -296,7 +310,7 @@ function renderTrendingItemsChart() {
               label: function (context) {
                 const value = context.parsed;
                 const percentage = ((value / total) * 100).toFixed(1);
-                return `${context.label.split(":")[0]}: ${value.toFixed(
+                return `${context.label}: ${value.toFixed(
                   2
                 )} units (${percentage}%)`;
               },
@@ -313,7 +327,6 @@ function renderTrendingItemsChart() {
 
   const colors = [
     "#60a5fa",
-    "#1f2937",
     "#4ade80",
     "#fb923c",
     "#f472b6",
@@ -322,15 +335,13 @@ function renderTrendingItemsChart() {
     "#ef4444",
     "#14b8a6",
     "#8b5cf6",
+    "#06b6d4",
   ];
 
   ChartManager.plot("trendingItemsChart", {
     type: "pie",
     data: {
-      labels: trendingItems.map((item) => {
-        const percentage = ((item.usageCount / total) * 100).toFixed(1);
-        return `${item.name}: ${percentage}%`;
-      }),
+      labels: trendingItems.map((item) => item.name),
       datasets: [
         {
           data: trendingItems.map((item) => item.usageCount),
@@ -344,10 +355,27 @@ function renderTrendingItemsChart() {
       responsive: true,
       plugins: {
         legend: {
+          display: true,
           position: "right",
           labels: {
-            padding: 15,
+            padding: 12,
             font: { size: 11 },
+            generateLabels: function(chart) {
+              const data = chart.data;
+              if (data.labels.length && data.datasets.length) {
+                return data.labels.map((label, i) => {
+                  const value = data.datasets[0].data[i];
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return {
+                    text: `${label} (${percentage}%)`,
+                    fillStyle: data.datasets[0].backgroundColor[i],
+                    hidden: false,
+                    index: i
+                  };
+                });
+              }
+              return [];
+            }
           },
         },
         tooltip: {
@@ -355,7 +383,7 @@ function renderTrendingItemsChart() {
             label: function (context) {
               const value = context.parsed;
               const percentage = ((value / total) * 100).toFixed(1);
-              return `${context.label.split(":")[0]}: ${value.toFixed(
+              return `${context.label}: ${value.toFixed(
                 2
               )} units (${percentage}%)`;
             },
