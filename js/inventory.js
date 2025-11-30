@@ -482,8 +482,10 @@ function setupRecordUsageButton() {
       itemsInCategory.forEach((item) => {
         const opt = document.createElement("option");
         opt.value = item.id;
-        opt.dataset.unit = item.unit || 'units';
-        opt.textContent = `${item.name} (${item.quantity} ${item.unit || 'units'})`;
+        opt.dataset.unit = item.unit || "units";
+        opt.textContent = `${item.name} (${item.quantity} ${
+          item.unit || "units"
+        })`;
         optgroup.appendChild(opt);
       });
 
@@ -492,10 +494,10 @@ function setupRecordUsageButton() {
   }
 
   // Update unit label when item is selected
-  select.addEventListener('change', function() {
+  select.addEventListener("change", function () {
     const selectedOption = this.options[this.selectedIndex];
-    const unit = selectedOption.dataset.unit || 'units';
-    const qtyInput = document.getElementById('usage-quantity');
+    const unit = selectedOption.dataset.unit || "units";
+    const qtyInput = document.getElementById("usage-quantity");
     if (qtyInput) {
       qtyInput.placeholder = `Enter quantity in ${unit}`;
     }
@@ -541,7 +543,11 @@ function setupRecordUsageButton() {
     const item = appState.inventory[idx];
 
     if (item.quantity < qty) {
-      alert(`Insufficient quantity. Available: ${item.quantity} ${item.unit || 'units'}`);
+      alert(
+        `Insufficient quantity. Available: ${item.quantity} ${
+          item.unit || "units"
+        }`
+      );
       return;
     }
 
@@ -577,7 +583,7 @@ function setupRecordUsageButton() {
     };
 
     alert(
-      `Logged: ${qty} ${item.unit || 'units'} of ${item.name} used for ${
+      `Logged: ${qty} ${item.unit || "units"} of ${item.name} used for ${
         reasonLabels[usageReason] || usageReason
       }`
     );

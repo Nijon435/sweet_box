@@ -6,8 +6,13 @@ from urllib.parse import urlparse
 import os
 
 def run_migration():
-    # Get database URL from environment or use default
-    database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:4305@localhost:5432/sweetbox')
+    # Get database URL from environment (Render production database)
+    database_url = os.getenv('DATABASE_URL')
+    
+    if not database_url:
+        print("❌ ERROR: DATABASE_URL not found in .env file")
+        print("Please set DATABASE_URL in your .env file")
+        return
     
     # Parse the database URL
     result = urlparse(database_url)

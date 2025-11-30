@@ -8,27 +8,24 @@ This folder contains all the SQL files needed to set up and maintain the Sweet B
 - **seeds.sql** - Sample data for testing and development
 - **add_unit_column.sql** - Migration to add unit column to existing databases
 - **run_migration.py** - Python script to run migrations automatically
+- **update_render_database.py** - Script to update production Render database
 
-## Initial Setup (New Database)
+## Database Configuration
 
-If you're setting up the database for the first time:
+The application uses the **Render production database** for both local development and production.
+
+Set your DATABASE_URL in `.env`:
 
 ```bash
-# 1. Create the database
-createdb sweetbox
-
-# 2. Run the schema
-psql -U postgres -d sweetbox -f sql/schema.sql
-
-# 3. Load sample data
-psql -U postgres -d sweetbox -f sql/seeds.sql
+DATABASE_URL=postgresql://username:password@hostname:port/database
 ```
 
 ## Migration (Existing Database)
 
-If you already have a database and need to add the unit column:
+If you need to add the unit column to an existing database:
 
-### Option 1: Using Python script
+### Using Python script
+
 ```bash
 # Make sure psycopg2 is installed
 pip install psycopg2-binary
@@ -37,9 +34,10 @@ pip install psycopg2-binary
 python sql/run_migration.py
 ```
 
-### Option 2: Using psql directly
+### Using psql directly
+
 ```bash
-psql -U postgres -d sweetbox -f sql/add_unit_column.sql
+psql -U username -d database -f sql/add_unit_column.sql
 ```
 
 ## Database Schema
@@ -61,19 +59,10 @@ psql -U postgres -d sweetbox -f sql/add_unit_column.sql
 - **Usage Tracking**: Separate logging for ingredient usage with reasons (order, waste, testing, staff_consumption, spoilage, other)
 - **Status Calculation**: Item status (in stock, low stock, out of stock) is automatically determined by comparing quantity to reorder_point
 
-## Environment Variables
-
-For the Python migration script, set your database URL:
-
-```bash
-export DATABASE_URL="postgresql://username:password@hostname:port/database"
-```
-
-Or it will default to: `postgresql://postgres:postgres@localhost:5432/sweetbox`
-
 ## Sample Data
 
 The seeds.sql file includes:
+
 - 11 users (1 admin, staff members with different roles)
 - 35 inventory items across 4 categories:
   - Cakes & Pastries (10 items)
@@ -90,3 +79,4 @@ The seeds.sql file includes:
 - Some items are intentionally set to low stock to test alerts
 - Reorder points are set based on typical usage patterns for each unit type
 - The migration is idempotent (safe to run multiple times)
+- The application connects to Render production database for both local and production environments
