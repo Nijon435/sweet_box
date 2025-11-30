@@ -1181,10 +1181,10 @@ function openEditProfileModal() {
       <form id="edit-profile-form">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div style="grid-column: 1 / -1;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Name</label>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Name *</label>
             <input type="text" name="name" value="${
               currentUser.name
-            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Email *</label>
@@ -1203,38 +1203,23 @@ function openEditProfileModal() {
             <input type="password" name="password" placeholder="Enter new password..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Role</label>
-            <input type="text" value="${
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Role *</label>
+            <input type="text" name="role" value="${
               currentUser.role
-            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Permission</label>
-            <input type="text" value="${(
-              currentUser.permission || "kitchen_staff"
-            ).replace(
-              "_",
-              " "
-            )}" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Shift Start</label>
-            <input type="text" value="${
-              currentUser.shiftStart || "--"
-            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Hire Date</label>
-            <input type="text" value="${
-              currentUser.hireDate
-                ? new Date(currentUser.hireDate).toISOString().split("T")[0]
-                : "--"
-            }" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: not-allowed;">
+            <input type="time" name="shiftStart" value="${
+              currentUser.shiftStart || ""
+            }" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
         </div>
-        <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 0.875rem; color: #856404;">
-          <strong>Note:</strong> To change Name, Role, Permission, Shift Start, Hire Date, or Status, please contact your administrator.
-        </div>
+        ${
+          !isAdminOrManager()
+            ? '<div style="margin-top: 0.75rem; padding: 0.75rem; background: #e3f2fd; border: 1px solid #2196F3; border-radius: 4px; font-size: 0.875rem; color: #1565C0;"><strong>Note:</strong> Your profile changes will be sent to an administrator for approval.</div>'
+            : ""
+        }
         <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
           <button type="button" onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
           <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Save Changes</button>
@@ -1250,33 +1235,79 @@ function openEditProfileModal() {
     e.preventDefault();
     const formData = new FormData(form);
 
-    // Update current user in appState
-    const userIndex = appState.users.findIndex((u) => u.id === currentUser.id);
-    if (userIndex !== -1) {
-      appState.users[userIndex].email = formData.get("email");
-      appState.users[userIndex].phone = formData.get("phone");
+    // Check if user is admin or manager
+    if (isAdminOrManager()) {
+      // Admin/Manager can edit directly
+      const userIndex = appState.users.findIndex(
+        (u) => u.id === currentUser.id
+      );
+      if (userIndex !== -1) {
+        appState.users[userIndex].name = formData.get("name");
+        appState.users[userIndex].email = formData.get("email");
+        appState.users[userIndex].phone = formData.get("phone");
+        appState.users[userIndex].role = formData.get("role");
+        appState.users[userIndex].shiftStart = formData.get("shiftStart");
+
+        const newPassword = formData.get("password");
+        if (newPassword && newPassword.trim() !== "") {
+          appState.users[userIndex].password = newPassword;
+        }
+
+        // Update session storage
+        sessionStorage.setItem(
+          "currentUser",
+          JSON.stringify(appState.users[userIndex])
+        );
+
+        saveState();
+        modal.remove();
+
+        // Update UI
+        updateUserSessionUI();
+
+        const toast = document.createElement("div");
+        toast.style.cssText =
+          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+        toast.textContent = "Profile updated successfully!";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+    } else {
+      // Regular user - create a profile edit request
+      const requestedChanges = {
+        name: formData.get("name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        role: formData.get("role"),
+        shiftStart: formData.get("shiftStart"),
+      };
 
       const newPassword = formData.get("password");
       if (newPassword && newPassword.trim() !== "") {
-        appState.users[userIndex].password = newPassword;
+        requestedChanges.password = newPassword;
       }
 
-      // Update session storage
-      sessionStorage.setItem(
-        "currentUser",
-        JSON.stringify(appState.users[userIndex])
-      );
+      const newRequest = {
+        id: `req-${Date.now()}`,
+        employeeId: currentUser.id,
+        requestType: "profile_edit",
+        requestedChanges: requestedChanges,
+        status: "pending",
+        requestedAt: new Date().toISOString(),
+        reviewedBy: null,
+        reviewedAt: null,
+      };
+
+      appState.requests = appState.requests || [];
+      appState.requests.push(newRequest);
 
       saveState();
       modal.remove();
 
-      // Update UI
-      updateUserSessionUI();
-
       const toast = document.createElement("div");
       toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-      toast.textContent = "Profile updated successfully!";
+        "position: fixed; top: 20px; right: 20px; background: #2196F3; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+      toast.textContent = "Request has been sent to admin for approval!";
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }

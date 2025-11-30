@@ -88,6 +88,9 @@ window.editUserPermissions = function (userId) {
               <option value="admin" ${
                 user.permission === "admin" ? "selected" : ""
               }>Admin - Full Access</option>
+              <option value="manager" ${
+                user.permission === "manager" ? "selected" : ""
+              }>Manager - Employee Management</option>
               <option value="kitchen_staff" ${
                 user.permission === "kitchen_staff" ? "selected" : ""
               }>Kitchen Staff</option>
@@ -842,58 +845,100 @@ function renderLeaveApprovals() {
   console.log("📋 Total requests:", appState.requests?.length || 0);
   console.log("🔍 Requests data:", JSON.stringify(appState.requests, null, 2));
 
-  const pendingLeaves = (appState.requests || []).filter((leave) => {
-    console.log("Checking leave:", leave, "Status:", leave.status);
-    return leave.status === "pending";
+  const pendingRequests = (appState.requests || []).filter((request) => {
+    console.log("Checking request:", request, "Status:", request.status);
+    return request.status === "pending";
   });
 
-  console.log("⏳ Pending leave requests:", pendingLeaves.length);
+  console.log("⏳ Pending requests:", pendingRequests.length);
   console.log(
-    "🔍 Pending leaves data:",
-    JSON.stringify(pendingLeaves, null, 2)
+    "🔍 Pending requests data:",
+    JSON.stringify(pendingRequests, null, 2)
   );
 
-  if (pendingLeaves.length === 0) {
+  if (pendingRequests.length === 0) {
     leaveList.innerHTML =
       '<p style="color: #888; font-size: 0.875rem; text-align: center; padding: 1rem;">No pending requests</p>';
     return;
   }
 
-  leaveList.innerHTML = pendingLeaves
-    .map((leave) => {
+  leaveList.innerHTML = pendingRequests
+    .map((request) => {
       // Support both camelCase and snake_case
-      const empId = leave.employeeId || leave.employee_id;
+      const empId = request.employeeId || request.employee_id;
       const employee = appState.users.find((u) => u.id === empId);
       const employeeName = employee ? employee.name : "Unknown";
-      const startDate = leave.startDate || leave.start_date;
-      const endDate = leave.endDate || leave.end_date;
+      const requestType =
+        request.requestType || request.request_type || "leave";
 
-      return `
-      <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
-        <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">${employeeName}</div>
-        <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${startDate} to ${endDate}</div>
-        ${
-          leave.reason
-            ? `<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; font-style: italic;">"${leave.reason}"</div>`
-            : ""
-        }
+      if (requestType === "profile_edit") {
+        // Profile edit request
+        const changes =
+          request.requestedChanges || request.requested_changes || {};
+        const changesList = Object.entries(changes)
+          .filter(([key, value]) => value && key !== "password")
+          .map(([key, value]) => {
+            const label =
+              key.charAt(0).toUpperCase() +
+              key.slice(1).replace(/([A-Z])/g, " $1");
+            const currentValue = employee ? employee[key] : "N/A";
+            return `<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>${label}:</strong> ${currentValue} → ${value}</div>`;
+          })
+          .join("");
+
+        return `
+      <div style="padding: 0.75rem; border: 1px solid #2196F3; border-radius: 4px; margin-bottom: 0.5rem; background: #e3f2fd;">
+        <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #1565C0;">${employeeName} - Profile Edit</div>
+        <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">
+          ${changesList}
+          ${
+            changes.password
+              ? '<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>Password:</strong> [Updated]</div>'
+              : ""
+          }
+        </div>
         <div style="display: flex; gap: 0.5rem;">
-          <button onclick="approveLeave('${
-            leave.id
+          <button onclick="approveProfileEdit('${
+            request.id
           }')" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
-          <button onclick="rejectLeave('${
-            leave.id
+          <button onclick="rejectProfileEdit('${
+            request.id
           }')" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
         </div>
       </div>
     `;
+      } else {
+        // Leave request
+        const startDate = request.startDate || request.start_date;
+        const endDate = request.endDate || request.end_date;
+
+        return `
+      <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
+        <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">${employeeName} - Leave</div>
+        <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${startDate} to ${endDate}</div>
+        ${
+          request.reason
+            ? `<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; font-style: italic;">"${request.reason}"</div>`
+            : ""
+        }
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="approveLeave('${
+            request.id
+          }')" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
+          <button onclick="rejectLeave('${
+            request.id
+          }')" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
+        </div>
+      </div>
+    `;
+      }
     })
     .join("");
 }
 
 window.approveLeave = function (leaveId) {
   if (!isAdminOrManager()) {
-    alert("Only administrators and managers can approve leave requests.");
+    alert("Only administrators and managers can approve requests.");
     return;
   }
 
@@ -907,12 +952,12 @@ window.approveLeave = function (leaveId) {
 
   saveState();
   renderEmployees();
-  alert("Leave request approved!");
+  alert("Request approved!");
 };
 
 window.rejectLeave = function (leaveId) {
   if (!isAdminOrManager()) {
-    alert("Only administrators and managers can reject leave requests.");
+    alert("Only administrators and managers can reject requests.");
     return;
   }
 
@@ -926,7 +971,80 @@ window.rejectLeave = function (leaveId) {
 
   saveState();
   renderEmployees();
-  alert("Leave request rejected.");
+  alert("Request rejected.");
+};
+
+window.approveProfileEdit = function (requestId) {
+  if (!isAdminOrManager()) {
+    alert(
+      "Only administrators and managers can approve profile edit requests."
+    );
+    return;
+  }
+
+  const request = appState.requests.find((r) => r.id === requestId);
+  if (
+    !request ||
+    (request.requestType !== "profile_edit" &&
+      request.request_type !== "profile_edit")
+  ) {
+    alert("Profile edit request not found.");
+    return;
+  }
+
+  // Find the employee
+  const empId = request.employeeId || request.employee_id;
+  const employee = appState.users.find((u) => u.id === empId);
+  if (!employee) {
+    alert("Employee not found.");
+    return;
+  }
+
+  // Apply the requested changes
+  const changes = request.requestedChanges || request.requested_changes || {};
+  if (changes.name) employee.name = changes.name;
+  if (changes.email) employee.email = changes.email;
+  if (changes.phone) employee.phone = changes.phone;
+  if (changes.role) employee.role = changes.role;
+  if (changes.shiftStart) employee.shiftStart = changes.shiftStart;
+  if (changes.password) employee.password = changes.password;
+
+  // Update the request status
+  const currentUser = getCurrentUser();
+  request.status = "approved";
+  request.reviewedBy = currentUser.id;
+  request.reviewedAt = new Date().toISOString();
+
+  saveState();
+  renderEmployees();
+  alert("Profile edit request approved and changes applied!");
+};
+
+window.rejectProfileEdit = function (requestId) {
+  if (!isAdminOrManager()) {
+    alert("Only administrators and managers can reject profile edit requests.");
+    return;
+  }
+
+  const request = appState.requests.find((r) => r.id === requestId);
+  if (
+    !request ||
+    (request.requestType !== "profile_edit" &&
+      request.request_type !== "profile_edit")
+  ) {
+    alert("Profile edit request not found.");
+    return;
+  }
+
+  // Mark request as rejected (no changes applied)
+  const currentUser = getCurrentUser();
+  request.status = "rejected";
+  request.reviewedBy = currentUser.id;
+  request.reviewedAt = new Date().toISOString();
+
+  saveState();
+  renderEmployees();
+  alert("Profile edit request rejected.");
 };
 
 window.pageRenderers = window.pageRenderers || {};
