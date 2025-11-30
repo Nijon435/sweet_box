@@ -417,19 +417,19 @@ async def save_state(state: dict):
         if "inventory" in state and state["inventory"]:
             for item in state["inventory"]:
                 await conn.execute(
-                    """INSERT INTO inventory (id, name, category, quantity, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                        ON CONFLICT (id) DO UPDATE SET
                        name = EXCLUDED.name, category = EXCLUDED.category,
-                       quantity = EXCLUDED.quantity, cost = EXCLUDED.cost,
+                       quantity = EXCLUDED.quantity, unit = EXCLUDED.unit, cost = EXCLUDED.cost,
                        date_purchased = EXCLUDED.date_purchased, use_by_date = EXCLUDED.use_by_date,
-                       reorder_point = EXCLUDED.reorder_point, last_restocked = EXCLUDED.last_restocked,
-                       total_used = EXCLUDED.total_used""",
+                       expiry_date = EXCLUDED.expiry_date, reorder_point = EXCLUDED.reorder_point, 
+                       last_restocked = EXCLUDED.last_restocked, total_used = EXCLUDED.total_used""",
                     item.get("id"), item.get("name"), item.get("category"),
-                    item.get("quantity"), item.get("cost"),
+                    item.get("quantity"), item.get("unit", "pieces"), item.get("cost"),
                     parse_date(item.get("datePurchased")), parse_date(item.get("useByDate")),
-                    item.get("reorderPoint", 10), parse_date(item.get("lastRestocked")),
-                    item.get("totalUsed", 0)
+                    parse_date(item.get("expiryDate")), item.get("reorderPoint", 10), 
+                    parse_date(item.get("lastRestocked")), item.get("totalUsed", 0)
                 )
         
         # Save orders (upsert - don't delete existing)
