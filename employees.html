@@ -13,6 +13,7 @@
     />
     <link rel="stylesheet" href="design.css" />
     <link rel="stylesheet" href="responsive.css" />
+    <link rel="stylesheet" href="css/employees.css" />
   </head>
 
   <body data-page="employees">
@@ -452,6 +453,18 @@
                 <option value="front_staff">Front Staff</option>
                 <option value="delivery_staff">Delivery Staff</option>
               </select>
+              <select
+                id="status-filter"
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
               <button
                 class="btn btn-primary"
                 id="add-employee-btn"
@@ -466,18 +479,6 @@
               >
                 + Add Access
               </button>
-              <select
-                id="status-filter"
-                style="
-                  padding: 0.5rem;
-                  border: 1px solid #ddd;
-                  border-radius: 4px;
-                "
-              >
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
             </div>
           </div>
           <table id="employee-table">
@@ -766,18 +767,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script>
-      // Auto-detect: Production vs Local
-      if (
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
-      ) {
-        window.APP_STATE_ENDPOINT =
-          "https://sweetbox-backend.onrender.com/api/state";
-      } else {
-        window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state";
-      }
-    </script>
+    <script src="js/config.js"></script>
     <script src="js/common.js"></script>
     <script src="js/employees.js"></script>
   </body>

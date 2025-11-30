@@ -1,0 +1,22 @@
+/* Login Page Specific Styles */
+
+.login-overlay {
+  position: relative;
+  min-height: 100vh;
+}
+
+.login-header {
+  margin-bottom: 0.5rem;
+}
+
+.login-header h2 {
+  margin: 0;
+}
+
+.login-header p {
+  margin: 0.25rem 0 0 0;
+}
+
+.login-subtext-warning {
+  color: #f59e0b;
+}

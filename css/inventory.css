@@ -1,0 +1,59 @@
+/* Inventory Page Specific Styles */
+
+/* Section Headers */
+.inventory-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.inventory-title h2 {
+  margin: 0;
+}
+
+/* Filter Controls */
+.inventory-filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.inventory-search {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 250px;
+}
+
+.inventory-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Modal Styles */
+.modal-form-field {
+  margin-bottom: 1rem;
+}
+
+.modal-form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.modal-form-input {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.modal-form-select {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.modal-form-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  resize: vertical;
+}

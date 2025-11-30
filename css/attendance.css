@@ -1,0 +1,46 @@
+/* Attendance Page Specific Styles */
+
+/* Modal Content */
+.attendance-modal-content {
+  padding: 1rem 0;
+}
+
+.attendance-modal-text {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+.attendance-form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.attendance-form-field {
+  flex: 1;
+}
+
+.attendance-select {
+  width: 100%;
+}
+
+.attendance-note-field {
+  margin-bottom: 1rem;
+}
+
+.attendance-note-hint {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+/* User Registry Section */
+.registry-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.registry-description {
+  margin-bottom: 1rem;
+}

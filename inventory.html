@@ -13,6 +13,7 @@
     />
     <link rel="stylesheet" href="design.css" />
     <link rel="stylesheet" href="responsive.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
   </head>
 
   <body data-page="inventory">
@@ -509,18 +510,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script>
-      // Auto-detect: Production vs Local
-      if (
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
-      ) {
-        window.APP_STATE_ENDPOINT =
-          "https://sweetbox-backend.onrender.com/api/state";
-      } else {
-        window.APP_STATE_ENDPOINT = "http://localhost:8000/api/state";
-      }
-    </script>
+    <script src="js/config.js"></script>
     <script src="js/common.js"></script>
     <script src="js/inventory.js"></script>
   </body>

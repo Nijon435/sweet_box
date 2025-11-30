@@ -57,15 +57,65 @@ function renderDashboard() {
           label: "Daily Sales",
           data: salesWindow.map((entry) => entry.total),
           borderColor: "#f6c343",
-          backgroundColor: "rgba(246,195,67,0.25)",
+          backgroundColor: "rgba(246,195,67,0.15)",
           tension: 0.4,
           fill: true,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#f6c343",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: "#e0a10b",
+          pointHoverBorderColor: "#fff",
         },
       ],
     },
     options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } },
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(92, 44, 6, 0.9)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: function (context) {
+              return (
+                "₱" +
+                context.parsed.y.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })
+              );
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "₱" + value.toLocaleString();
+            },
+          },
+          grid: {
+            color: "rgba(92, 44, 6, 0.1)",
+          },
+        },
+        x: {
+          grid: {
+            display: false,
+          },
+        },
+      },
+      interaction: {
+        intersect: false,
+        mode: "index",
+      },
     },
   });
 
@@ -93,18 +143,51 @@ function renderDashboard() {
             "#ef4444",
             "#94a3b8",
           ],
-          borderColor: ["#4ade80", "#fbbf24", "#fb923c", "#ef4444", "#94a3b8"],
+          borderColor: "#fff",
+          borderWidth: 3,
+          hoverOffset: 8,
         },
       ],
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: "65%",
       plugins: {
         legend: {
           position: "bottom",
           labels: {
             font: { size: 10 },
             padding: 8,
+            boxWidth: 12,
+            boxHeight: 12,
+            usePointStyle: true,
+            pointStyle: "circle",
           },
+          align: "center",
+          display: true,
+          maxWidth: 600,
+        },
+        tooltip: {
+          backgroundColor: "rgba(92, 44, 6, 0.9)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          padding: 12,
+          displayColors: true,
+          callbacks: {
+            label: function (context) {
+              const label = context.label || "";
+              const value = context.parsed || 0;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${value} (${percentage}%)`;
+            },
+          },
+        },
+      },
+      layout: {
+        padding: {
+          bottom: 10,
         },
       },
     },
@@ -129,6 +212,70 @@ function renderDashboard() {
   renderExpiredItems();
   renderRecentlyAddedItems();
   renderTrendingItemsChart();
+
+  // Setup category checkboxes for trending items
+  const checkboxContainer = document.getElementById(
+    "trending-category-checkboxes"
+  );
+  if (checkboxContainer && !checkboxContainer.dataset.bound) {
+    checkboxContainer.dataset.bound = "true";
+
+    // Populate categories
+    const categories = [
+      ...new Set(appState.inventory.map((item) => item.category)),
+    ]
+      .filter(Boolean)
+      .sort();
+
+    // Add "All" checkbox
+    const allCheckbox = document.createElement("div");
+    allCheckbox.className = "trending-checkbox-item";
+    allCheckbox.innerHTML = `
+      <input type="checkbox" id="category-all" value="all" checked />
+      <label for="category-all">All</label>
+    `;
+    checkboxContainer.appendChild(allCheckbox);
+
+    // Add category checkboxes
+    categories.forEach((cat) => {
+      const checkboxItem = document.createElement("div");
+      checkboxItem.className = "trending-checkbox-item";
+      const id = `category-${cat.replace(/\s+/g, "-").toLowerCase()}`;
+      checkboxItem.innerHTML = `
+        <input type="checkbox" id="${id}" value="${cat}" checked />
+        <label for="${id}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</label>
+      `;
+      checkboxContainer.appendChild(checkboxItem);
+    });
+
+    // Add event listeners
+    checkboxContainer.addEventListener("change", (e) => {
+      if (e.target.type === "checkbox") {
+        const allCheckbox = document.getElementById("category-all");
+        if (e.target.id === "category-all") {
+          // If "All" is checked/unchecked, sync all other checkboxes
+          const allChecked = e.target.checked;
+          checkboxContainer
+            .querySelectorAll('input[type="checkbox"]')
+            .forEach((cb) => {
+              cb.checked = allChecked;
+            });
+        } else {
+          // If any category is unchecked, uncheck "All"
+          const categoryCheckboxes = Array.from(
+            checkboxContainer.querySelectorAll(
+              'input[type="checkbox"]:not(#category-all)'
+            )
+          );
+          const allCategoriesChecked = categoryCheckboxes.every(
+            (cb) => cb.checked
+          );
+          allCheckbox.checked = allCategoriesChecked;
+        }
+        renderTrendingItemsChart();
+      }
+    });
+  }
 }
 
 // Render Expired Items
@@ -145,7 +292,7 @@ function renderExpiredItems() {
       const expireDate = new Date(item.useByDate);
       return expireDate < today;
     })
-    .slice(0, 5);
+    .slice(0, 3);
 
   if (expiredItems.length === 0) {
     tbody.innerHTML =
@@ -183,7 +330,7 @@ function renderRecentlyAddedItems() {
       const dateB = new Date(b.createdAt || b.datePurchased);
       return dateB - dateA;
     })
-    .slice(0, 5);
+    .slice(0, 3);
 
   if (recentItems.length === 0) {
     tbody.innerHTML =
@@ -211,8 +358,34 @@ function renderRecentlyAddedItems() {
 }
 // Render Top 10 Trending Items Pie Chart
 function renderTrendingItemsChart() {
+  const checkboxContainer = document.getElementById(
+    "trending-category-checkboxes"
+  );
+
+  // Get selected categories from checkboxes
+  let selectedCategories = [];
+  if (checkboxContainer) {
+    const allCheckbox = document.getElementById("category-all");
+    if (allCheckbox && allCheckbox.checked) {
+      selectedCategories = ["all"];
+    } else {
+      const checkedBoxes = checkboxContainer.querySelectorAll(
+        'input[type="checkbox"]:checked:not(#category-all)'
+      );
+      selectedCategories = Array.from(checkedBoxes).map((cb) => cb.value);
+    }
+  }
+
+  // Filter by selected categories
+  let inventoryItems = [...appState.inventory];
+  if (!selectedCategories.includes("all") && selectedCategories.length > 0) {
+    inventoryItems = inventoryItems.filter((item) =>
+      selectedCategories.includes(item.category)
+    );
+  }
+
   // Calculate trending items based on total_used (from database) or quantity as fallback
-  const trendingItems = [...appState.inventory]
+  const trendingItems = inventoryItems
     .map((item) => ({
       ...item,
       usageCount: item.totalUsed || item.total_used || 0,
@@ -223,7 +396,7 @@ function renderTrendingItemsChart() {
 
   if (trendingItems.length === 0) {
     // If no usage data, show items sorted by quantity instead
-    const topItemsByQty = [...appState.inventory]
+    const topItemsByQty = inventoryItems
       .filter((item) => item.quantity > 0)
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 10);
@@ -253,16 +426,16 @@ function renderTrendingItemsChart() {
     // Use quantity-based data
     const total = topItemsByQty.reduce((sum, item) => sum + item.quantity, 0);
     const colors = [
-      "#60a5fa",
-      "#4ade80",
-      "#fb923c",
-      "#f472b6",
-      "#a78bfa",
-      "#fbbf24",
-      "#ef4444",
-      "#14b8a6",
-      "#8b5cf6",
-      "#06b6d4",
+      "#f6c343",
+      "#e0a10b",
+      "#ffdb8a",
+      "#d4a574",
+      "#8b6914",
+      "#ffd700",
+      "#b8860b",
+      "#daa520",
+      "#f4a460",
+      "#cd853f",
     ];
 
     ChartManager.plot("trendingItemsChart", {
@@ -280,30 +453,17 @@ function renderTrendingItemsChart() {
       },
       options: {
         responsive: true,
+        layout: {
+          padding: {
+            left: 80,
+            right: 80,
+            top: 60,
+            bottom: 60,
+          },
+        },
         plugins: {
           legend: {
-            display: true,
-            position: "right",
-            labels: {
-              padding: 12,
-              font: { size: 11 },
-              generateLabels: function(chart) {
-                const data = chart.data;
-                if (data.labels.length && data.datasets.length) {
-                  return data.labels.map((label, i) => {
-                    const value = data.datasets[0].data[i];
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return {
-                      text: `${label} (${percentage}%)`,
-                      fillStyle: data.datasets[0].backgroundColor[i],
-                      hidden: false,
-                      index: i
-                    };
-                  });
-                }
-                return [];
-              }
-            },
+            display: false,
           },
           tooltip: {
             callbacks: {
@@ -318,6 +478,45 @@ function renderTrendingItemsChart() {
           },
         },
       },
+      plugins: [
+        {
+          id: "pieLabels",
+          afterDraw: function (chart) {
+            const ctx = chart.ctx;
+            const dataset = chart.data.datasets[0];
+            const meta = chart.getDatasetMeta(0);
+
+            meta.data.forEach((element, index) => {
+              const model = element;
+              const midAngle = (element.startAngle + element.endAngle) / 2;
+              const x = model.x + Math.cos(midAngle) * (model.outerRadius + 30);
+              const y = model.y + Math.sin(midAngle) * (model.outerRadius + 30);
+
+              const label = chart.data.labels[index];
+              const value = dataset.data[index];
+              const percentage = ((value / total) * 100).toFixed(1);
+              const text = `${label}: ${percentage} %`;
+
+              ctx.fillStyle = "#333";
+              ctx.font = "11px Arial";
+              ctx.textAlign = x < model.x ? "right" : "left";
+              ctx.textBaseline = "middle";
+              ctx.fillText(text, x, y);
+
+              // Draw line from pie to label
+              ctx.strokeStyle = "#999";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(
+                model.x + Math.cos(midAngle) * model.outerRadius,
+                model.y + Math.sin(midAngle) * model.outerRadius
+              );
+              ctx.lineTo(x - (x < model.x ? 5 : -5), y);
+              ctx.stroke();
+            });
+          },
+        },
+      ],
     });
     return;
   }
@@ -326,16 +525,16 @@ function renderTrendingItemsChart() {
   const total = trendingItems.reduce((sum, item) => sum + item.usageCount, 0);
 
   const colors = [
-    "#60a5fa",
-    "#4ade80",
-    "#fb923c",
-    "#f472b6",
-    "#a78bfa",
-    "#fbbf24",
-    "#ef4444",
-    "#14b8a6",
-    "#8b5cf6",
-    "#06b6d4",
+    "#f6c343",
+    "#e0a10b",
+    "#ffdb8a",
+    "#d4a574",
+    "#8b6914",
+    "#ffd700",
+    "#b8860b",
+    "#daa520",
+    "#f4a460",
+    "#cd853f",
   ];
 
   ChartManager.plot("trendingItemsChart", {
@@ -353,30 +552,17 @@ function renderTrendingItemsChart() {
     },
     options: {
       responsive: true,
+      layout: {
+        padding: {
+          left: 80,
+          right: 80,
+          top: 60,
+          bottom: 60,
+        },
+      },
       plugins: {
         legend: {
-          display: true,
-          position: "right",
-          labels: {
-            padding: 12,
-            font: { size: 11 },
-            generateLabels: function(chart) {
-              const data = chart.data;
-              if (data.labels.length && data.datasets.length) {
-                return data.labels.map((label, i) => {
-                  const value = data.datasets[0].data[i];
-                  const percentage = ((value / total) * 100).toFixed(1);
-                  return {
-                    text: `${label} (${percentage}%)`,
-                    fillStyle: data.datasets[0].backgroundColor[i],
-                    hidden: false,
-                    index: i
-                  };
-                });
-              }
-              return [];
-            }
-          },
+          display: false,
         },
         tooltip: {
           callbacks: {
@@ -391,6 +577,45 @@ function renderTrendingItemsChart() {
         },
       },
     },
+    plugins: [
+      {
+        id: "pieLabels",
+        afterDraw: function (chart) {
+          const ctx = chart.ctx;
+          const dataset = chart.data.datasets[0];
+          const meta = chart.getDatasetMeta(0);
+
+          meta.data.forEach((element, index) => {
+            const model = element;
+            const midAngle = (element.startAngle + element.endAngle) / 2;
+            const x = model.x + Math.cos(midAngle) * (model.outerRadius + 30);
+            const y = model.y + Math.sin(midAngle) * (model.outerRadius + 30);
+
+            const label = chart.data.labels[index];
+            const value = dataset.data[index];
+            const percentage = ((value / total) * 100).toFixed(1);
+            const text = `${label}: ${percentage} %`;
+
+            ctx.fillStyle = "#333";
+            ctx.font = "11px Arial";
+            ctx.textAlign = x < model.x ? "right" : "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, x, y);
+
+            // Draw line from pie to label
+            ctx.strokeStyle = "#999";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(
+              model.x + Math.cos(midAngle) * model.outerRadius,
+              model.y + Math.sin(midAngle) * model.outerRadius
+            );
+            ctx.lineTo(x - (x < model.x ? 5 : -5), y);
+            ctx.stroke();
+          });
+        },
+      },
+    ],
   });
 }
 

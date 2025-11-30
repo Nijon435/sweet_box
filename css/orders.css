@@ -1,0 +1,64 @@
+/* Orders Page Specific Styles */
+
+/* Order Header */
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.order-title h2 {
+  margin: 0;
+}
+
+/* Filter Controls */
+.order-filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.order-search {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 250px;
+}
+
+.order-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Order Table */
+.order-table-wrapper {
+  overflow-x: auto;
+}
+
+.order-table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+/* Order Details */
+.order-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.order-details-info {
+  flex: 1;
+}
+
+.order-detail-row {
+  margin-bottom: 0.5rem;
+}
+
+.order-detail-label {
+  font-weight: 600;
+  color: #666;
+}
