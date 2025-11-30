@@ -53,7 +53,7 @@ const getEmptyData = () => ({
   salesHistory: [],
   inventoryUsage: [],
   attendanceTrend: [],
-  leaveRequests: [],
+  requests: [],
 });
 
 async function fetchServerState() {
@@ -158,8 +158,13 @@ const getCurrentUser = () => {
 
 const isAdmin = () => getCurrentUser()?.permission === "admin";
 
+const isManager = () => getCurrentUser()?.permission === "manager";
+
+const isAdminOrManager = () => isAdmin() || isManager();
+
 const getLandingPageForRole = (role) => {
   if (role === "admin") return "index.html";
+  if (role === "manager") return "employees.html";
   if (role === "kitchen_staff") return "orders.html";
   if (role === "front_staff") return "orders.html";
   if (role === "delivery_staff") return "orders.html";
@@ -357,7 +362,7 @@ const getTodaysLogs = () =>
 const computeEmployeeStatus = (employee) => {
   // Check if employee is on approved leave today
   const today = todayKey();
-  const onLeave = (appState.leaveRequests || []).some((leave) => {
+  const onLeave = (appState.requests || []).some((leave) => {
     // Support both camelCase (frontend) and snake_case (database)
     const empId = leave.employeeId || leave.employee_id;
     if (empId !== employee.id || leave.status !== "approved") {
@@ -823,7 +828,7 @@ function initApp() {
             "  Attendance Logs:",
             appState.attendanceLogs?.length || 0
           );
-          console.log("  Leave Requests:", appState.leaveRequests?.length || 0);
+          console.log("  Requests:", appState.requests?.length || 0);
           console.log("  Orders:", appState.orders?.length || 0);
           // Only store essential data (users) in localStorage to avoid quota issues
           // Store full state in memory only

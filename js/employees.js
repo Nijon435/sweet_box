@@ -30,12 +30,12 @@ function renderUserPermissions() {
         <button class="btn btn-outline btn-sm" onclick="editUserPermissions('${
           user.id
         }')" ${
-      !isAdmin() ? "disabled" : ""
+      !isAdminOrManager() ? "disabled" : ""
     } style="margin-right: 0.5rem;">Edit</button>
         <button class="btn btn-outline btn-sm" onclick="saveUserRole('${
           user.id
         }')" ${
-      !isAdmin() ? "disabled" : ""
+      !isAdminOrManager() ? "disabled" : ""
     } style="display: none;">Save</button>
       </td>
     `;
@@ -248,8 +248,8 @@ function renderEmployees() {
     form.dataset.bound = "true";
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      if (!isAdmin()) {
-        alert("Only administrators can add employees.");
+      if (!isAdminOrManager()) {
+        alert("Only administrators and managers can add employees.");
         return;
       }
       const data = new FormData(form);
@@ -338,8 +338,8 @@ function renderEmployees() {
       if (button.dataset.bound) return;
       button.dataset.bound = "true";
       button.addEventListener("click", () => {
-        if (!isAdmin()) {
-          alert("Only administrators can remove employees.");
+        if (!isAdminOrManager()) {
+          alert("Only administrators and managers can remove employees.");
           return;
         }
         const id = button.dataset.deleteEmployee;
@@ -358,8 +358,8 @@ function renderEmployees() {
       if (button.dataset.bound) return;
       button.dataset.bound = "true";
       button.addEventListener("click", () => {
-        if (!isAdmin()) {
-          alert("Only administrators can edit employees.");
+        if (!isAdminOrManager()) {
+          alert("Only administrators and managers can edit employees.");
           return;
         }
         const id = button.dataset.editEmployee;
@@ -719,8 +719,8 @@ function filterEmployeeRoster() {
 
 // Open modal to add new employee
 function openAddEmployeeModal() {
-  if (!isAdmin()) {
-    alert("Only administrators can add employees.");
+  if (!isAdminOrManager()) {
+    alert("Only administrators and managers can add employees.");
     return;
   }
 
@@ -839,13 +839,10 @@ function renderLeaveApprovals() {
     return;
   }
 
-  console.log("📋 Total leave requests:", appState.leaveRequests?.length || 0);
-  console.log(
-    "🔍 Leave requests data:",
-    JSON.stringify(appState.leaveRequests, null, 2)
-  );
+  console.log("📋 Total requests:", appState.requests?.length || 0);
+  console.log("🔍 Requests data:", JSON.stringify(appState.requests, null, 2));
 
-  const pendingLeaves = (appState.leaveRequests || []).filter((leave) => {
+  const pendingLeaves = (appState.requests || []).filter((leave) => {
     console.log("Checking leave:", leave, "Status:", leave.status);
     return leave.status === "pending";
   });
@@ -895,12 +892,12 @@ function renderLeaveApprovals() {
 }
 
 window.approveLeave = function (leaveId) {
-  if (!isAdmin()) {
-    alert("Only administrators can approve leave requests.");
+  if (!isAdminOrManager()) {
+    alert("Only administrators and managers can approve leave requests.");
     return;
   }
 
-  const leave = appState.leaveRequests.find((l) => l.id === leaveId);
+  const leave = appState.requests.find((l) => l.id === leaveId);
   if (!leave) return;
 
   const currentUser = getCurrentUser();
@@ -914,12 +911,12 @@ window.approveLeave = function (leaveId) {
 };
 
 window.rejectLeave = function (leaveId) {
-  if (!isAdmin()) {
-    alert("Only administrators can reject leave requests.");
+  if (!isAdminOrManager()) {
+    alert("Only administrators and managers can reject leave requests.");
     return;
   }
 
-  const leave = appState.leaveRequests.find((l) => l.id === leaveId);
+  const leave = appState.requests.find((l) => l.id === leaveId);
   if (!leave) return;
 
   const currentUser = getCurrentUser();

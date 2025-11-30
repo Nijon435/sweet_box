@@ -551,10 +551,10 @@ function openRequestLeaveModal(user) {
       approvedAt: null,
     };
 
-    appState.leaveRequests = appState.leaveRequests || [];
-    appState.leaveRequests.push(newLeaveRequest);
+    appState.requests = appState.requests || [];
+    appState.requests.push(newLeaveRequest);
     console.log("📝 Leave request created:", newLeaveRequest);
-    console.log("📋 Total leave requests:", appState.leaveRequests.length);
+    console.log("📋 Total requests:", appState.requests.length);
     saveState();
 
     modal.remove();

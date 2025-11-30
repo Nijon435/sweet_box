@@ -29,19 +29,29 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
   FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Leave requests
-CREATE TABLE IF NOT EXISTS leave_requests (
+-- Requests table (combined leave and profile edit requests)
+CREATE TABLE IF NOT EXISTS requests (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   employee_id VARCHAR(64) NOT NULL,
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
+  request_type VARCHAR(32) NOT NULL, -- 'leave' or 'profile_edit'
+  
+  -- Leave request fields
+  start_date DATE,
+  end_date DATE,
   reason TEXT,
+  
+  -- Profile edit request fields
+  requested_changes JSONB,
+  
+  -- Common fields
   status VARCHAR(32) DEFAULT 'pending',
   requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  approved_by VARCHAR(64),
-  approved_at TIMESTAMP,
+  reviewed_by VARCHAR(64),
+  reviewed_at TIMESTAMP,
+  review_note TEXT,
+  
   FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Inventory

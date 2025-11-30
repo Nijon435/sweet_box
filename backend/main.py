@@ -72,7 +72,7 @@ TABLES = [
     "orders",
     "sales_history",
     "inventory_usage",
-    "leave_requests"
+    "requests"  # Renamed from leave_requests
 ]
 
 async def fetch_table(conn, table):
@@ -132,7 +132,7 @@ async def fetch_table(conn, table):
             if table == "attendance_logs":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
-            if table == "leave_requests":
+            if table == "requests":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
                 if "start_date" in item:
@@ -141,10 +141,14 @@ async def fetch_table(conn, table):
                     item["endDate"] = item.pop("end_date")
                 if "requested_at" in item:
                     item["requestedAt"] = item.pop("requested_at")
-                if "approved_by" in item:
-                    item["approvedBy"] = item.pop("approved_by")
-                if "approved_at" in item:
-                    item["approvedAt"] = item.pop("approved_at")
+                if "reviewed_by" in item:
+                    item["reviewedBy"] = item.pop("reviewed_by")
+                if "reviewed_at" in item:
+                    item["reviewedAt"] = item.pop("reviewed_at")
+                if "request_type" in item:
+                    item["requestType"] = item.pop("request_type")
+                if "requested_changes" in item:
+                    item["requestedChanges"] = item.pop("requested_changes")
             if table == "sales_history" and "orders_count" in item:
                 item["ordersCount"] = item.pop("orders_count")
             if table == "inventory" and "reorder_point" in item:
@@ -228,7 +232,7 @@ async def get_state():
             "orders": data["orders"],
             "salesHistory": data["sales_history"],
             "inventoryUsage": data["inventory_usage"],
-            "leaveRequests": data["leave_requests"],
+            "requests": data["requests"],
             "attendanceTrend": []
         }
     except Exception as e:
@@ -468,22 +472,25 @@ async def save_state(state: dict):
                     usage.get("id"), usage.get("label"), usage.get("used")
                 )
         
-        # Save leave requests
-        if "leaveRequests" in state and state["leaveRequests"]:
-            for leave in state["leaveRequests"]:
+        # Save requests (leave and profile edit requests)
+        if "requests" in state and state["requests"]:
+            for request in state["requests"]:
                 await conn.execute(
-                    """INSERT INTO leave_requests (id, employee_id, start_date, end_date, reason, status, requested_at, approved_by, approved_at)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                        ON CONFLICT (id) DO UPDATE SET
-                       employee_id = EXCLUDED.employee_id, start_date = EXCLUDED.start_date,
-                       end_date = EXCLUDED.end_date, reason = EXCLUDED.reason,
+                       employee_id = EXCLUDED.employee_id, request_type = EXCLUDED.request_type,
+                       start_date = EXCLUDED.start_date, end_date = EXCLUDED.end_date,
+                       reason = EXCLUDED.reason, requested_changes = EXCLUDED.requested_changes,
                        status = EXCLUDED.status, requested_at = EXCLUDED.requested_at,
-                       approved_by = EXCLUDED.approved_by, approved_at = EXCLUDED.approved_at""",
-                    leave.get("id"), leave.get("employeeId"),
-                    parse_date(leave.get("startDate")), parse_date(leave.get("endDate")),
-                    leave.get("reason"), leave.get("status", "pending"),
-                    parse_timestamp(leave.get("requestedAt")),
-                    leave.get("approvedBy"), parse_timestamp(leave.get("approvedAt"))
+                       reviewed_by = EXCLUDED.reviewed_by, reviewed_at = EXCLUDED.reviewed_at""",
+                    request.get("id"), request.get("employeeId"),
+                    request.get("requestType", "leave"),
+                    parse_date(request.get("startDate")), parse_date(request.get("endDate")),
+                    request.get("reason"), json.dumps(request.get("requestedChanges")) if request.get("requestedChanges") else None,
+                    request.get("status", "pending"),
+                    parse_timestamp(request.get("requestedAt")),
+                    request.get("reviewedBy"), parse_timestamp(request.get("reviewedAt"))
                 )
         
         await conn.close()
