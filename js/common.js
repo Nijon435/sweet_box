@@ -177,11 +177,10 @@ let saveTimeout = null;
 let isSyncing = false;
 
 async function syncStateToDatabase() {
-  if (isSyncing) return;
-
-  // TEMPORARY: Disable auto-sync to prevent data overwrites during deployment
-  // Remove this check after confirming dates are stable
-  console.warn("Database sync is temporarily disabled to preserve date fields");
+  // DATABASE SYNC PERMANENTLY DISABLED
+  // Data is now read-only from the server to prevent data loss
+  // All updates go through individual API endpoints (PUT /api/inventory, etc.)
+  console.log("ℹ️ Database sync disabled - using individual API endpoints for updates");
   return;
 
   try {
