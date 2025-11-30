@@ -1121,6 +1121,22 @@ input[type="number"]::-webkit-outer-spin-button {
   max-width: 100%;
 }
 
+.split-65-35 {
+  display: grid;
+  grid-template-columns: 1.857fr 1fr;
+  gap: 24px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.split-50-50 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  max-width: 100%;
+}
+
 /* 3-column layout only for inventory page */
 body[data-page="inventory"] .split {
   grid-template-columns: 1.17fr 1.17fr 1fr;

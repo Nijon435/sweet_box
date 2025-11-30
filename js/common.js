@@ -447,6 +447,12 @@ const categorizeInventory = () => {
 };
 
 const inventoryStats = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const sevenDaysFromNow = new Date(today);
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
   const value = appState.inventory.reduce(
     (sum, item) => sum + item.quantity * item.cost,
     0
@@ -459,7 +465,27 @@ const inventoryStats = () => {
       item.category === "supplies" || item.category === "beverages" ? 10 : 5;
     return item.quantity > 0 && item.quantity < threshold;
   }).length;
-  return { totalItems: appState.inventory.length, lowStock, outOfStock, value };
+
+  const expired = appState.inventory.filter((item) => {
+    if (!item.useByDate) return false;
+    const expireDate = new Date(item.useByDate);
+    return expireDate < today;
+  }).length;
+
+  const soonToExpire = appState.inventory.filter((item) => {
+    if (!item.useByDate) return false;
+    const expireDate = new Date(item.useByDate);
+    return expireDate >= today && expireDate <= sevenDaysFromNow;
+  }).length;
+
+  return {
+    totalItems: appState.inventory.length,
+    lowStock,
+    outOfStock,
+    expired,
+    soonToExpire,
+    value,
+  };
 };
 
 const orderStats = () => {

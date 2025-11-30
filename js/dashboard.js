@@ -72,20 +72,42 @@ function renderDashboard() {
   ChartManager.plot("inventoryStatusChart", {
     type: "doughnut",
     data: {
-      labels: ["Safe", "Low", "No Stock"],
+      labels: ["Safe", "Low", "Soon to Expire", "Expired", "No Stock"],
       datasets: [
         {
           data: [
-            metrics.totalItems - metrics.lowStock - metrics.outOfStock,
+            metrics.totalItems -
+              metrics.lowStock -
+              metrics.outOfStock -
+              metrics.soonToExpire -
+              metrics.expired,
             metrics.lowStock,
+            metrics.soonToExpire || 0,
+            metrics.expired || 0,
             metrics.outOfStock,
           ],
-          backgroundColor: ["#ffd37c", "#f97316", "#ef4444"],
-          borderColor: ["#ffd37c", "#f97316", "#ef4444"],
+          backgroundColor: [
+            "#4ade80",
+            "#fbbf24",
+            "#fb923c",
+            "#ef4444",
+            "#94a3b8",
+          ],
+          borderColor: ["#4ade80", "#fbbf24", "#fb923c", "#ef4444", "#94a3b8"],
         },
       ],
     },
-    options: { plugins: { legend: { position: "bottom" } } },
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            font: { size: 10 },
+            padding: 8,
+          },
+        },
+      },
+    },
   });
 
   const lowStockContainer = document.getElementById("low-stock-list");
@@ -103,8 +125,9 @@ function renderDashboard() {
     }
   }
 
-  // Render expired items and trending chart
+  // Render expired items, recently added items, and trending chart
   renderExpiredItems();
+  renderRecentlyAddedItems();
   renderTrendingItemsChart();
 }
 
@@ -126,7 +149,7 @@ function renderExpiredItems() {
 
   if (expiredItems.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: #888;">No expired items</td></tr>';
+      '<tr><td colspan="4" style="text-align: center; padding: 1rem; color: #888;">No expired items</td></tr>';
     return;
   }
 
@@ -136,7 +159,6 @@ function renderExpiredItems() {
       return `
         <tr>
           <td style="padding: 0.5rem;">${index + 1}</td>
-          <td style="padding: 0.5rem;">${item.id || "N/A"}</td>
           <td style="padding: 0.5rem;">${item.name}</td>
           <td style="padding: 0.5rem;">${item.category}</td>
           <td style="padding: 0.5rem;">${expireDate.toLocaleDateString(
@@ -148,40 +170,146 @@ function renderExpiredItems() {
     })
     .join("");
 }
+
+// Render Recently Added Items
+function renderRecentlyAddedItems() {
+  const tbody = document.getElementById("recently-added-items");
+  if (!tbody) return;
+
+  const recentItems = [...appState.inventory]
+    .filter((item) => item.createdAt || item.datePurchased)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.datePurchased);
+      const dateB = new Date(b.createdAt || b.datePurchased);
+      return dateB - dateA;
+    })
+    .slice(0, 5);
+
+  if (recentItems.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="4" style="text-align: center; padding: 1rem; color: #888;">No recent items</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = recentItems
+    .map((item, index) => {
+      const dateAdded = new Date(item.createdAt || item.datePurchased);
+      return `
+        <tr>
+          <td style="padding: 0.5rem;">${index + 1}</td>
+          <td style="padding: 0.5rem;">${item.name}</td>
+          <td style="padding: 0.5rem;">${item.category}</td>
+          <td style="padding: 0.5rem;">${dateAdded.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
 // Render Top 10 Trending Items Pie Chart
 function renderTrendingItemsChart() {
-  // Calculate trending items based on total_used or sales
+  // Calculate trending items based on total_used (from database) or quantity as fallback
   const trendingItems = [...appState.inventory]
-    .filter((item) => item.totalUsed && item.totalUsed > 0)
-    .sort((a, b) => (b.totalUsed || 0) - (a.totalUsed || 0))
+    .map((item) => ({
+      ...item,
+      usageCount: item.totalUsed || item.total_used || 0,
+    }))
+    .filter((item) => item.usageCount > 0)
+    .sort((a, b) => b.usageCount - a.usageCount)
     .slice(0, 10);
 
   if (trendingItems.length === 0) {
-    // Show placeholder if no data
+    // If no usage data, show items sorted by quantity instead
+    const topItemsByQty = [...appState.inventory]
+      .filter((item) => item.quantity > 0)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+
+    if (topItemsByQty.length === 0) {
+      // Show placeholder if no data at all
+      ChartManager.plot("trendingItemsChart", {
+        type: "pie",
+        data: {
+          labels: ["No Data"],
+          datasets: [
+            {
+              data: [1],
+              backgroundColor: ["#e5e7eb"],
+            },
+          ],
+        },
+        options: {
+          plugins: {
+            legend: { position: "right" },
+          },
+        },
+      });
+      return;
+    }
+
+    // Use quantity-based data
+    const total = topItemsByQty.reduce((sum, item) => sum + item.quantity, 0);
+    const colors = [
+      "#60a5fa",
+      "#1f2937",
+      "#4ade80",
+      "#fb923c",
+      "#f472b6",
+      "#a78bfa",
+      "#fbbf24",
+      "#ef4444",
+      "#14b8a6",
+      "#8b5cf6",
+    ];
+
     ChartManager.plot("trendingItemsChart", {
       type: "pie",
       data: {
-        labels: ["No Data"],
+        labels: topItemsByQty.map((item) => {
+          const percentage = ((item.quantity / total) * 100).toFixed(1);
+          return `${item.name}: ${percentage}%`;
+        }),
         datasets: [
           {
-            data: [1],
-            backgroundColor: ["#e5e7eb"],
+            data: topItemsByQty.map((item) => item.quantity),
+            backgroundColor: colors.slice(0, topItemsByQty.length),
+            borderColor: "#fff",
+            borderWidth: 2,
           },
         ],
       },
       options: {
+        responsive: true,
         plugins: {
-          legend: { position: "right" },
+          legend: {
+            position: "right",
+            labels: {
+              padding: 15,
+              font: { size: 11 },
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label.split(":")[0]}: ${value.toFixed(
+                  2
+                )} units (${percentage}%)`;
+              },
+            },
+          },
         },
       },
     });
     return;
   }
 
-  const total = trendingItems.reduce(
-    (sum, item) => sum + (item.totalUsed || 0),
-    0
-  );
+  // Use usage-based data
+  const total = trendingItems.reduce((sum, item) => sum + item.usageCount, 0);
 
   const colors = [
     "#60a5fa",
@@ -200,12 +328,12 @@ function renderTrendingItemsChart() {
     type: "pie",
     data: {
       labels: trendingItems.map((item) => {
-        const percentage = ((item.totalUsed / total) * 100).toFixed(1);
-        return `${item.name}: ${percentage} %`;
+        const percentage = ((item.usageCount / total) * 100).toFixed(1);
+        return `${item.name}: ${percentage}%`;
       }),
       datasets: [
         {
-          data: trendingItems.map((item) => item.totalUsed),
+          data: trendingItems.map((item) => item.usageCount),
           backgroundColor: colors.slice(0, trendingItems.length),
           borderColor: "#fff",
           borderWidth: 2,
@@ -227,7 +355,7 @@ function renderTrendingItemsChart() {
             label: function (context) {
               const value = context.parsed;
               const percentage = ((value / total) * 100).toFixed(1);
-              return `${context.label}: ${value.toFixed(
+              return `${context.label.split(":")[0]}: ${value.toFixed(
                 2
               )} units (${percentage}%)`;
             },
