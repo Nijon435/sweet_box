@@ -1112,23 +1112,22 @@ function showLoadingScreen() {
     loader = document.createElement("div");
     loader.id = "app-loading-screen";
     loader.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(92, 44, 6, 0.75); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f5dc; display: flex; align-items: center; justify-content: center; z-index: 9999;";
     loader.innerHTML = `
-      <div class="loading-text" style="width: 100%; height: 100px; line-height: 100px; text-align: center;">
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0s infinite linear alternate;">L</span>
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.2s infinite linear alternate;">O</span>
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.4s infinite linear alternate;">A</span>
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.6s infinite linear alternate;">D</span>
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 0.8s infinite linear alternate;">I</span>
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 1s infinite linear alternate;">N</span>
-        <span class="loading-text-words" style="display: inline-block; margin: 0 5px; color: #ffdb8a; font-family: 'Quattrocento Sans', sans-serif; font-size: 2rem; animation: blur-text 1.5s 1.2s infinite linear alternate;">G</span>
-      </div>
+      <div class="loader"></div>
       <style>
-        @import url('https://fonts.googleapis.com/css?family=Quattrocento+Sans');
-        
-        @keyframes blur-text {
-          0% { filter: blur(0px); }
-          100% { filter: blur(4px); }
+        .loader {
+          width: 50px;
+          aspect-ratio: 1;
+          border-radius: 50%;
+          background: 
+            radial-gradient(farthest-side,#ffa516 94%,#0000) top/8px 8px no-repeat,
+            conic-gradient(#0000 30%,#ffa516);
+          -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 8px),#000 0);
+          animation: l13 1s infinite linear;
+        }
+        @keyframes l13{ 
+          100%{transform: rotate(1turn)}
         }
       </style>
     `;
