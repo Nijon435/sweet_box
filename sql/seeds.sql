@@ -27,45 +27,50 @@ ON CONFLICT (id) DO UPDATE SET
   status = EXCLUDED.status;
 
 -- Inventory (small business - 4 categories: cakes & pastries, beverages, ingredients, supplies)
--- Updated with date_purchased, use_by_date, reorder_point, last_restocked, and total_used
-INSERT INTO inventory (id, category, name, quantity, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, created_at) VALUES
+-- Updated with date_purchased, use_by_date, reorder_point, last_restocked, total_used, and unit
+INSERT INTO inventory (id, category, name, quantity, unit, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, created_at) VALUES
   -- Cakes & Pastries (ready to sell items)
-  ('inv-1', 'cakes & pastries', 'Chocolate Mousse Slice', 15, 120.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '3 days', 5, CURRENT_DATE - INTERVAL '2 days', 18, NOW()),
-  ('inv-2', 'cakes & pastries', 'Classic Cheesecake (whole)', 5, 850.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '5 days', 2, CURRENT_DATE - INTERVAL '1 day', 4, NOW()),
-  ('inv-3', 'cakes & pastries', 'Butter Croissant', 30, 35.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 days', 10, CURRENT_DATE, 32, NOW()),
-  ('inv-4', 'cakes & pastries', 'Almond Danish', 25, 45.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 days', 8, CURRENT_DATE, 22, NOW()),
-  ('inv-5', 'cakes & pastries', 'Red Velvet Slice', 12, 110.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '4 days', 5, CURRENT_DATE - INTERVAL '1 day', 15, NOW()),
-  ('inv-6', 'cakes & pastries', 'Cinnamon Roll', 20, 50.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '3 days', 8, CURRENT_DATE, 28, NOW()),
-  ('inv-7', 'cakes & pastries', 'Assorted Macarons (box of 6)', 18, 220.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '7 days', 6, CURRENT_DATE - INTERVAL '1 day', 12, NOW()),
-  ('inv-8', 'cakes & pastries', 'Blueberry Muffin', 24, 55.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '3 days', 10, CURRENT_DATE, 42, NOW()),
+  ('inv-1', 'cakes & pastries', 'Chocolate Mousse Slice', 15, 'slices', 120.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '3 days', 5, CURRENT_DATE - INTERVAL '2 days', 18, NOW()),
+  ('inv-2', 'cakes & pastries', 'Classic Cheesecake (whole)', 3, 'whole', 850.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '5 days', 2, CURRENT_DATE - INTERVAL '1 day', 4, NOW()),
+  ('inv-3', 'cakes & pastries', 'Butter Croissant', 30, 'pieces', 35.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 days', 10, CURRENT_DATE, 32, NOW()),
+  ('inv-4', 'cakes & pastries', 'Almond Danish', 6, 'pieces', 45.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 days', 8, CURRENT_DATE, 22, NOW()),
+  ('inv-5', 'cakes & pastries', 'Red Velvet Slice', 12, 'slices', 110.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '4 days', 5, CURRENT_DATE - INTERVAL '1 day', 15, NOW()),
+  ('inv-6', 'cakes & pastries', 'Cinnamon Roll', 20, 'pieces', 50.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '3 days', 8, CURRENT_DATE, 28, NOW()),
+  ('inv-7', 'cakes & pastries', 'Assorted Macarons (box of 6)', 4, 'box', 220.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '7 days', 6, CURRENT_DATE - INTERVAL '1 day', 12, NOW()),
+  ('inv-8', 'cakes & pastries', 'Blueberry Muffin', 24, 'pieces', 55.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '3 days', 10, CURRENT_DATE, 42, NOW()),
+  ('inv-9', 'cakes & pastries', 'Strawberry Shortcake (whole)', 4, 'whole', 780.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '4 days', 2, CURRENT_DATE - INTERVAL '1 day', 3, NOW()),
+  ('inv-10', 'cakes & pastries', 'Chocolate Chip Cookie', 45, 'pieces', 25.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '5 days', 15, CURRENT_DATE, 38, NOW()),
   
   -- Beverages (only bottled/canned - ready to serve)
-  ('inv-9', 'beverages', 'Bottled Water 500ml', 48, 15.00, CURRENT_DATE - INTERVAL '5 days', CURRENT_DATE + INTERVAL '180 days', 20, CURRENT_DATE - INTERVAL '5 days', 25, NOW()),
-  ('inv-10', 'beverages', 'Iced Tea 350ml', 36, 45.00, CURRENT_DATE - INTERVAL '4 days', CURRENT_DATE + INTERVAL '90 days', 15, CURRENT_DATE - INTERVAL '4 days', 18, NOW()),
-  ('inv-11', 'beverages', 'Canned Soda 330ml', 42, 30.00, CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE + INTERVAL '120 days', 20, CURRENT_DATE - INTERVAL '6 days', 0, NOW()),
-  ('inv-12', 'beverages', 'Orange Juice 250ml', 30, 40.00, CURRENT_DATE - INTERVAL '3 days', CURRENT_DATE + INTERVAL '60 days', 12, CURRENT_DATE - INTERVAL '3 days', 0, NOW()),
-  ('inv-13', 'beverages', 'Canned Coffee 240ml', 24, 55.00, CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE + INTERVAL '150 days', 10, CURRENT_DATE - INTERVAL '7 days', 0, NOW()),
+  ('inv-11', 'beverages', 'Bottled Water 500ml', 8, 'bottles', 15.00, CURRENT_DATE - INTERVAL '5 days', CURRENT_DATE + INTERVAL '180 days', 20, CURRENT_DATE - INTERVAL '5 days', 25, NOW()),
+  ('inv-12', 'beverages', 'Iced Tea 350ml', 36, 'bottles', 45.00, CURRENT_DATE - INTERVAL '4 days', CURRENT_DATE + INTERVAL '90 days', 15, CURRENT_DATE - INTERVAL '4 days', 18, NOW()),
+  ('inv-13', 'beverages', 'Canned Soda 330ml', 42, 'cans', 30.00, CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE + INTERVAL '120 days', 20, CURRENT_DATE - INTERVAL '6 days', 12, NOW()),
+  ('inv-14', 'beverages', 'Orange Juice 250ml', 30, 'bottles', 40.00, CURRENT_DATE - INTERVAL '3 days', CURRENT_DATE + INTERVAL '60 days', 12, CURRENT_DATE - INTERVAL '3 days', 8, NOW()),
+  ('inv-15', 'beverages', 'Canned Coffee 240ml', 24, 'cans', 55.00, CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE + INTERVAL '150 days', 10, CURRENT_DATE - INTERVAL '7 days', 5, NOW()),
   
   -- Ingredients (baking supplies)
-  ('inv-14', 'ingredients', 'All-purpose Flour', 25.00, 40.00, CURRENT_DATE - INTERVAL '10 days', CURRENT_DATE + INTERVAL '90 days', 10, CURRENT_DATE - INTERVAL '10 days', 0, NOW()),
-  ('inv-15', 'ingredients', 'Granulated Sugar', 20.00, 35.00, CURRENT_DATE - INTERVAL '8 days', CURRENT_DATE + INTERVAL '180 days', 8, CURRENT_DATE - INTERVAL '8 days', 0, NOW()),
-  ('inv-16', 'ingredients', 'Unsalted Butter', 15.00, 180.00, CURRENT_DATE - INTERVAL '3 days', CURRENT_DATE + INTERVAL '14 days', 5, CURRENT_DATE - INTERVAL '3 days', 0, NOW()),
-  ('inv-17', 'ingredients', 'Whole Milk', 30.00, 45.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '7 days', 10, CURRENT_DATE - INTERVAL '1 day', 0, NOW()),
-  ('inv-18', 'ingredients', 'Cocoa Powder', 8.00, 120.00, CURRENT_DATE - INTERVAL '15 days', CURRENT_DATE + INTERVAL '365 days', 3, CURRENT_DATE - INTERVAL '15 days', 0, NOW()),
-  ('inv-19', 'ingredients', 'Vanilla Extract', 2.50, 850.00, CURRENT_DATE - INTERVAL '20 days', CURRENT_DATE + INTERVAL '730 days', 1, CURRENT_DATE - INTERVAL '20 days', 0, NOW()),
-  ('inv-20', 'ingredients', 'Eggs', 15.00, 120.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '21 days', 10, CURRENT_DATE - INTERVAL '2 days', 0, NOW()),
+  ('inv-16', 'ingredients', 'All-purpose Flour', 25.00, 'kg', 40.00, CURRENT_DATE - INTERVAL '10 days', CURRENT_DATE + INTERVAL '90 days', 10, CURRENT_DATE - INTERVAL '10 days', 12.50, NOW()),
+  ('inv-17', 'ingredients', 'Granulated Sugar', 8.00, 'kg', 35.00, CURRENT_DATE - INTERVAL '8 days', CURRENT_DATE + INTERVAL '180 days', 10, CURRENT_DATE - INTERVAL '8 days', 6.50, NOW()),
+  ('inv-18', 'ingredients', 'Unsalted Butter', 4.00, 'kg', 180.00, CURRENT_DATE - INTERVAL '3 days', CURRENT_DATE + INTERVAL '14 days', 5, CURRENT_DATE - INTERVAL '3 days', 3.20, NOW()),
+  ('inv-19', 'ingredients', 'Whole Milk', 12.00, 'liters', 45.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '7 days', 10, CURRENT_DATE - INTERVAL '1 day', 8.50, NOW()),
+  ('inv-20', 'ingredients', 'Cocoa Powder', 8.00, 'kg', 120.00, CURRENT_DATE - INTERVAL '15 days', CURRENT_DATE + INTERVAL '365 days', 3, CURRENT_DATE - INTERVAL '15 days', 2.10, NOW()),
+  ('inv-21', 'ingredients', 'Vanilla Extract', 2.50, 'liters', 850.00, CURRENT_DATE - INTERVAL '20 days', CURRENT_DATE + INTERVAL '730 days', 1, CURRENT_DATE - INTERVAL '20 days', 0.80, NOW()),
+  ('inv-22', 'ingredients', 'Eggs', 15.00, 'dozen', 120.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '21 days', 10, CURRENT_DATE - INTERVAL '2 days', 8.00, NOW()),
+  ('inv-23', 'ingredients', 'Cream Cheese', 6.00, 'kg', 220.00, CURRENT_DATE - INTERVAL '5 days', CURRENT_DATE + INTERVAL '30 days', 3, CURRENT_DATE - INTERVAL '5 days', 4.50, NOW()),
+  ('inv-24', 'ingredients', 'Fresh Strawberries', 3.50, 'kg', 180.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '3 days', 2, CURRENT_DATE - INTERVAL '1 day', 2.80, NOW()),
+  ('inv-25', 'ingredients', 'Blueberries', 4.00, 'kg', 200.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '5 days', 2, CURRENT_DATE - INTERVAL '2 days', 1.50, NOW()),
   
   -- Supplies (packaging & serving materials)
-  ('inv-21', 'supplies', 'Cake Box (small)', 50, 8.00, CURRENT_DATE - INTERVAL '14 days', NULL, 20, CURRENT_DATE - INTERVAL '14 days', 0, NOW()),
-  ('inv-22', 'supplies', 'Cake Box (medium)', 40, 12.00, CURRENT_DATE - INTERVAL '14 days', NULL, 15, CURRENT_DATE - INTERVAL '14 days', 0, NOW()),
-  ('inv-23', 'supplies', 'Cake Box (large)', 30, 18.00, CURRENT_DATE - INTERVAL '14 days', NULL, 10, CURRENT_DATE - INTERVAL '14 days', 0, NOW()),
-  ('inv-24', 'supplies', 'Plastic Cups 16oz', 200, 2.50, CURRENT_DATE - INTERVAL '10 days', NULL, 50, CURRENT_DATE - INTERVAL '10 days', 0, NOW()),
-  ('inv-25', 'supplies', 'Paper Bags (small)', 150, 1.50, CURRENT_DATE - INTERVAL '12 days', NULL, 50, CURRENT_DATE - INTERVAL '12 days', 0, NOW()),
-  ('inv-26', 'supplies', 'Paper Bags (large)', 100, 3.00, CURRENT_DATE - INTERVAL '12 days', NULL, 30, CURRENT_DATE - INTERVAL '12 days', 0, NOW()),
-  ('inv-27', 'supplies', 'Plastic Forks', 300, 0.50, CURRENT_DATE - INTERVAL '15 days', NULL, 100, CURRENT_DATE - INTERVAL '15 days', 0, NOW()),
-  ('inv-28', 'supplies', 'Napkins (pack of 100)', 20, 45.00, CURRENT_DATE - INTERVAL '9 days', NULL, 8, CURRENT_DATE - INTERVAL '9 days', 0, NOW()),
-  ('inv-29', 'supplies', 'Plastic Food Containers', 80, 5.00, CURRENT_DATE - INTERVAL '11 days', NULL, 30, CURRENT_DATE - INTERVAL '11 days', 0, NOW()),
-  ('inv-30', 'supplies', 'Aluminum Foil Roll', 5, 120.00, CURRENT_DATE - INTERVAL '20 days', NULL, 2, CURRENT_DATE - INTERVAL '20 days', 0, NOW())
+  ('inv-26', 'supplies', 'Cake Box (small)', 18, 'pieces', 8.00, CURRENT_DATE - INTERVAL '14 days', NULL, 20, CURRENT_DATE - INTERVAL '14 days', 15, NOW()),
+  ('inv-27', 'supplies', 'Cake Box (medium)', 40, 'pieces', 12.00, CURRENT_DATE - INTERVAL '14 days', NULL, 15, CURRENT_DATE - INTERVAL '14 days', 8, NOW()),
+  ('inv-28', 'supplies', 'Cake Box (large)', 30, 'pieces', 18.00, CURRENT_DATE - INTERVAL '14 days', NULL, 10, CURRENT_DATE - INTERVAL '14 days', 5, NOW()),
+  ('inv-29', 'supplies', 'Plastic Cups 16oz', 200, 'pieces', 2.50, CURRENT_DATE - INTERVAL '10 days', NULL, 50, CURRENT_DATE - INTERVAL '10 days', 45, NOW()),
+  ('inv-30', 'supplies', 'Paper Bags (small)', 35, 'pieces', 1.50, CURRENT_DATE - INTERVAL '12 days', NULL, 50, CURRENT_DATE - INTERVAL '12 days', 68, NOW()),
+  ('inv-31', 'supplies', 'Paper Bags (large)', 100, 'pieces', 3.00, CURRENT_DATE - INTERVAL '12 days', NULL, 30, CURRENT_DATE - INTERVAL '12 days', 22, NOW()),
+  ('inv-32', 'supplies', 'Plastic Forks', 300, 'pieces', 0.50, CURRENT_DATE - INTERVAL '15 days', NULL, 100, CURRENT_DATE - INTERVAL '15 days', 85, NOW()),
+  ('inv-33', 'supplies', 'Napkins (pack of 100)', 20, 'packs', 45.00, CURRENT_DATE - INTERVAL '9 days', NULL, 8, CURRENT_DATE - INTERVAL '9 days', 12, NOW()),
+  ('inv-34', 'supplies', 'Plastic Food Containers', 80, 'pieces', 5.00, CURRENT_DATE - INTERVAL '11 days', NULL, 30, CURRENT_DATE - INTERVAL '11 days', 28, NOW()),
+  ('inv-35', 'supplies', 'Aluminum Foil Roll', 5, 'rolls', 120.00, CURRENT_DATE - INTERVAL '20 days', NULL, 2, CURRENT_DATE - INTERVAL '20 days', 1, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Orders (1 week simulation - small bakery business)

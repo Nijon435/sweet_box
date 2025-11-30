@@ -54,6 +54,7 @@ const getEmptyData = () => ({
   inventoryUsage: [],
   attendanceTrend: [],
   requests: [],
+  ingredientUsageLogs: [], // New: separate ingredient usage tracking
 });
 
 async function fetchServerState() {
@@ -904,6 +905,16 @@ function initApp() {
       recalculateSalesHistory();
     }
 
+    // Auto-migrate existing usage data (runs once)
+    if (typeof migrateExistingUsageData === "function") {
+      const migrationResult = migrateExistingUsageData();
+      if (migrationResult.migrated > 0) {
+        console.log(
+          `✅ Migrated ${migrationResult.migrated} ingredient usage records to new system`
+        );
+      }
+    }
+
     const page = document.body.dataset.page;
     if (page === "login") return;
 
@@ -1339,3 +1350,244 @@ function openEditProfileModal() {
     }
   });
 }
+
+// ==================== INGREDIENT USAGE TRACKING ====================
+
+/**
+ * Log ingredient usage with reason and optional order linkage
+ * @param {string} inventoryItemId - ID of the inventory item being used
+ * @param {number} quantity - Amount used
+ * @param {string} reason - Reason for usage: 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'other'
+ * @param {string|null} orderId - Optional order ID if usage is from an order
+ * @param {string} notes - Optional notes/description
+ * @returns {object} The created usage log entry
+ */
+function logIngredientUsage(
+  inventoryItemId,
+  quantity,
+  reason,
+  orderId = null,
+  notes = ""
+) {
+  if (!appState.ingredientUsageLogs) {
+    appState.ingredientUsageLogs = [];
+  }
+
+  const usageLog = {
+    id: `usage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    inventoryItemId: inventoryItemId,
+    quantity: parseFloat(quantity),
+    reason: reason, // 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'other'
+    orderId: orderId,
+    notes: notes,
+    timestamp: new Date().toISOString(),
+  };
+
+  appState.ingredientUsageLogs.push(usageLog);
+  console.log(
+    `Logged ingredient usage: ${quantity} of ${inventoryItemId} for ${reason}`
+  );
+
+  return usageLog;
+}
+
+/**
+ * Get all ingredient usage logs for a specific item
+ * @param {string} inventoryItemId - ID of the inventory item
+ * @param {object} options - Filter options: {startDate, endDate, reason}
+ * @returns {array} Array of usage logs
+ */
+function getIngredientUsageLogs(inventoryItemId, options = {}) {
+  if (!appState.ingredientUsageLogs) {
+    return [];
+  }
+
+  let logs = appState.ingredientUsageLogs.filter(
+    (log) => log.inventoryItemId === inventoryItemId
+  );
+
+  // Filter by date range if provided
+  if (options.startDate) {
+    logs = logs.filter((log) => log.timestamp >= options.startDate);
+  }
+  if (options.endDate) {
+    logs = logs.filter((log) => log.timestamp <= options.endDate);
+  }
+
+  // Filter by reason if provided
+  if (options.reason) {
+    logs = logs.filter((log) => log.reason === options.reason);
+  }
+
+  return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+/**
+ * Get usage summary grouped by reason
+ * @param {string} inventoryItemId - ID of the inventory item
+ * @param {object} options - Filter options: {startDate, endDate}
+ * @returns {object} Object with usage totals by reason
+ */
+function getUsageByReason(inventoryItemId, options = {}) {
+  const logs = getIngredientUsageLogs(inventoryItemId, options);
+
+  const summary = {
+    order: 0,
+    waste: 0,
+    testing: 0,
+    staff_consumption: 0,
+    spoilage: 0,
+    other: 0,
+    total: 0,
+  };
+
+  logs.forEach((log) => {
+    const reason = log.reason || "other";
+    if (summary.hasOwnProperty(reason)) {
+      summary[reason] += log.quantity;
+    } else {
+      summary.other += log.quantity;
+    }
+    summary.total += log.quantity;
+  });
+
+  return summary;
+}
+
+/**
+ * Get all usage logs (optionally filtered)
+ * @param {object} options - Filter options: {startDate, endDate, reason, inventoryItemId}
+ * @returns {array} Array of usage logs
+ */
+function getAllUsageLogs(options = {}) {
+  if (!appState.ingredientUsageLogs) {
+    return [];
+  }
+
+  let logs = [...appState.ingredientUsageLogs];
+
+  if (options.inventoryItemId) {
+    logs = logs.filter(
+      (log) => log.inventoryItemId === options.inventoryItemId
+    );
+  }
+  if (options.reason) {
+    logs = logs.filter((log) => log.reason === options.reason);
+  }
+  if (options.startDate) {
+    logs = logs.filter((log) => log.timestamp >= options.startDate);
+  }
+  if (options.endDate) {
+    logs = logs.filter((log) => log.timestamp <= options.endDate);
+  }
+
+  return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+/**
+ * Calculate trending items based on usage logs
+ * @param {number} limit - Number of top items to return
+ * @param {object} options - Filter options: {startDate, endDate, reason}
+ * @returns {array} Array of items with usage counts, sorted by usage
+ */
+function getTrendingItemsByUsage(limit = 10, options = {}) {
+  const logs = getAllUsageLogs(options);
+
+  const usageMap = {};
+  logs.forEach((log) => {
+    if (!usageMap[log.inventoryItemId]) {
+      usageMap[log.inventoryItemId] = 0;
+    }
+    usageMap[log.inventoryItemId] += log.quantity;
+  });
+
+  // Convert to array and join with inventory data
+  const trendingItems = Object.entries(usageMap).map(([itemId, totalUsage]) => {
+    const inventoryItem = appState.inventory.find((item) => item.id === itemId);
+    return {
+      id: itemId,
+      name: inventoryItem ? inventoryItem.name : "Unknown Item",
+      category: inventoryItem ? inventoryItem.category : "unknown",
+      totalUsage: totalUsage,
+      inventoryItem: inventoryItem,
+    };
+  });
+
+  // Sort by usage and limit
+  return trendingItems
+    .sort((a, b) => b.totalUsage - a.totalUsage)
+    .slice(0, limit);
+}
+
+// Export functions globally
+window.logIngredientUsage = logIngredientUsage;
+window.getIngredientUsageLogs = getIngredientUsageLogs;
+window.getUsageByReason = getUsageByReason;
+window.getAllUsageLogs = getAllUsageLogs;
+window.getTrendingItemsByUsage = getTrendingItemsByUsage;
+
+// ==================== DATA MIGRATION ====================
+
+/**
+ * Migrate existing totalUsed/total_used values to ingredientUsageLogs
+ * This should be run once when the new system is first deployed
+ */
+function migrateExistingUsageData() {
+  if (!appState.inventory) {
+    console.log("No inventory to migrate");
+    return { migrated: 0, skipped: 0 };
+  }
+
+  if (!appState.ingredientUsageLogs) {
+    appState.ingredientUsageLogs = [];
+  }
+
+  let migrated = 0;
+  let skipped = 0;
+  const migrationTimestamp = new Date().toISOString();
+
+  appState.inventory.forEach((item) => {
+    const totalUsed = item.totalUsed || item.total_used || 0;
+
+    if (totalUsed > 0) {
+      // Check if this item already has migration logs
+      const existingMigrationLog = appState.ingredientUsageLogs.find(
+        (log) =>
+          log.inventoryItemId === item.id &&
+          log.notes &&
+          log.notes.includes("[MIGRATION]")
+      );
+
+      if (!existingMigrationLog) {
+        // Create a migration log entry
+        const migrationLog = {
+          id: `usage-migration-${item.id}-${Date.now()}`,
+          inventoryItemId: item.id,
+          quantity: totalUsed,
+          reason: "other",
+          orderId: null,
+          notes: `[MIGRATION] Historical usage data migrated from totalUsed field`,
+          timestamp: migrationTimestamp,
+        };
+
+        appState.ingredientUsageLogs.push(migrationLog);
+        migrated++;
+        console.log(`Migrated ${totalUsed} usage for ${item.name}`);
+      } else {
+        skipped++;
+      }
+    }
+  });
+
+  console.log(
+    `Migration complete: ${migrated} items migrated, ${skipped} skipped (already migrated)`
+  );
+
+  if (migrated > 0) {
+    saveState();
+  }
+
+  return { migrated, skipped };
+}
+
+window.migrateExistingUsageData = migrateExistingUsageData;

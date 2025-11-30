@@ -384,15 +384,37 @@ function renderTrendingItemsChart() {
     );
   }
 
-  // Calculate trending items based on total_used (from database) or quantity as fallback
-  const trendingItems = inventoryItems
-    .map((item) => ({
-      ...item,
-      usageCount: item.totalUsed || item.total_used || 0,
-    }))
-    .filter((item) => item.usageCount > 0)
-    .sort((a, b) => b.usageCount - a.usageCount)
-    .slice(0, 10);
+  // Use new usage log system if available
+  let trendingItems = [];
+  if (
+    typeof getTrendingItemsByUsage === "function" &&
+    appState.ingredientUsageLogs &&
+    appState.ingredientUsageLogs.length > 0
+  ) {
+    // Use the new usage log system
+    const allTrending = getTrendingItemsByUsage(10, {});
+
+    // Filter by selected categories
+    trendingItems = allTrending
+      .filter((item) => {
+        if (selectedCategories.includes("all")) return true;
+        return selectedCategories.includes(item.category);
+      })
+      .slice(0, 10);
+  } else {
+    // Fallback to old totalUsed system
+    trendingItems = inventoryItems
+      .map((item) => ({
+        ...item,
+        usageCount: item.totalUsed || item.total_used || 0,
+        totalUsage: item.totalUsed || item.total_used || 0, // Normalize field name
+        name: item.name,
+        category: item.category,
+      }))
+      .filter((item) => item.usageCount > 0)
+      .sort((a, b) => b.usageCount - a.usageCount)
+      .slice(0, 10);
+  }
 
   if (trendingItems.length === 0) {
     // If no usage data, show items sorted by quantity instead
@@ -521,8 +543,11 @@ function renderTrendingItemsChart() {
     return;
   }
 
-  // Use usage-based data
-  const total = trendingItems.reduce((sum, item) => sum + item.usageCount, 0);
+  // Use usage-based data (works with both old and new systems)
+  const total = trendingItems.reduce(
+    (sum, item) => sum + (item.totalUsage || item.usageCount || 0),
+    0
+  );
 
   const colors = [
     "#f6c343",
@@ -543,7 +568,9 @@ function renderTrendingItemsChart() {
       labels: trendingItems.map((item) => item.name),
       datasets: [
         {
-          data: trendingItems.map((item) => item.usageCount),
+          data: trendingItems.map(
+            (item) => item.totalUsage || item.usageCount || 0
+          ),
           backgroundColor: colors.slice(0, trendingItems.length),
           borderColor: "#fff",
           borderWidth: 2,

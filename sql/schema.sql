@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS inventory (
   category VARCHAR(64),
   name VARCHAR(255) NOT NULL,
   quantity NUMERIC(12,2) DEFAULT 0,
+  unit VARCHAR(32) DEFAULT 'kg', -- kg, g, slices, whole, pieces, liters, ml, dozen, box, small, medium, large, other
   cost NUMERIC(12,2) DEFAULT 0,
   date_purchased DATE,
   use_by_date DATE,
@@ -67,6 +68,19 @@ CREATE TABLE IF NOT EXISTS inventory (
   last_restocked DATE,
   total_used NUMERIC(12,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Ingredient Usage Logs (new table for detailed usage tracking)
+CREATE TABLE IF NOT EXISTS ingredient_usage_logs (
+  id VARCHAR(128) NOT NULL PRIMARY KEY,
+  inventory_item_id VARCHAR(64) NOT NULL,
+  quantity NUMERIC(12,2) NOT NULL,
+  reason VARCHAR(64) NOT NULL, -- 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'other'
+  order_id VARCHAR(64),
+  notes TEXT,
+  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (inventory_item_id) REFERENCES inventory(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
 
 -- Orders

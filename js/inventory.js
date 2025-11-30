@@ -2,6 +2,7 @@
 let currentFilters = {
   search: "",
   category: "",
+  unit: "",
   status: "",
 };
 
@@ -10,7 +11,7 @@ function renderInventory() {
   setupForms();
   renderUnifiedTable();
   setupFilters();
-  setupIngredientUsageForm();
+  setupRecordUsageButton();
   updateAlert();
 }
 
@@ -21,6 +22,7 @@ function renderMetrics() {
   const totalSKUs = inventory.length;
 
   const lowStockItems = inventory.filter((item) => {
+    // Get unit-specific reorder point, fallback to 10 if not set
     const reorderPoint = item.reorderPoint || item.reorder_point || 10;
     return item.quantity < reorderPoint && item.quantity > 0;
   });
@@ -54,6 +56,7 @@ function renderMetrics() {
 }
 
 function getItemStatus(item) {
+  // Get unit-specific reorder point, fallback to 10 if not set
   const reorderPoint = item.reorderPoint || item.reorder_point || 10;
   const useByDate = item.useByDate || item.use_by_date;
 
@@ -125,13 +128,18 @@ function renderUnifiedTable() {
       }
     }
 
+    // Unit filter
+    if (currentFilters.unit && item.unit !== currentFilters.unit) {
+      return false;
+    }
+
     return true;
   });
 
   if (filteredInventory.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="10" style="text-align: center; padding: 2rem; color: #999">
+        <td colspan="9" style="text-align: center; padding: 2rem; color: #999">
           No inventory items found matching your filters
         </td>
       </tr>
@@ -146,8 +154,7 @@ function renderUnifiedTable() {
       const statusInfo = getItemStatus(item);
       const datePurchased = item.datePurchased || item.date_purchased;
       const useByDate = item.useByDate || item.use_by_date;
-      const reorderPoint = item.reorderPoint || item.reorder_point || 10;
-      const totalUsed = item.totalUsed || item.total_used || 0;
+      const unit = item.unit || "pieces";
 
       return `
       <tr>
@@ -156,11 +163,10 @@ function renderUnifiedTable() {
           item.category
         }</span></td>
         <td>${item.quantity}</td>
+        <td>${unit}</td>
         <td>${formatCurrency(item.cost)}</td>
         <td>${formatDate(datePurchased)}</td>
         <td>${formatDate(useByDate)}</td>
-        <td>${reorderPoint}</td>
-        <td>${totalUsed}</td>
         <td><span class="status ${
           statusInfo.class
         }"><span class="status-text">${statusInfo.text}</span></span></td>
@@ -202,6 +208,7 @@ function setupFilters() {
   const searchInput = document.getElementById("unified-search");
   const categoryFilter = document.getElementById("category-filter");
   const statusFilter = document.getElementById("status-filter");
+  const unitFilter = document.getElementById("unit-filter");
 
   if (searchInput && !searchInput.dataset.bound) {
     searchInput.dataset.bound = "true";
@@ -223,6 +230,14 @@ function setupFilters() {
     statusFilter.dataset.bound = "true";
     statusFilter.addEventListener("change", (e) => {
       currentFilters.status = e.target.value;
+      renderUnifiedTable();
+    });
+  }
+
+  if (unitFilter && !unitFilter.dataset.bound) {
+    unitFilter.dataset.bound = "true";
+    unitFilter.addEventListener("change", (e) => {
+      currentFilters.unit = e.target.value;
       renderUnifiedTable();
     });
   }
@@ -292,6 +307,7 @@ function setupAddModal() {
         datePurchased: data.get("datePurchased") || null,
         useByDate: data.get("useByDate") || null,
         reorderPoint: Number(data.get("reorderPoint")) || 10,
+        unit: data.get("unit") || "pieces",
         lastRestocked: new Date().toISOString().split("T")[0],
         totalUsed: 0,
       };
@@ -388,6 +404,7 @@ function setupEditModal() {
         datePurchased: data.get("datePurchased") || null,
         useByDate: data.get("useByDate") || null,
         reorderPoint: Number(data.get("reorderPoint")) || 10,
+        unit: data.get("unit") || "pieces",
       };
 
       appState.inventory[idx] = updated;
@@ -414,6 +431,7 @@ function openEditModal(item) {
   const datePurchasedField = editForm.querySelector("[name=datePurchased]");
   const useByDateField = editForm.querySelector("[name=useByDate]");
   const reorderPointField = editForm.querySelector("[name=reorderPoint]");
+  const unitField = editForm.querySelector("[name=unit]");
 
   if (categoryField) categoryField.value = item.category || "";
   if (nameField) nameField.value = item.name || "";
@@ -425,6 +443,7 @@ function openEditModal(item) {
     useByDateField.value = item.useByDate || item.use_by_date || "";
   if (reorderPointField)
     reorderPointField.value = item.reorderPoint || item.reorder_point || 10;
+  if (unitField) unitField.value = item.unit || "pieces";
 
   editModal.classList.add("active");
 }
@@ -439,72 +458,129 @@ function closeEditModal() {
   delete editForm.dataset.itemId;
 }
 
-function setupIngredientUsageForm() {
-  const form = document.getElementById("ingredient-usage-form");
-  const select = document.getElementById("ingredient-select");
+function setupRecordUsageButton() {
+  const recordUsageBtn = document.getElementById("record-usage-btn");
+  const modal = document.getElementById("usage-log-modal");
+  const closeBtn = document.getElementById("usage-log-close");
+  const form = document.getElementById("usage-log-form");
+  const select = document.getElementById("usage-item-select");
 
-  if (!form || !select) return;
+  if (!recordUsageBtn || !modal || !form || !select) return;
 
-  // Populate ingredient dropdown
-  const ingredients = (appState.inventory || []).filter(
-    (i) => i.category === "ingredients"
-  );
-  select.innerHTML = '<option value="">Choose ingredient...</option>';
-  ingredients.forEach((ing) => {
-    const opt = document.createElement("option");
-    opt.value = ing.id;
-    opt.textContent = `${ing.name} (Available: ${ing.quantity})`;
-    select.appendChild(opt);
+  // Populate ingredient dropdown with ALL inventory items
+  function populateItemSelect() {
+    const allItems = appState.inventory || [];
+    select.innerHTML = '<option value="">Choose item...</option>';
+
+    // Group by category for better UX
+    const categories = [...new Set(allItems.map((i) => i.category))].sort();
+    categories.forEach((category) => {
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = category.charAt(0).toUpperCase() + category.slice(1);
+
+      const itemsInCategory = allItems.filter((i) => i.category === category);
+      itemsInCategory.forEach((item) => {
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.dataset.unit = item.unit || 'units';
+        opt.textContent = `${item.name} (${item.quantity} ${item.unit || 'units'})`;
+        optgroup.appendChild(opt);
+      });
+
+      select.appendChild(optgroup);
+    });
+  }
+
+  // Update unit label when item is selected
+  select.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const unit = selectedOption.dataset.unit || 'units';
+    const qtyInput = document.getElementById('usage-quantity');
+    if (qtyInput) {
+      qtyInput.placeholder = `Enter quantity in ${unit}`;
+    }
   });
 
+  // Open modal
+  recordUsageBtn.addEventListener("click", () => {
+    populateItemSelect();
+    modal.classList.add("active");
+    form.reset();
+  });
+
+  // Close modal
+  closeBtn.addEventListener("click", () => {
+    modal.classList.remove("active");
+  });
+
+  // Close on backdrop click
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.classList.remove("active");
+    }
+  });
+
+  // Handle form submission
   if (form.dataset.bound) return;
   form.dataset.bound = "true";
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const data = new FormData(form);
-    const ingredientId = data.get("ingredientId");
+    const ingredientId = data.get("itemId");
     const qty = Number(data.get("quantity"));
-    const reason = data.get("reason");
+    const usageReason = data.get("reason");
+    const notes = data.get("notes") || "";
 
     const idx = appState.inventory.findIndex((i) => i.id === ingredientId);
     if (idx < 0) {
-      alert("Ingredient not found");
+      alert("Item not found");
       return;
     }
 
-    if (appState.inventory[idx].quantity < qty) {
-      alert(
-        `Insufficient quantity. Available: ${appState.inventory[idx].quantity}`
+    const item = appState.inventory[idx];
+
+    if (item.quantity < qty) {
+      alert(`Insufficient quantity. Available: ${item.quantity} ${item.unit || 'units'}`);
+      return;
+    }
+
+    // Deduct from inventory
+    item.quantity -= qty;
+
+    // Log ingredient usage with the new system
+    if (typeof logIngredientUsage === "function") {
+      logIngredientUsage(
+        ingredientId,
+        qty,
+        usageReason,
+        null, // No order ID for manual logging
+        notes || `${usageReason}: ${item.name}`
       );
-      return;
     }
 
-    // Deduct from inventory and update total used
-    appState.inventory[idx].quantity -= qty;
-    const currentTotalUsed =
-      appState.inventory[idx].totalUsed ||
-      appState.inventory[idx].total_used ||
-      0;
-    appState.inventory[idx].totalUsed = currentTotalUsed + qty;
-
-    // Record usage
-    const usageRecord = {
-      id: "usage-" + Date.now(),
-      label: appState.inventory[idx].name,
-      used: qty,
-      reason: reason || "Staff usage",
-      timestamp: new Date().toISOString(),
-    };
-
-    if (!appState.inventoryUsage) appState.inventoryUsage = [];
-    appState.inventoryUsage.push(usageRecord);
+    // Also update totalUsed for backward compatibility
+    const currentTotalUsed = item.totalUsed || item.total_used || 0;
+    item.totalUsed = currentTotalUsed + qty;
 
     saveState();
     renderInventory();
+    modal.classList.remove("active");
     form.reset();
 
-    alert(`Recorded: ${qty} of ${appState.inventory[idx].name} used`);
+    const reasonLabels = {
+      waste: "Waste",
+      spoilage: "Spoilage",
+      testing: "Testing",
+      staff_consumption: "Staff Consumption",
+      other: "Other",
+    };
+
+    alert(
+      `Logged: ${qty} ${item.unit || 'units'} of ${item.name} used for ${
+        reasonLabels[usageReason] || usageReason
+      }`
+    );
   });
 }
 

@@ -201,41 +201,6 @@
           </div>
         </section>
 
-        <!-- Use Ingredients Card -->
-        <section class="card" style="margin-bottom: 2rem">
-          <div class="section-heading">
-            <h2>Use Ingredients</h2>
-            <span class="pill">Staff Access</span>
-          </div>
-          <form id="ingredient-usage-form" style="max-width: 600px">
-            <label for="ingredient-select">Select Ingredient</label>
-            <select id="ingredient-select" name="ingredientId" required>
-              <option value="">Choose ingredient...</option>
-            </select>
-
-            <label for="usage-qty">Quantity to Use</label>
-            <input
-              id="usage-qty"
-              name="quantity"
-              type="number"
-              min="1"
-              step="1"
-              placeholder="0"
-              required
-            />
-
-            <label for="usage-reason">Reason (Optional)</label>
-            <input
-              id="usage-reason"
-              name="reason"
-              type="text"
-              placeholder="e.g., Baking batch #5"
-            />
-
-            <button class="btn btn-primary" type="submit">Record Usage</button>
-          </form>
-        </section>
-
         <!-- Unified Inventory Table -->
         <section class="table-wrapper" style="margin-top: 2rem">
           <div
@@ -288,6 +253,44 @@
                 <option value="beverages">Beverages</option>
               </select>
 
+              <!-- Unit Filter -->
+              <select
+                id="unit-filter"
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              >
+                <option value="">All Units</option>
+                <optgroup label="Weight">
+                  <option value="kg">Kilograms (kg)</option>
+                  <option value="g">Grams (g)</option>
+                </optgroup>
+                <optgroup label="Volume">
+                  <option value="liters">Liters</option>
+                  <option value="ml">Milliliters (ml)</option>
+                </optgroup>
+                <optgroup label="Count">
+                  <option value="pieces">Pieces</option>
+                  <option value="slices">Slices</option>
+                  <option value="whole">Whole</option>
+                  <option value="dozen">Dozen</option>
+                </optgroup>
+                <optgroup label="Packaging">
+                  <option value="box">Box</option>
+                  <option value="packs">Packs</option>
+                  <option value="rolls">Rolls</option>
+                  <option value="bottles">Bottles</option>
+                  <option value="cans">Cans</option>
+                </optgroup>
+                <optgroup label="Size">
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                </optgroup>
+              </select>
+
               <!-- Status Filter -->
               <select
                 id="status-filter"
@@ -311,6 +314,13 @@
               >
                 + Add Item
               </button>
+              <button
+                class="btn btn-secondary"
+                id="log-usage-btn"
+                style="white-space: nowrap"
+              >
+                Record Usage
+              </button>
             </div>
           </div>
 
@@ -320,11 +330,10 @@
                 <th>Item</th>
                 <th>Category</th>
                 <th>Qty</th>
+                <th>Unit</th>
                 <th>Cost</th>
                 <th>Purchased</th>
                 <th>Use By</th>
-                <th>Reorder Point</th>
-                <th>Total Used</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -332,7 +341,7 @@
             <tbody id="unified-inventory-tbody">
               <tr>
                 <td
-                  colspan="10"
+                  colspan="9"
                   style="text-align: center; padding: 2rem; color: #999"
                 >
                   No inventory items found
@@ -386,9 +395,40 @@
             name="quantity"
             type="number"
             min="0"
-            step="1"
+            step="0.01"
             required
           />
+
+          <label for="item-unit">Unit of Measurement</label>
+          <select id="item-unit" name="unit" required>
+            <option value="">Select unit...</option>
+            <optgroup label="Weight">
+              <option value="kg">Kilograms (kg)</option>
+              <option value="g">Grams (g)</option>
+            </optgroup>
+            <optgroup label="Volume">
+              <option value="liters">Liters</option>
+              <option value="ml">Milliliters (ml)</option>
+            </optgroup>
+            <optgroup label="Count">
+              <option value="pieces">Pieces</option>
+              <option value="slices">Slices</option>
+              <option value="whole">Whole</option>
+              <option value="dozen">Dozen</option>
+            </optgroup>
+            <optgroup label="Packaging">
+              <option value="box">Box</option>
+              <option value="packs">Packs</option>
+              <option value="rolls">Rolls</option>
+              <option value="bottles">Bottles</option>
+              <option value="cans">Cans</option>
+            </optgroup>
+            <optgroup label="Size">
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+            </optgroup>
+          </select>
 
           <label for="item-cost">Unit cost (₱)</label>
           <input
@@ -406,14 +446,14 @@
           <label for="item-use-by-date">Use By Date</label>
           <input id="item-use-by-date" name="useByDate" type="date" />
 
-          <label for="item-reorder-point">Reorder Point</label>
+          <label for="item-reorder">Reorder Point (in selected unit)</label>
           <input
-            id="item-reorder-point"
+            id="item-reorder"
             name="reorderPoint"
             type="number"
             min="0"
-            step="1"
-            placeholder="10"
+            step="0.01"
+            placeholder="0"
           />
 
           <div class="modal-card__actions">
@@ -462,9 +502,40 @@
             name="quantity"
             type="number"
             min="0"
-            step="1"
+            step="0.01"
             required
           />
+
+          <label for="edit-item-unit">Unit of Measurement</label>
+          <select id="edit-item-unit" name="unit" required>
+            <option value="">Select unit...</option>
+            <optgroup label="Weight">
+              <option value="kg">Kilograms (kg)</option>
+              <option value="g">Grams (g)</option>
+            </optgroup>
+            <optgroup label="Volume">
+              <option value="liters">Liters</option>
+              <option value="ml">Milliliters (ml)</option>
+            </optgroup>
+            <optgroup label="Count">
+              <option value="pieces">Pieces</option>
+              <option value="slices">Slices</option>
+              <option value="whole">Whole</option>
+              <option value="dozen">Dozen</option>
+            </optgroup>
+            <optgroup label="Packaging">
+              <option value="box">Box</option>
+              <option value="packs">Packs</option>
+              <option value="rolls">Rolls</option>
+              <option value="bottles">Bottles</option>
+              <option value="cans">Cans</option>
+            </optgroup>
+            <optgroup label="Size">
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+            </optgroup>
+          </select>
 
           <label for="edit-item-cost">Unit cost (₱)</label>
           <input
@@ -486,13 +557,15 @@
           <label for="edit-item-use-by-date">Use By Date</label>
           <input id="edit-item-use-by-date" name="useByDate" type="date" />
 
-          <label for="edit-item-reorder-point">Reorder Point</label>
+          <label for="edit-item-reorder-point"
+            >Reorder Point (in selected unit)</label
+          >
           <input
             id="edit-item-reorder-point"
             name="reorderPoint"
             type="number"
             min="0"
-            step="1"
+            step="0.01"
           />
 
           <div class="modal-card__actions">
@@ -504,6 +577,73 @@
               Cancel
             </button>
             <button class="btn btn-primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Log Usage Modal -->
+    <div class="modal-overlay" id="log-usage-modal">
+      <div class="modal-card">
+        <div class="modal-card__header">
+          <h2>Record Ingredient Usage</h2>
+          <button class="btn btn-outline" type="button" id="log-usage-close">
+            Close
+          </button>
+        </div>
+        <form id="log-usage-form">
+          <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem">
+            Record ingredient usage for waste, testing, staff consumption, and
+            other non-order purposes.
+          </p>
+
+          <label for="usage-ingredient-select">Select Ingredient</label>
+          <select id="usage-ingredient-select" name="ingredientId" required>
+            <option value="">Choose ingredient...</option>
+          </select>
+
+          <label for="usage-quantity">Quantity Used</label>
+          <input
+            id="usage-quantity"
+            name="quantity"
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder="0.00"
+            required
+          />
+
+          <label for="usage-reason">Usage Reason</label>
+          <select id="usage-reason" name="usageReason" required>
+            <option value="">Select reason...</option>
+            <option value="waste">Waste (dropped, spilled)</option>
+            <option value="spoilage">Spoilage (expired, contaminated)</option>
+            <option value="testing">
+              Testing (quality check, recipe development)
+            </option>
+            <option value="staff_consumption">
+              Staff Consumption (employee meals)
+            </option>
+            <option value="other">Other</option>
+          </select>
+
+          <label for="usage-notes-field">Notes (Optional)</label>
+          <textarea
+            id="usage-notes-field"
+            name="notes"
+            rows="2"
+            placeholder="Additional details about this usage..."
+          ></textarea>
+
+          <div class="modal-card__actions">
+            <button
+              class="btn btn-secondary"
+              type="button"
+              id="log-usage-cancel"
+            >
+              Cancel
+            </button>
+            <button class="btn btn-primary" type="submit">Log Usage</button>
           </div>
         </form>
       </div>

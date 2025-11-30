@@ -56,8 +56,20 @@ function renderOrders() {
         if (it.source === "inventory" || it.source === "supplies") {
           const inv = appState.inventory.find((i) => i.id === it.id);
           if (inv) {
+            // Deduct from inventory
             inv.quantity = Number(inv.quantity || 0) - Number(it.qty || 0);
             if (inv.quantity < 0) inv.quantity = 0;
+
+            // Log ingredient usage for this order
+            if (typeof logIngredientUsage === "function") {
+              logIngredientUsage(
+                inv.id,
+                Number(it.qty || 0),
+                "order",
+                `ord-${Date.now()}`, // Will be replaced with actual order ID below
+                `Order item: ${it.name}`
+              );
+            }
           }
         }
       });
@@ -75,6 +87,17 @@ function renderOrders() {
         timestamp: new Date().toISOString(),
         servedAt: null,
       };
+
+      // Update usage logs with correct order ID
+      if (appState.ingredientUsageLogs && itemsArr.length > 0) {
+        const recentLogs = appState.ingredientUsageLogs.slice(-itemsArr.length);
+        recentLogs.forEach((log) => {
+          if (log.orderId && log.orderId.startsWith("ord-")) {
+            log.orderId = payload.id;
+          }
+        });
+      }
+
       appState.orders.unshift(payload);
       saveState();
       form.reset();
