@@ -29,7 +29,7 @@
             data-section="employees"
             data-role="admin,manager"
             data-hide-when-denied="true"
-            >Team</a
+            >Users</a
           >
           <a
             href="inventory.html"
@@ -238,82 +238,79 @@
         <!-- Unified Inventory Table -->
         <section class="table-wrapper" style="margin-top: 2rem">
           <div
-            class="section-heading"
             style="
-              margin-bottom: 1rem;
-              align-items: center;
+              display: flex;
               justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1rem;
+              gap: 1rem;
             "
           >
             <div>
-              <h2>All Inventory Items</h2>
+              <h2 style="margin: 0 0 0.25rem 0">All Inventory Items</h2>
               <span class="pill">Unified View</span>
             </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center">
+            <div
+              style="
+                display: flex;
+                gap: 0.75rem;
+                align-items: center;
+                flex-wrap: nowrap;
+              "
+            >
+              <!-- Search Bar -->
+              <input
+                type="search"
+                id="unified-search"
+                placeholder="Search items..."
+                style="
+                  padding: 0.5rem 1rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  min-width: 250px;
+                "
+              />
+
+              <!-- Category Filter -->
+              <select
+                id="category-filter"
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              >
+                <option value="">All Categories</option>
+                <option value="cakes & pastries">Cakes & Pastries</option>
+                <option value="ingredients">Ingredients</option>
+                <option value="supplies">Supplies</option>
+                <option value="beverages">Beverages</option>
+              </select>
+
+              <!-- Status Filter -->
+              <select
+                id="status-filter"
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              >
+                <option value="">All Status</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="expiring-soon">Expiring Soon</option>
+              </select>
+
               <button
                 class="btn btn-primary"
                 id="add-item-btn"
                 data-role="admin"
+                style="white-space: nowrap"
               >
                 + Add Item
               </button>
             </div>
-          </div>
-
-          <!-- Filters Row -->
-          <div
-            style="
-              display: flex;
-              gap: 0.75rem;
-              align-items: center;
-              flex-wrap: wrap;
-              margin-bottom: 1rem;
-            "
-          >
-            <!-- Search Bar -->
-            <input
-              type="search"
-              id="unified-search"
-              placeholder="Search items..."
-              style="
-                padding: 0.5rem 1rem;
-                border: 1px solid #ddd;
-                border-radius: 0.375rem;
-                flex: 1;
-                min-width: 200px;
-              "
-            />
-
-            <!-- Category Filter -->
-            <select
-              id="category-filter"
-              style="
-                padding: 0.5rem 1rem;
-                border: 1px solid #ddd;
-                border-radius: 0.375rem;
-              "
-            >
-              <option value="">All Categories</option>
-              <option value="cakes & pastries">Cakes & Pastries</option>
-              <option value="ingredients">Ingredients</option>
-              <option value="supplies">Supplies</option>
-              <option value="beverages">Beverages</option>
-            </select>
-
-            <!-- Status Filter -->
-            <select
-              id="status-filter"
-              style="
-                padding: 0.5rem 1rem;
-                border: 1px solid #ddd;
-                border-radius: 0.375rem;
-              "
-            >
-              <option value="">All Status</option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="expiring-soon">Expiring Soon</option>
-            </select>
           </div>
 
           <table id="unified-inventory-table">

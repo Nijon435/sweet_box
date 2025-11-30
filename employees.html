@@ -29,7 +29,7 @@
             data-section="employees"
             data-role="admin,manager"
             data-hide-when-denied="true"
-            >Team</a
+            >Users</a
           >
           <a
             href="inventory.html"
@@ -132,24 +132,11 @@
           </div>
         </section>
 
-        <!-- Team Snapshot - Compact Summary -->
+        <!-- Users Overview - Compact Summary -->
         <section class="card section-mt-1-5">
           <div class="section-heading">
-            <h2>Team Overview</h2>
-            <div style="display: flex; gap: 0.5rem; align-items: center">
-              <span class="pill">Live</span>
-              <button
-                class="btn btn-primary"
-                id="add-access-btn"
-                style="
-                  white-space: nowrap;
-                  padding: 0.4rem 0.8rem;
-                  font-size: 0.875rem;
-                "
-              >
-                + Add Access
-              </button>
-            </div>
+            <h2>Users Overview</h2>
+            <span class="pill">Live</span>
           </div>
 
           <div
@@ -464,6 +451,20 @@
                 <option value="front_staff">Front Staff</option>
                 <option value="delivery_staff">Delivery Staff</option>
               </select>
+              <button
+                class="btn btn-primary"
+                id="add-employee-btn"
+                style="white-space: nowrap"
+              >
+                + Add Employee
+              </button>
+              <button
+                class="btn btn-secondary"
+                id="add-access-btn"
+                style="white-space: nowrap"
+              >
+                + Add Access
+              </button>
               <select
                 id="status-filter"
                 style="
@@ -476,13 +477,6 @@
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
-              <button
-                class="btn btn-primary"
-                id="add-employee-btn"
-                style="white-space: nowrap"
-              >
-                + Add Employee
-              </button>
             </div>
           </div>
           <table id="employee-table">

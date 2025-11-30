@@ -242,6 +242,299 @@ function renderDashboard() {
   }
 }
 
+// Render Purchase & Sales Bar Chart
+function renderPurchaseSalesChart() {
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Calculate monthly sales from salesHistory
+  const monthlySales = Array(12).fill(0);
+  const monthlyPurchases = Array(12).fill(0);
+
+  appState.salesHistory.forEach((sale) => {
+    const date = new Date(sale.date);
+    const month = date.getMonth();
+    monthlySales[month] += sale.total || 0;
+  });
+
+  // Calculate purchases from inventory date_purchased
+  appState.inventory.forEach((item) => {
+    if (item.datePurchased) {
+      const date = new Date(item.datePurchased);
+      const month = date.getMonth();
+      const purchaseValue = (item.quantity || 0) * (item.cost || 0);
+      monthlyPurchases[month] += purchaseValue;
+    }
+  });
+
+  ChartManager.plot("purchaseSalesChart", {
+    type: "bar",
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: "Purchases",
+          data: monthlyPurchases,
+          backgroundColor: "#94a3b8",
+          borderColor: "#64748b",
+          borderWidth: 1,
+        },
+        {
+          label: "Sales",
+          data: monthlySales,
+          backgroundColor: "#4ade80",
+          borderColor: "#22c55e",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "top" },
+        title: { display: false },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "₱" + value.toLocaleString();
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// Render Recently Added Items
+function renderRecentlyAddedItems() {
+  const tbody = document.getElementById("recently-added-items");
+  if (!tbody) return;
+
+  const recentItems = [...appState.inventory]
+    .filter((item) => item.createdAt || item.datePurchased)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.datePurchased);
+      const dateB = new Date(b.createdAt || b.datePurchased);
+      return dateB - dateA;
+    })
+    .slice(0, 5);
+
+  if (recentItems.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="3" style="text-align: center; padding: 1rem; color: #888;">No recent items</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = recentItems
+    .map((item, index) => {
+      const salesPrice = item.cost ? (item.cost * 1.5).toFixed(2) : "0.00";
+      return `
+        <tr>
+          <td style="padding: 0.5rem;">${index + 1}</td>
+          <td style="padding: 0.5rem;">${item.name}</td>
+          <td style="padding: 0.5rem; text-align: right;">₱${parseFloat(
+            salesPrice
+          ).toLocaleString("en-PH", { minimumFractionDigits: 2 })}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+// Render Expired Items
+function renderExpiredItems() {
+  const tbody = document.getElementById("expired-items");
+  if (!tbody) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const expiredItems = appState.inventory
+    .filter((item) => {
+      if (!item.useByDate) return false;
+      const expireDate = new Date(item.useByDate);
+      return expireDate < today;
+    })
+    .slice(0, 2);
+
+  if (expiredItems.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: #888;">No expired items</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = expiredItems
+    .map((item, index) => {
+      const expireDate = new Date(item.useByDate);
+      return `
+        <tr>
+          <td style="padding: 0.5rem;">${index + 1}</td>
+          <td style="padding: 0.5rem;">${item.id || "N/A"}</td>
+          <td style="padding: 0.5rem;">${item.name}</td>
+          <td style="padding: 0.5rem;">${item.category}</td>
+          <td style="padding: 0.5rem;">${expireDate.toLocaleDateString(
+            "en-US",
+            { month: "short", day: "numeric", year: "numeric" }
+          )}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+// Render Stock Alert
+function renderStockAlert() {
+  const tbody = document.getElementById("stock-alert-items");
+  if (!tbody) return;
+
+  const lowStockItems = appState.inventory
+    .filter((item) => {
+      const qty = item.quantity || 0;
+      const reorderPoint = item.reorderPoint || 10;
+      return qty <= reorderPoint && qty > 0;
+    })
+    .slice(0, 2);
+
+  if (lowStockItems.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="4" style="text-align: center; padding: 1rem; color: #888;">All items in stock</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lowStockItems
+    .map(
+      (item, index) => `
+      <tr>
+        <td style="padding: 0.5rem;">${index + 1}</td>
+        <td style="padding: 0.5rem;">${item.name}</td>
+        <td style="padding: 0.5rem;">${item.category}</td>
+        <td style="padding: 0.5rem; text-align: right; color: #f97316; font-weight: 600;">${item.quantity.toFixed(
+          2
+        )}</td>
+      </tr>
+    `
+    )
+    .join("");
+}
+
+// Render Top 10 Trending Items Pie Chart
+function renderTrendingItemsChart() {
+  // Calculate trending items based on total_used or sales
+  const trendingItems = [...appState.inventory]
+    .filter((item) => item.totalUsed && item.totalUsed > 0)
+    .sort((a, b) => (b.totalUsed || 0) - (a.totalUsed || 0))
+    .slice(0, 10);
+
+  if (trendingItems.length === 0) {
+    // Show placeholder if no data
+    ChartManager.plot("trendingItemsChart", {
+      type: "pie",
+      data: {
+        labels: ["No Data"],
+        datasets: [
+          {
+            data: [1],
+            backgroundColor: ["#e5e7eb"],
+          },
+        ],
+      },
+      options: {
+        plugins: {
+          legend: { position: "right" },
+        },
+      },
+    });
+    return;
+  }
+
+  const total = trendingItems.reduce(
+    (sum, item) => sum + (item.totalUsed || 0),
+    0
+  );
+
+  const colors = [
+    "#60a5fa",
+    "#1f2937",
+    "#4ade80",
+    "#fb923c",
+    "#f472b6",
+    "#a78bfa",
+    "#fbbf24",
+    "#ef4444",
+    "#14b8a6",
+    "#8b5cf6",
+  ];
+
+  ChartManager.plot("trendingItemsChart", {
+    type: "pie",
+    data: {
+      labels: trendingItems.map((item) => {
+        const percentage = ((item.totalUsed / total) * 100).toFixed(1);
+        return `${item.name}: ${percentage} %`;
+      }),
+      datasets: [
+        {
+          data: trendingItems.map((item) => item.totalUsed),
+          backgroundColor: colors.slice(0, trendingItems.length),
+          borderColor: "#fff",
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            padding: 15,
+            font: { size: 11 },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const value = context.parsed;
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${context.label}: ${value.toFixed(
+                2
+              )} units (${percentage}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// Update main renderDashboard to call new functions
+const originalRenderDashboard = renderDashboard;
+renderDashboard = function () {
+  originalRenderDashboard();
+
+  // Render new dashboard components
+  renderPurchaseSalesChart();
+  renderRecentlyAddedItems();
+  renderExpiredItems();
+  renderStockAlert();
+  renderTrendingItemsChart();
+};
+
 // register renderer
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["dashboard"] = renderDashboard;
