@@ -356,6 +356,44 @@ def parse_time(time_str):
     except:
         return None
 
+@app.post("/api/requests")
+async def create_request(request: dict):
+    """Create a new leave or profile edit request"""
+    try:
+        logger.info(f"Creating new request: {request}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        # Insert request into database
+        await conn.execute(
+            """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+               ON CONFLICT (id) DO NOTHING""",
+            request.get("id"),
+            request.get("employeeId"),
+            request.get("requestType"),
+            parse_date(request.get("startDate")),
+            parse_date(request.get("endDate")),
+            request.get("reason"),
+            json.dumps(request.get("requestedChanges")) if request.get("requestedChanges") else None,
+            request.get("status", "pending"),
+            parse_timestamp(request.get("requestedAt")),
+            request.get("reviewedBy"),
+            parse_timestamp(request.get("reviewedAt"))
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully created request {request.get('id')}")
+        return {"success": True, "id": request.get("id")}
+    except Exception as e:
+        logger.error(f"Error creating request: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/state")
 async def save_state(state: dict):
     try:

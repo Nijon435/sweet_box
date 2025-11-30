@@ -746,7 +746,7 @@ function ordersPreviousPage() {
   if (ordersCurrentPage > 1) {
     ordersCurrentPage--;
     renderOrders();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 
@@ -758,7 +758,7 @@ function ordersNextPage() {
   if (ordersCurrentPage < totalPages) {
     ordersCurrentPage++;
     renderOrders();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 

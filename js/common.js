@@ -911,16 +911,6 @@ function initApp() {
       recalculateSalesHistory();
     }
 
-    // Auto-migrate existing usage data - DISABLED (already migrated to database)
-    // if (typeof migrateExistingUsageData === "function") {
-    //   const migrationResult = migrateExistingUsageData();
-    //   if (migrationResult.migrated > 0) {
-    //     console.log(
-    //       `✅ Migrated ${migrationResult.migrated} ingredient usage records to new system`
-    //     );
-    //   }
-    // }
-
     const page = document.body.dataset.page;
     if (page === "login") return;
 
@@ -1112,7 +1102,7 @@ function showLoadingScreen() {
     loader = document.createElement("div");
     loader.id = "app-loading-screen";
     loader.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f5dc; display: flex; align-items: center; justify-content: center; z-index: 9999;";
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; align-items: center; justify-content: center; z-index: 9999;";
     loader.innerHTML = `
       <div class="loader"></div>
       <style>
@@ -1343,15 +1333,28 @@ function openEditProfileModal() {
       appState.requests = appState.requests || [];
       appState.requests.push(newRequest);
 
-      saveState();
-      modal.remove();
+      // Save to database via API
+      fetch(`${API_BASE}/api/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRequest),
+      })
+        .then((res) => res.json())
+        .then(() => {
+          saveState();
+          modal.remove();
 
-      const toast = document.createElement("div");
-      toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #2196F3; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-      toast.textContent = "Request has been sent to admin for approval!";
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+          const toast = document.createElement("div");
+          toast.style.cssText =
+            "position: fixed; top: 20px; right: 20px; background: #2196F3; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+          toast.textContent = "Request has been sent to admin for approval!";
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+        })
+        .catch((error) => {
+          console.error("Error saving request:", error);
+          alert("Failed to save request. Please try again.");
+        });
     }
   });
 }

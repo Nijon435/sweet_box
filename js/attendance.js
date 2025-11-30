@@ -573,10 +573,23 @@ function openRequestLeaveModal(user) {
     appState.requests.push(newLeaveRequest);
     console.log("📝 Leave request created:", newLeaveRequest);
     console.log("📋 Total requests:", appState.requests.length);
-    saveState();
 
-    modal.remove();
-    alert("Leave request submitted successfully! Awaiting admin approval.");
+    // Save to database via API
+    fetch(`${API_BASE}/api/requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newLeaveRequest),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        saveState();
+        modal.remove();
+        alert("Leave request submitted successfully! Awaiting admin approval.");
+      })
+      .catch((error) => {
+        console.error("Error saving request:", error);
+        alert("Failed to save request. Please try again.");
+      });
   });
 }
 
@@ -610,7 +623,7 @@ function attendancePreviousPage() {
   if (attendanceCurrentPage > 1) {
     attendanceCurrentPage--;
     renderAttendance();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 
@@ -630,7 +643,7 @@ function attendanceNextPage() {
   if (attendanceCurrentPage < totalPages) {
     attendanceCurrentPage++;
     renderAttendance();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 
