@@ -888,13 +888,21 @@ function renderLeaveApprovals() {
         // Profile edit request
         const changes =
           request.requestedChanges || request.requested_changes || {};
+        
+        // Field label mapping for better display
+        const fieldLabels = {
+          name: "Name",
+          email: "Email",
+          phone: "Phone",
+          role: "Role",
+          shiftStart: "Shift Start"
+        };
+        
         const changesList = Object.entries(changes)
           .filter(([key, value]) => value && key !== "password")
           .map(([key, value]) => {
-            const label =
-              key.charAt(0).toUpperCase() +
-              key.slice(1).replace(/([A-Z])/g, " $1");
-            const currentValue = employee ? employee[key] : "N/A";
+            const label = fieldLabels[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1");
+            const currentValue = employee ? (employee[key] || employee[key.toLowerCase()] || "N/A") : "N/A";
             return `<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>${label}:</strong> ${currentValue} → ${value}</div>`;
           })
           .join("");
