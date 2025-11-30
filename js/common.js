@@ -905,15 +905,15 @@ function initApp() {
       recalculateSalesHistory();
     }
 
-    // Auto-migrate existing usage data (runs once)
-    if (typeof migrateExistingUsageData === "function") {
-      const migrationResult = migrateExistingUsageData();
-      if (migrationResult.migrated > 0) {
-        console.log(
-          `✅ Migrated ${migrationResult.migrated} ingredient usage records to new system`
-        );
-      }
-    }
+    // Auto-migrate existing usage data - DISABLED (already migrated to database)
+    // if (typeof migrateExistingUsageData === "function") {
+    //   const migrationResult = migrateExistingUsageData();
+    //   if (migrationResult.migrated > 0) {
+    //     console.log(
+    //       `✅ Migrated ${migrationResult.migrated} ingredient usage records to new system`
+    //     );
+    //   }
+    // }
 
     const page = document.body.dataset.page;
     if (page === "login") return;
