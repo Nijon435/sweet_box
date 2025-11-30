@@ -179,6 +179,11 @@ let isSyncing = false;
 async function syncStateToDatabase() {
   if (isSyncing) return;
 
+  // TEMPORARY: Disable auto-sync to prevent data overwrites during deployment
+  // Remove this check after confirming dates are stable
+  console.warn("Database sync is temporarily disabled to preserve date fields");
+  return;
+
   try {
     isSyncing = true;
     const endpoint =
