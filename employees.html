@@ -171,6 +171,20 @@
                   title="Admin"
                 ></div>
                 <div
+                  id="permission-bar-manager"
+                  style="
+                    background: #9c27b0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    color: white;
+                    transition: all 0.3s;
+                  "
+                  title="Manager"
+                ></div>
+                <div
                   id="permission-bar-kitchen"
                   style="
                     background: #ff9800;
@@ -239,6 +253,18 @@
                     style="
                       width: 12px;
                       height: 12px;
+                      background: #9c27b0;
+                      border-radius: 2px;
+                      display: inline-block;
+                    "
+                  ></span>
+                  <span id="permission-legend-manager">0 Manager</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem">
+                  <span
+                    style="
+                      width: 12px;
+                      height: 12px;
                       background: #ff9800;
                       border-radius: 2px;
                       display: inline-block;
@@ -276,7 +302,7 @@
             <!-- Leave Approval (20%) -->
             <div style="flex: 1; min-width: 250px">
               <strong
-                style="display: block; margin-bottom: 0.75rem; color: #555"
+                style="display: block; margin-bottom: 0.75rem; color: #555; text-align: center;"
                 >Requests</strong
               >
               <div

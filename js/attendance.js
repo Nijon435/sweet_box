@@ -542,6 +542,7 @@ function openRequestLeaveModal(user) {
     const newLeaveRequest = {
       id: `leave-${Date.now()}`,
       employeeId: user.id,
+      requestType: "leave",
       startDate,
       endDate,
       reason,

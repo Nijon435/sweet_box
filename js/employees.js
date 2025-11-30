@@ -490,6 +490,7 @@ function updateTeamOverview() {
   // Count by permission
   const permissionCounts = {
     admin: users.filter((u) => u.permission === "admin").length,
+    manager: users.filter((u) => u.permission === "manager").length,
     kitchen_staff: users.filter((u) => u.permission === "kitchen_staff").length,
     front_staff: users.filter((u) => u.permission === "front_staff").length,
     delivery_staff: users.filter((u) => u.permission === "delivery_staff")
@@ -498,11 +499,13 @@ function updateTeamOverview() {
 
   // Update permission bar widths and labels
   const adminBar = document.getElementById("permission-bar-admin");
+  const managerBar = document.getElementById("permission-bar-manager");
   const kitchenBar = document.getElementById("permission-bar-kitchen");
   const frontBar = document.getElementById("permission-bar-front");
   const deliveryBar = document.getElementById("permission-bar-delivery");
 
   const adminPct = (permissionCounts.admin / total) * 100;
+  const managerPct = (permissionCounts.manager / total) * 100;
   const kitchenPct = (permissionCounts.kitchen_staff / total) * 100;
   const frontPct = (permissionCounts.front_staff / total) * 100;
   const deliveryPct = (permissionCounts.delivery_staff / total) * 100;
@@ -512,6 +515,12 @@ function updateTeamOverview() {
     adminBar.textContent =
       permissionCounts.admin > 0 ? permissionCounts.admin : "";
     adminBar.style.display = adminPct === 0 ? "none" : "flex";
+  }
+  if (managerBar) {
+    managerBar.style.width = `${managerPct}%`;
+    managerBar.textContent =
+      permissionCounts.manager > 0 ? permissionCounts.manager : "";
+    managerBar.style.display = managerPct === 0 ? "none" : "flex";
   }
   if (kitchenBar) {
     kitchenBar.style.width = `${kitchenPct}%`;
@@ -536,11 +545,13 @@ function updateTeamOverview() {
 
   // Update legend
   const adminLegend = document.getElementById("permission-legend-admin");
+  const managerLegend = document.getElementById("permission-legend-manager");
   const kitchenLegend = document.getElementById("permission-legend-kitchen");
   const frontLegend = document.getElementById("permission-legend-front");
   const deliveryLegend = document.getElementById("permission-legend-delivery");
 
   if (adminLegend) adminLegend.textContent = `${permissionCounts.admin} Admin`;
+  if (managerLegend) managerLegend.textContent = `${permissionCounts.manager} Manager`;
   if (kitchenLegend)
     kitchenLegend.textContent = `${permissionCounts.kitchen_staff} Kitchen`;
   if (frontLegend)
