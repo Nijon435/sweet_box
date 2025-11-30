@@ -1,4 +1,4 @@
-function renderUserPermissions() {
+function renderUserAccess() {
   const tbody = document.getElementById("user-permissions-body");
   if (!tbody) return;
 
@@ -15,19 +15,15 @@ function renderUserPermissions() {
   appState.users.forEach((user) => {
     const row = document.createElement("tr");
 
-    const permissionLabel = (user.permission || "kitchen_staff").replace(
-      "_",
-      " "
-    );
-    const permissionClass =
-      user.permission === "admin" ? "chip-primary" : "chip";
+    const accessLabel = (user.permission || "kitchen_staff").replace("_", " ");
+    const accessClass = user.permission === "admin" ? "chip-primary" : "chip";
 
     row.innerHTML = `
       <td><strong>${user.name}</strong></td>
       <td>${user.email}</td>
-      <td><span class="${permissionClass}">${permissionLabel}</span></td>
+      <td><span class="${accessClass}">${accessLabel}</span></td>
       <td>
-        <button class="btn btn-outline btn-sm" onclick="editUserPermissions('${
+        <button class="btn btn-outline btn-sm" onclick="editUserAccess('${
           user.id
         }')" ${
       !isAdminOrManager() ? "disabled" : ""
@@ -43,7 +39,7 @@ function renderUserPermissions() {
   });
 }
 
-window.editUserPermissions = function (userId) {
+window.editUserAccess = function (userId) {
   const user = appState.users.find((u) => u.id === userId);
   if (!user) {
     alert("User not found");
@@ -58,7 +54,7 @@ window.editUserPermissions = function (userId) {
         <h3>Edit User: ${user.name}</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
       </div>
-      <form id="edit-user-permissions-form">
+      <form id="edit-user-access-form">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
             <label>Name</label>
@@ -83,7 +79,7 @@ window.editUserPermissions = function (userId) {
             <input type="text" name="role" value="${user.role}" required>
           </div>
           <div>
-            <label>Permission Level</label>
+            <label>Access Level</label>
             <select name="permission" required>
               <option value="admin" ${
                 user.permission === "admin" ? "selected" : ""
@@ -139,7 +135,7 @@ window.editUserPermissions = function (userId) {
 
   document.body.appendChild(modal);
 
-  const form = modal.querySelector("#edit-user-permissions-form");
+  const form = modal.querySelector("#edit-user-access-form");
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const formData = new FormData(form);
@@ -188,8 +184,8 @@ window.saveUserRole = function (userId) {
 };
 
 function renderEmployees() {
-  // Render user permissions table
-  renderUserPermissions();
+  // Render user access table
+  renderUserAccess();
 
   const form = document.getElementById("employee-form");
   const roleSelect = document.getElementById("employee-role");
@@ -308,15 +304,16 @@ function renderEmployees() {
         const hireDate = employee.hireDate
           ? new Date(employee.hireDate).toLocaleDateString()
           : "--";
-        const permissionLabel = (
-          employee.permission || "kitchen_staff"
-        ).replace("_", " ");
+        const accessLabel = (employee.permission || "kitchen_staff").replace(
+          "_",
+          " "
+        );
         row.innerHTML = `
         <td><strong>${employee.name}</strong></td>
         <td>${employee.email || "--"}</td>
         <td>${employee.phone || "--"}</td>
         <td>${employee.role}</td>
-        <td><span class="chip">${permissionLabel}</span></td>
+        <td><span class="chip">${accessLabel}</span></td>
         <td>${employee.shiftStart || "--"}</td>
         <td>${hireDate}</td>
         <td><span class="chip ${
@@ -402,7 +399,7 @@ function renderEmployees() {
               <input type="text" name="role" value="${user.role}" required>
             </div>
             <div>
-              <label>Permission</label>
+              <label>Access</label>
               <select name="permission" required>
                 <option value="admin" ${
                   user.permission === "admin" ? "selected" : ""
@@ -483,15 +480,15 @@ function renderEmployees() {
   renderLeaveApprovals();
 }
 
-// Update team overview with permission distribution and stats
+// Update team overview with access distribution and stats
 function updateTeamOverview() {
   const users = appState.users || [];
   const total = users.length;
 
   if (total === 0) return;
 
-  // Count by permission
-  const permissionCounts = {
+  // Count by access level
+  const accessCounts = {
     admin: users.filter((u) => u.permission === "admin").length,
     manager: users.filter((u) => u.permission === "manager").length,
     kitchen_staff: users.filter((u) => u.permission === "kitchen_staff").length,
@@ -500,68 +497,65 @@ function updateTeamOverview() {
       .length,
   };
 
-  // Update permission bar widths and labels
-  const adminBar = document.getElementById("permission-bar-admin");
-  const managerBar = document.getElementById("permission-bar-manager");
-  const kitchenBar = document.getElementById("permission-bar-kitchen");
-  const frontBar = document.getElementById("permission-bar-front");
-  const deliveryBar = document.getElementById("permission-bar-delivery");
+  // Update access bar widths and labels
+  const adminBar = document.getElementById("access-bar-admin");
+  const managerBar = document.getElementById("access-bar-manager");
+  const kitchenBar = document.getElementById("access-bar-kitchen");
+  const frontBar = document.getElementById("access-bar-front");
+  const deliveryBar = document.getElementById("access-bar-delivery");
 
-  const adminPct = (permissionCounts.admin / total) * 100;
-  const managerPct = (permissionCounts.manager / total) * 100;
-  const kitchenPct = (permissionCounts.kitchen_staff / total) * 100;
-  const frontPct = (permissionCounts.front_staff / total) * 100;
-  const deliveryPct = (permissionCounts.delivery_staff / total) * 100;
+  const adminPct = (accessCounts.admin / total) * 100;
+  const managerPct = (accessCounts.manager / total) * 100;
+  const kitchenPct = (accessCounts.kitchen_staff / total) * 100;
+  const frontPct = (accessCounts.front_staff / total) * 100;
+  const deliveryPct = (accessCounts.delivery_staff / total) * 100;
 
   if (adminBar) {
     adminBar.style.width = `${adminPct}%`;
-    adminBar.textContent =
-      permissionCounts.admin > 0 ? permissionCounts.admin : "";
+    adminBar.textContent = accessCounts.admin > 0 ? accessCounts.admin : "";
     adminBar.style.display = adminPct === 0 ? "none" : "flex";
   }
   if (managerBar) {
     managerBar.style.width = `${managerPct}%`;
     managerBar.textContent =
-      permissionCounts.manager > 0 ? permissionCounts.manager : "";
+      accessCounts.manager > 0 ? accessCounts.manager : "";
     managerBar.style.display = managerPct === 0 ? "none" : "flex";
   }
   if (kitchenBar) {
     kitchenBar.style.width = `${kitchenPct}%`;
     kitchenBar.textContent =
-      permissionCounts.kitchen_staff > 0 ? permissionCounts.kitchen_staff : "";
+      accessCounts.kitchen_staff > 0 ? accessCounts.kitchen_staff : "";
     kitchenBar.style.display = kitchenPct === 0 ? "none" : "flex";
   }
   if (frontBar) {
     frontBar.style.width = `${frontPct}%`;
     frontBar.textContent =
-      permissionCounts.front_staff > 0 ? permissionCounts.front_staff : "";
+      accessCounts.front_staff > 0 ? accessCounts.front_staff : "";
     frontBar.style.display = frontPct === 0 ? "none" : "flex";
   }
   if (deliveryBar) {
     deliveryBar.style.width = `${deliveryPct}%`;
     deliveryBar.textContent =
-      permissionCounts.delivery_staff > 0
-        ? permissionCounts.delivery_staff
-        : "";
+      accessCounts.delivery_staff > 0 ? accessCounts.delivery_staff : "";
     deliveryBar.style.display = deliveryPct === 0 ? "none" : "flex";
   }
 
   // Update legend
-  const adminLegend = document.getElementById("permission-legend-admin");
-  const managerLegend = document.getElementById("permission-legend-manager");
-  const kitchenLegend = document.getElementById("permission-legend-kitchen");
-  const frontLegend = document.getElementById("permission-legend-front");
-  const deliveryLegend = document.getElementById("permission-legend-delivery");
+  const adminLegend = document.getElementById("access-legend-admin");
+  const managerLegend = document.getElementById("access-legend-manager");
+  const kitchenLegend = document.getElementById("access-legend-kitchen");
+  const frontLegend = document.getElementById("access-legend-front");
+  const deliveryLegend = document.getElementById("access-legend-delivery");
 
-  if (adminLegend) adminLegend.textContent = `${permissionCounts.admin} Admin`;
+  if (adminLegend) adminLegend.textContent = `${accessCounts.admin} Admin`;
   if (managerLegend)
-    managerLegend.textContent = `${permissionCounts.manager} Manager`;
+    managerLegend.textContent = `${accessCounts.manager} Manager`;
   if (kitchenLegend)
-    kitchenLegend.textContent = `${permissionCounts.kitchen_staff} Kitchen`;
+    kitchenLegend.textContent = `${accessCounts.kitchen_staff} Kitchen`;
   if (frontLegend)
-    frontLegend.textContent = `${permissionCounts.front_staff} Front`;
+    frontLegend.textContent = `${accessCounts.front_staff} Front`;
   if (deliveryLegend)
-    deliveryLegend.textContent = `${permissionCounts.delivery_staff} Delivery`;
+    deliveryLegend.textContent = `${accessCounts.delivery_staff} Delivery`;
 
   // Calculate active rate
   const activeCount = users.filter((u) => u.status === "active").length;
@@ -668,7 +662,7 @@ function updateQuickMetrics() {
 // Attach handlers for search, filters, and add employee button
 function attachQuickActionHandlers() {
   const searchInput = document.getElementById("staff-search");
-  const permissionFilter = document.getElementById("permission-filter");
+  const accessFilter = document.getElementById("access-filter");
   const statusFilter = document.getElementById("status-filter");
   const addEmployeeBtn = document.getElementById("add-employee-btn");
 
@@ -677,9 +671,9 @@ function attachQuickActionHandlers() {
     searchInput.addEventListener("input", filterEmployeeRoster);
   }
 
-  if (permissionFilter && !permissionFilter.dataset.bound) {
-    permissionFilter.dataset.bound = "true";
-    permissionFilter.addEventListener("change", filterEmployeeRoster);
+  if (accessFilter && !accessFilter.dataset.bound) {
+    accessFilter.dataset.bound = "true";
+    accessFilter.addEventListener("change", filterEmployeeRoster);
   }
 
   if (statusFilter && !statusFilter.dataset.bound) {
@@ -696,11 +690,11 @@ function attachQuickActionHandlers() {
 // Filter employee roster based on search and filters
 function filterEmployeeRoster() {
   const searchInput = document.getElementById("staff-search");
-  const permissionFilter = document.getElementById("permission-filter");
+  const accessFilter = document.getElementById("access-filter");
   const statusFilter = document.getElementById("status-filter");
 
   const searchTerm = searchInput?.value.toLowerCase() || "";
-  const permissionValue = permissionFilter?.value || "";
+  const accessValue = accessFilter?.value || "";
   const statusValue = statusFilter?.value || "";
 
   const rosterBody = document
@@ -714,7 +708,7 @@ function filterEmployeeRoster() {
     const name = row.cells[0]?.textContent.toLowerCase() || "";
     const email = row.cells[1]?.textContent.toLowerCase() || "";
     const role = row.cells[3]?.textContent.toLowerCase() || "";
-    const permission = row.cells[4]?.textContent.toLowerCase() || "";
+    const access = row.cells[4]?.textContent.toLowerCase() || "";
     const status = row.cells[7]?.textContent.toLowerCase() || "";
 
     const matchesSearch =
@@ -723,15 +717,15 @@ function filterEmployeeRoster() {
       email.includes(searchTerm) ||
       role.includes(searchTerm);
 
-    const matchesPermission =
-      !permissionValue ||
-      permission.includes(permissionValue.toLowerCase().replace("_", " "));
+    const matchesAccess =
+      !accessValue ||
+      access.includes(accessValue.toLowerCase().replace("_", " "));
 
     const matchesStatus =
       !statusValue || status.includes(statusValue.toLowerCase());
 
     row.style.display =
-      matchesSearch && matchesPermission && matchesStatus ? "" : "none";
+      matchesSearch && matchesAccess && matchesStatus ? "" : "none";
   });
 }
 
@@ -775,9 +769,9 @@ function openAddEmployeeModal() {
             <input type="text" name="role" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Permission Level *</label>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Access Level *</label>
             <select name="permission" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-              <option value="">Select Permission</option>
+              <option value="">Select Access Level</option>
               <option value="admin">Admin - Full Access</option>
               <option value="front_staff" selected>Front Staff (Default)</option>
               <option value="kitchen_staff">Kitchen Staff</option>
@@ -1167,7 +1161,7 @@ window.openEditEmployeeModal = function (userId) {
             }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Permission Level *</label>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Access Level *</label>
             <select name="permission" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
               <option value="admin" ${
                 user.permission === "admin" ? "selected" : ""
@@ -1294,3 +1288,67 @@ window.deleteEmployee = function (userId) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 };
+
+// Add Access Modal Handler
+document.addEventListener("DOMContentLoaded", () => {
+  const addAccessBtn = document.getElementById("add-access-btn");
+  const addAccessModal = document.getElementById("add-access-modal");
+  const addAccessForm = document.getElementById("add-access-form");
+
+  if (addAccessBtn) {
+    addAccessBtn.addEventListener("click", () => {
+      if (!isAdmin()) {
+        alert("Only administrators can create new access levels.");
+        return;
+      }
+      addAccessModal.style.display = "flex";
+    });
+  }
+
+  if (addAccessForm) {
+    addAccessForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const formData = new FormData(addAccessForm);
+
+      const accessName = formData.get("accessName").trim();
+      const description = formData.get("description").trim();
+      const selectedPages = formData.getAll("pages");
+
+      if (selectedPages.length === 0) {
+        alert("Please select at least one page for this access level.");
+        return;
+      }
+
+      // Store the new access level configuration
+      if (!appState.accessLevels) {
+        appState.accessLevels = [];
+      }
+
+      const newAccessLevel = {
+        id: `access-${Date.now()}`,
+        name: accessName,
+        description: description,
+        pages: selectedPages,
+        createdAt: new Date().toISOString(),
+      };
+
+      appState.accessLevels.push(newAccessLevel);
+      saveState();
+
+      // Close modal and reset form
+      addAccessModal.style.display = "none";
+      addAccessForm.reset();
+
+      // Show success message
+      const toast = document.createElement("div");
+      toast.style.cssText =
+        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+      toast.textContent = `Access level "${accessName}" created successfully!`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+
+      // Optionally refresh the view
+      renderEmployees();
+    });
+  }
+});

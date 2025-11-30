@@ -231,28 +231,45 @@
               placeholder="e.g., Baking batch #5"
             />
 
-            <button class="btn btn-primary" type="submit">
-              Record Usage
-            </button>
+            <button class="btn btn-primary" type="submit">Record Usage</button>
           </form>
         </section>
 
         <!-- Unified Inventory Table -->
         <section class="table-wrapper" style="margin-top: 2rem">
-          <div class="section-heading" style="margin-bottom: 1rem; align-items: center; justify-content: space-between">
+          <div
+            class="section-heading"
+            style="
+              margin-bottom: 1rem;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
             <div>
               <h2>All Inventory Items</h2>
               <span class="pill">Unified View</span>
             </div>
             <div style="display: flex; gap: 0.75rem; align-items: center">
-              <button class="btn btn-primary" id="add-item-btn" data-role="admin">
+              <button
+                class="btn btn-primary"
+                id="add-item-btn"
+                data-role="admin"
+              >
                 + Add Item
               </button>
             </div>
           </div>
-          
+
           <!-- Filters Row -->
-          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem">
+          <div
+            style="
+              display: flex;
+              gap: 0.75rem;
+              align-items: center;
+              flex-wrap: wrap;
+              margin-bottom: 1rem;
+            "
+          >
             <!-- Search Bar -->
             <input
               type="search"
@@ -386,11 +403,7 @@
           />
 
           <label for="item-date-purchased">Date Purchased</label>
-          <input
-            id="item-date-purchased"
-            name="datePurchased"
-            type="date"
-          />
+          <input id="item-date-purchased" name="datePurchased" type="date" />
 
           <label for="item-use-by-date">Use By Date</label>
           <input id="item-use-by-date" name="useByDate" type="date" />
