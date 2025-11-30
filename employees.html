@@ -143,6 +143,7 @@
             style="
               display: grid;
               grid-template-columns: 2fr 1fr;
+              grid-template-rows: auto auto;
               gap: 1.5rem;
               align-items: start;
             "
@@ -307,7 +308,7 @@
             </div>
 
             <!-- Stats: Active Rate, Newest Hire, Average Tenure (Below Distribution) -->
-            <div style="grid-column: 1; grid-row: 1">
+            <div style="grid-column: 1; grid-row: 2">
               <div
                 style="
                   display: grid;
@@ -367,11 +368,11 @@
               </div>
             </div>
 
-            <!-- Requests Box (Right Side) -->
+            <!-- Requests Box (Right Side, Spans Both Rows) -->
             <div
               style="
                 grid-column: 2;
-                grid-row: 1;
+                grid-row: 1 / 3;
                 display: flex;
                 flex-direction: column;
               "
