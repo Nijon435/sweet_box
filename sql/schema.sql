@@ -61,6 +61,11 @@ CREATE TABLE IF NOT EXISTS inventory (
   name VARCHAR(255) NOT NULL,
   quantity NUMERIC(12,2) DEFAULT 0,
   cost NUMERIC(12,2) DEFAULT 0,
+  date_purchased DATE,
+  use_by_date DATE,
+  reorder_point NUMERIC(12,2) DEFAULT 10,
+  last_restocked DATE,
+  total_used NUMERIC(12,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

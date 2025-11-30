@@ -90,6 +90,33 @@
 
         <section class="alert-panel" id="inventory-alert"></section>
 
+        <!-- Inventory Metrics Overview -->
+        <section class="card" style="margin-bottom: 2rem">
+          <div class="section-heading">
+            <h2>Inventory Metrics</h2>
+            <span class="pill">Live</span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem">
+            <div style="text-align: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem">
+              <small style="color: #666; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Total SKUs</small>
+              <strong style="font-size: 1.75rem; color: #333" id="metric-total-skus">0</strong>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: #fff3cd; border-radius: 0.5rem">
+              <small style="color: #856404; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Low Stock Items</small>
+              <strong style="font-size: 1.75rem; color: #856404" id="metric-low-stock">0</strong>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: #f8d7da; border-radius: 0.5rem">
+              <small style="color: #721c24; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Expiring Soon</small>
+              <strong style="font-size: 1.75rem; color: #721c24" id="metric-expiring-soon">0</strong>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: #d1ecf1; border-radius: 0.5rem">
+              <small style="color: #0c5460; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Total Inventory Value</small>
+              <strong style="font-size: 1.75rem; color: #0c5460" id="metric-total-value">₱0.00</strong>
+            </div>
+          </div>
+        </section>
+
         <section class="split">
           <article class="card">
             <div class="section-heading">
@@ -135,6 +162,30 @@
                 required
               />
 
+              <label for="item-date-purchased">Date Purchased</label>
+              <input
+                id="item-date-purchased"
+                name="datePurchased"
+                type="date"
+              />
+
+              <label for="item-use-by-date">Use By Date</label>
+              <input
+                id="item-use-by-date"
+                name="useByDate"
+                type="date"
+              />
+
+              <label for="item-reorder-point">Reorder Point</label>
+              <input
+                id="item-reorder-point"
+                name="reorderPoint"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="10"
+              />
+
               <button class="btn btn-primary" type="submit">Save Item</button>
             </form>
           </article>
@@ -174,188 +225,70 @@
               </button>
             </form>
           </article>
-
-          <article class="card">
-            <div class="section-heading">
-              <h2>Inventory Snapshot</h2>
-              <span class="pill">Auto</span>
-            </div>
-            <ul class="list">
-              <li>
-                <span>Total SKUs</span
-                ><strong id="inventory-total">0 products</strong>
-              </li>
-              <li class="expandable" id="low-stock-toggle">
-                <div class="list-header">
-                  <span>Low stock alerts</span>
-                  <div>
-                    <strong id="inventory-low">0 low stock</strong>
-                    <span class="expand-icon">▼</span>
-                  </div>
-                </div>
-                <div class="list-content" id="low-stock-items"></div>
-              </li>
-              <li class="expandable" id="total-value-toggle">
-                <div class="list-header">
-                  <span>Total value</span>
-                  <div>
-                    <strong id="inventory-value">₱0.00</strong>
-                    <span class="expand-icon">▼</span>
-                  </div>
-                </div>
-                <div class="list-content">
-                  <div
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      padding: 4px 0;
-                    "
-                  >
-                    <span>Cakes & Pastries</span>
-                    <strong id="inventory-cakes-value">₱0.00</strong>
-                  </div>
-                  <div
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      padding: 4px 0;
-                    "
-                  >
-                    <span>Ingredients</span>
-                    <strong id="inventory-ingredients-value">₱0.00</strong>
-                  </div>
-                  <div
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      padding: 4px 0;
-                    "
-                  >
-                    <span>Supplies</span>
-                    <strong id="inventory-supplies-value">₱0.00</strong>
-                  </div>
-                  <div
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      padding: 4px 0;
-                    "
-                  >
-                    <span>Beverages</span>
-                    <strong id="inventory-beverages-value">₱0.00</strong>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </article>
         </section>
 
-        <section class="grid grid-2" style="margin-top: 2rem">
-          <article class="table-wrapper">
-            <div class="section-heading">
-              <h2>Cakes & Pastries</h2>
+        <!-- Unified Inventory Table -->
+        <section class="table-wrapper" style="margin-top: 2rem">
+          <div class="section-heading" style="margin-bottom: 1rem; align-items: center; flex-wrap: wrap; gap: 1rem">
+            <div>
+              <h2>All Inventory Items</h2>
+              <span class="pill">Unified View</span>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap">
+              <!-- Search Bar -->
               <input
                 type="search"
-                placeholder="Search cakes..."
-                class="inventory-search"
-                data-category="cakes & pastries"
+                id="unified-search"
+                placeholder="Search items..."
+                style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 0.375rem; min-width: 250px"
               />
-              <span class="pill">Finished goods</span>
+              
+              <!-- Category Filter -->
+              <select id="category-filter" style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 0.375rem">
+                <option value="">All Categories</option>
+                <option value="cakes & pastries">Cakes & Pastries</option>
+                <option value="ingredients">Ingredients</option>
+                <option value="supplies">Supplies</option>
+                <option value="beverages">Beverages</option>
+              </select>
+              
+              <!-- Status Filter -->
+              <select id="status-filter" style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 0.375rem">
+                <option value="">All Status</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="expiring-soon">Expiring Soon</option>
+              </select>
             </div>
-            <table class="inventory-table" data-category="cakes & pastries">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Cost</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </article>
-
-          <article class="table-wrapper">
-            <div class="section-heading">
-              <h2>Ingredients</h2>
-              <input
-                type="search"
-                placeholder="Search ingredients..."
-                class="inventory-search"
-                data-category="ingredients"
-              />
-              <span class="pill">Kitchen</span>
-            </div>
-            <table class="inventory-table" data-category="ingredients">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Cost</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </article>
-        </section>
-
-        <section class="grid grid-2" style="margin-top: 1.5rem">
-          <article class="table-wrapper">
-            <div class="section-heading">
-              <h2>Supplies</h2>
-              <input
-                type="search"
-                placeholder="Search supplies..."
-                class="inventory-search"
-                data-category="supplies"
-              />
-              <span class="pill">Packaging</span>
-            </div>
-            <table class="inventory-table" data-category="supplies">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Cost</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </article>
-
-          <article class="table-wrapper">
-            <div class="section-heading">
-              <h2>Beverages</h2>
-              <input
-                type="search"
-                placeholder="Search beverages..."
-                class="inventory-search"
-                data-category="beverages"
-              />
-              <span class="pill">Liquid inventory</span>
-            </div>
-            <table class="inventory-table" data-category="beverages">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Cost</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </article>
+          </div>
+          
+          <table id="unified-inventory-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Cost</th>
+                <th>Purchased</th>
+                <th>Use By</th>
+                <th>Reorder Point</th>
+                <th>Total Used</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="unified-inventory-tbody">
+              <tr>
+                <td colspan="10" style="text-align: center; padding: 2rem; color: #999">
+                  No inventory items found
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </section>
 
         <p class="footer-note">
-          Use the form on the left to add new SKUs or update existing counts.
+          Use the form above to add new SKUs or update existing counts. Filter and search to find specific items.
         </p>
       </main>
     </div>
@@ -376,7 +309,7 @@
           <label for="edit-item-category">Category</label>
           <select id="edit-item-category" name="category" required>
             <option value="">Select category</option>
-            <option value="cakes">Cakes & Pastries</option>
+            <option value="cakes & pastries">Cakes & Pastries</option>
             <option value="ingredients">Ingredients</option>
             <option value="supplies">Supplies</option>
             <option value="beverages">Beverages</option>
@@ -403,6 +336,29 @@
             min="0"
             step="0.01"
             required
+          />
+
+          <label for="edit-item-date-purchased">Date Purchased</label>
+          <input
+            id="edit-item-date-purchased"
+            name="datePurchased"
+            type="date"
+          />
+
+          <label for="edit-item-use-by-date">Use By Date</label>
+          <input
+            id="edit-item-use-by-date"
+            name="useByDate"
+            type="date"
+          />
+
+          <label for="edit-item-reorder-point">Reorder Point</label>
+          <input
+            id="edit-item-reorder-point"
+            name="reorderPoint"
+            type="number"
+            min="0"
+            step="1"
           />
 
           <div class="modal-card__actions">

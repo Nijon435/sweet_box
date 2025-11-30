@@ -478,7 +478,7 @@ function renderEmployees() {
   attachRemovalHandlers();
   updateQuickMetrics();
   attachQuickActionHandlers();
-  
+
   // Render leave/request approvals
   renderLeaveApprovals();
 }
@@ -862,6 +862,13 @@ function renderLeaveApprovals() {
     return request.status === "pending";
   });
 
+  // Sort by oldest first (ascending by requestedAt date)
+  pendingRequests.sort((a, b) => {
+    const dateA = new Date(a.requestedAt || a.requested_at || 0);
+    const dateB = new Date(b.requestedAt || b.requested_at || 0);
+    return dateA - dateB;
+  });
+
   console.log("⏳ Pending requests:", pendingRequests.length);
   console.log(
     "🔍 Pending requests data:",
@@ -964,7 +971,7 @@ window.approveLeave = function (leaveId) {
 
   saveState();
   renderEmployees();
-  
+
   // Show custom success popup
   const popup = document.createElement("div");
   popup.style.cssText =
@@ -995,7 +1002,7 @@ window.rejectLeave = function (leaveId) {
 
   saveState();
   renderEmployees();
-  
+
   // Show custom rejection popup
   const popup = document.createElement("div");
   popup.style.cssText =
@@ -1053,7 +1060,7 @@ window.approveProfileEdit = function (requestId) {
 
   saveState();
   renderEmployees();
-  
+
   // Show custom success popup
   const popup = document.createElement("div");
   popup.style.cssText =
@@ -1092,7 +1099,7 @@ window.rejectProfileEdit = function (requestId) {
 
   saveState();
   renderEmployees();
-  
+
   // Show custom rejection popup
   const popup = document.createElement("div");
   popup.style.cssText =

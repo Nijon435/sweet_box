@@ -1,495 +1,468 @@
+// Global state for filters
+let currentFilters = {
+  search: '',
+  category: '',
+  status: ''
+};
+
 function renderInventory() {
-  const form = document.getElementById("inventory-form");
-  const editModal = document.getElementById("inventory-edit-modal");
-  const editForm = document.getElementById("inventory-edit-form");
-  const editClose = document.getElementById("inventory-edit-close");
-  const editCancel = document.getElementById("inventory-edit-cancel");
+  renderMetrics();
+  setupForms();
+  renderUnifiedTable();
+  setupFilters();
+  setupIngredientUsageForm();
+  updateAlert();
+}
 
-  const setSelectValue = (select, value) => {
-    if (!select) return;
-    const hasOption = [...select.options].some(
-      (option) => option.value === value
-    );
-    if (!hasOption && value) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      select.appendChild(option);
+function renderMetrics() {
+  const inventory = appState.inventory || [];
+  
+  // Calculate metrics
+  const totalSKUs = inventory.length;
+  
+  const lowStockItems = inventory.filter(item => {
+    const reorderPoint = item.reorderPoint || item.reorder_point || 10;
+    return item.quantity < reorderPoint && item.quantity > 0;
+  });
+  
+  const expiringItems = inventory.filter(item => {
+    const useByDate = item.useByDate || item.use_by_date;
+    if (!useByDate) return false;
+    const daysUntilExpiry = Math.floor((new Date(useByDate) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
+  });
+  
+  const totalValue = inventory.reduce((sum, item) => sum + (item.quantity * item.cost), 0);
+  
+  // Update UI
+  const metricElements = {
+    'metric-total-skus': totalSKUs,
+    'metric-low-stock': lowStockItems.length,
+    'metric-expiring-soon': expiringItems.length,
+    'metric-total-value': formatCurrency(totalValue)
+  };
+  
+  Object.entries(metricElements).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  });
+}
+
+function getItemStatus(item) {
+  const reorderPoint = item.reorderPoint || item.reorder_point || 10;
+  const useByDate = item.useByDate || item.use_by_date;
+  
+  // Check expiration first
+  if (useByDate) {
+    const daysUntilExpiry = Math.floor((new Date(useByDate) - new Date()) / (1000 * 60 * 60 * 24));
+    if (daysUntilExpiry < 0) return { status: 'expired', text: 'Expired', class: 'out-of-stock' };
+    if (daysUntilExpiry <= 7) return { status: 'expiring-soon', text: 'Expiring Soon', class: 'late' };
+  }
+  
+  // Check stock levels
+  if (item.quantity === 0) return { status: 'out-of-stock', text: 'Out of Stock', class: 'out-of-stock' };
+  if (item.quantity < reorderPoint) return { status: 'low-stock', text: 'Low Stock', class: 'late' };
+  
+  return { status: 'in-stock', text: 'In Stock', class: 'present' };
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderUnifiedTable() {
+  const tbody = document.getElementById('unified-inventory-tbody');
+  if (!tbody) return;
+  
+  const inventory = appState.inventory || [];
+  
+  // Apply filters
+  const filteredInventory = inventory.filter(item => {
+    // Search filter
+    if (currentFilters.search) {
+      const searchLower = currentFilters.search.toLowerCase();
+      const itemName = (item.name || '').toLowerCase();
+      const itemCategory = (item.category || '').toLowerCase();
+      if (!itemName.includes(searchLower) && !itemCategory.includes(searchLower)) {
+        return false;
+      }
     }
-    select.value = value || "";
-  };
-
-  const closeEditModal = () => {
-    if (!editModal || !editForm) return;
-    editModal.classList.remove("active");
-    editForm.reset();
-    delete editForm.dataset.itemId;
-  };
-  const openEditModal = (item) => {
-    if (!editModal || !editForm) return;
-    editForm.dataset.itemId = item.id;
-    const categoryField = editForm.querySelector("[name=category]");
-    setSelectValue(categoryField, item.category);
-    const nameField = editForm.querySelector("[name=name]");
-    const qtyField = editForm.querySelector("[name=quantity]");
-    const costField = editForm.querySelector("[name=cost]");
-    if (nameField) nameField.value = item.name;
-    if (qtyField) qtyField.value = item.quantity;
-    if (costField) costField.value = item.cost;
-    editModal.classList.add("active");
-  };
-
-  if (editClose && !editClose.dataset.bound) {
-    editClose.dataset.bound = "true";
-    editClose.addEventListener("click", closeEditModal);
+    
+    // Category filter
+    if (currentFilters.category && item.category !== currentFilters.category) {
+      return false;
+    }
+    
+    // Status filter
+    if (currentFilters.status) {
+      const itemStatus = getItemStatus(item);
+      if (itemStatus.status !== currentFilters.status) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+  
+  if (filteredInventory.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; padding: 2rem; color: #999">
+          No inventory items found matching your filters
+        </td>
+      </tr>
+    `;
+    return;
   }
-  if (editCancel && !editCancel.dataset.bound) {
-    editCancel.dataset.bound = "true";
-    editCancel.addEventListener("click", closeEditModal);
-  }
-  if (editModal && !editModal.dataset.bound) {
-    editModal.dataset.bound = "true";
-    editModal.addEventListener("click", (event) => {
-      if (event.target === editModal) closeEditModal();
+  
+  const canManageInventory = isAdmin();
+  
+  tbody.innerHTML = filteredInventory.map(item => {
+    const statusInfo = getItemStatus(item);
+    const datePurchased = item.datePurchased || item.date_purchased;
+    const useByDate = item.useByDate || item.use_by_date;
+    const reorderPoint = item.reorderPoint || item.reorder_point || 10;
+    const totalUsed = item.totalUsed || item.total_used || 0;
+    
+    return `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td><span class="pill" style="background: #e3f2fd; color: #1565c0; font-size: 0.75rem">${item.category}</span></td>
+        <td>${item.quantity}</td>
+        <td>${formatCurrency(item.cost)}</td>
+        <td>${formatDate(datePurchased)}</td>
+        <td>${formatDate(useByDate)}</td>
+        <td>${reorderPoint}</td>
+        <td>${totalUsed}</td>
+        <td><span class="status ${statusInfo.class}"><span class="status-text">${statusInfo.text}</span></span></td>
+        <td class="table-actions">
+          <button class="btn btn-outline" data-edit="${item.id}" ${!canManageInventory ? 'disabled' : ''}>Edit</button>
+          <button class="btn btn-secondary" data-delete="${item.id}" ${!canManageInventory ? 'disabled' : ''}>Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  // Attach event listeners
+  document.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.edit;
+      const item = inventory.find(i => i.id === id);
+      if (item) openEditModal(item);
+    });
+  });
+  
+  document.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.delete;
+      if (confirm('Are you sure you want to delete this item?')) {
+        appState.inventory = appState.inventory.filter(i => i.id !== id);
+        saveState();
+        renderInventory();
+      }
+    });
+  });
+}
+
+function setupFilters() {
+  const searchInput = document.getElementById('unified-search');
+  const categoryFilter = document.getElementById('category-filter');
+  const statusFilter = document.getElementById('status-filter');
+  
+  if (searchInput && !searchInput.dataset.bound) {
+    searchInput.dataset.bound = 'true';
+    searchInput.addEventListener('input', (e) => {
+      currentFilters.search = e.target.value;
+      renderUnifiedTable();
     });
   }
+  
+  if (categoryFilter && !categoryFilter.dataset.bound) {
+    categoryFilter.dataset.bound = 'true';
+    categoryFilter.addEventListener('change', (e) => {
+      currentFilters.category = e.target.value;
+      renderUnifiedTable();
+    });
+  }
+  
+  if (statusFilter && !statusFilter.dataset.bound) {
+    statusFilter.dataset.bound = 'true';
+    statusFilter.addEventListener('change', (e) => {
+      currentFilters.status = e.target.value;
+      renderUnifiedTable();
+    });
+  }
+}
 
+function setupForms() {
+  setupMainForm();
+  setupEditModal();
+}
+
+function setupMainForm() {
+  const form = document.getElementById('inventory-form');
+  if (!form || form.dataset.bound) return;
+  
+  form.dataset.bound = 'true';
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    if (!isAdmin()) {
+      alert('Only administrators can add or update inventory items.');
+      return;
+    }
+    
+    const data = new FormData(form);
+    const payload = {
+      id: data.get('itemId') || `inv-${Date.now()}`,
+      category: data.get('category'),
+      name: data.get('name'),
+      quantity: Number(data.get('quantity')) || 0,
+      cost: Number(data.get('cost')) || 0,
+      datePurchased: data.get('datePurchased') || null,
+      useByDate: data.get('useByDate') || null,
+      reorderPoint: Number(data.get('reorderPoint')) || 10,
+      lastRestocked: new Date().toISOString().split('T')[0],
+      totalUsed: 0
+    };
+    
+    if (!payload.category || !payload.name) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+    
+    const idx = appState.inventory.findIndex(i => i.id === payload.id);
+    if (idx >= 0) {
+      appState.inventory[idx] = { ...appState.inventory[idx], ...payload };
+    } else {
+      appState.inventory.push(payload);
+    }
+    
+    saveState();
+    form.reset();
+    renderInventory();
+    alert('Inventory item saved successfully!');
+  });
+}
+
+function setupEditModal() {
+  const editModal = document.getElementById('inventory-edit-modal');
+  const editForm = document.getElementById('inventory-edit-form');
+  const editClose = document.getElementById('inventory-edit-close');
+  const editCancel = document.getElementById('inventory-edit-cancel');
+  
+  if (editClose && !editClose.dataset.bound) {
+    editClose.dataset.bound = 'true';
+    editClose.addEventListener('click', closeEditModal);
+  }
+  
+  if (editCancel && !editCancel.dataset.bound) {
+    editCancel.dataset.bound = 'true';
+    editCancel.addEventListener('click', closeEditModal);
+  }
+  
+  if (editModal && !editModal.dataset.bound) {
+    editModal.dataset.bound = 'true';
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) closeEditModal();
+    });
+  }
+  
   if (editForm && !editForm.dataset.bound) {
-    editForm.dataset.bound = "true";
-    editForm.addEventListener("submit", (event) => {
-      event.preventDefault();
+    editForm.dataset.bound = 'true';
+    editForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
       if (!isAdmin()) {
-        alert("Only administrators can update inventory records.");
+        alert('Only administrators can update inventory records.');
         return;
       }
+      
       const itemId = editForm.dataset.itemId;
       if (!itemId) {
         closeEditModal();
         return;
       }
-      const idx = appState.inventory.findIndex((item) => item.id === itemId);
+      
+      const idx = appState.inventory.findIndex(i => i.id === itemId);
       if (idx < 0) {
         closeEditModal();
         return;
       }
+      
       const data = new FormData(editForm);
       const updated = {
         ...appState.inventory[idx],
-        category: data.get("category"),
-        name: data.get("name"),
-        quantity: Number(data.get("quantity")) || 0,
-        cost: Number(data.get("cost")) || 0,
+        category: data.get('category'),
+        name: data.get('name'),
+        quantity: Number(data.get('quantity')) || 0,
+        cost: Number(data.get('cost')) || 0,
+        datePurchased: data.get('datePurchased') || null,
+        useByDate: data.get('useByDate') || null,
+        reorderPoint: Number(data.get('reorderPoint')) || 10
       };
+      
       appState.inventory[idx] = updated;
-
-      // Save to backend API
-      fetch(
-        window.APP_STATE_ENDPOINT?.replace(
-          "/api/state",
-          "/api/inventory/" + itemId
-        ),
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updated),
-          credentials: "include",
-        }
-      ).catch((err) =>
-        console.error("Failed to save inventory to backend:", err)
-      );
-
       saveState();
       closeEditModal();
       renderInventory();
+      alert('Inventory item updated successfully!');
     });
   }
+}
 
-  if (form && !form.dataset.bound) {
-    form.dataset.bound = "true";
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      const payload = {
-        id: data.get("itemId") || `inv-${Date.now()}`,
-        category: data.get("category"),
-        name: data.get("name"),
-        quantity: Number(data.get("quantity")) || 0,
-        cost: Number(data.get("cost")) || 0,
-      };
-      if (!payload.category || !payload.name) return;
-      const idx = appState.inventory.findIndex(
-        (item) => item.id === payload.id
-      );
-      if (idx >= 0) appState.inventory[idx] = payload;
-      else appState.inventory.push(payload);
-      saveState();
-      form.reset();
-      renderInventory();
-    });
-  }
+function openEditModal(item) {
+  const editModal = document.getElementById('inventory-edit-modal');
+  const editForm = document.getElementById('inventory-edit-form');
+  if (!editModal || !editForm) return;
+  
+  editForm.dataset.itemId = item.id;
+  
+  // Set form values
+  const categoryField = editForm.querySelector('[name=category]');
+  const nameField = editForm.querySelector('[name=name]');
+  const qtyField = editForm.querySelector('[name=quantity]');
+  const costField = editForm.querySelector('[name=cost]');
+  const datePurchasedField = editForm.querySelector('[name=datePurchased]');
+  const useByDateField = editForm.querySelector('[name=useByDate]');
+  const reorderPointField = editForm.querySelector('[name=reorderPoint]');
+  
+  if (categoryField) categoryField.value = item.category || '';
+  if (nameField) nameField.value = item.name || '';
+  if (qtyField) qtyField.value = item.quantity || 0;
+  if (costField) costField.value = item.cost || 0;
+  if (datePurchasedField) datePurchasedField.value = item.datePurchased || item.date_purchased || '';
+  if (useByDateField) useByDateField.value = item.useByDate || item.use_by_date || '';
+  if (reorderPointField) reorderPointField.value = item.reorderPoint || item.reorder_point || 10;
+  
+  editModal.classList.add('active');
+}
 
-  const stats = inventoryStats();
-  const categorizedInventory = categorizeInventory();
-
-  // Calculate value per category
-  const categoryValues = {
-    "cakes & pastries":
-      categorizedInventory["cakes & pastries"]?.reduce(
-        (sum, item) => sum + item.quantity * item.cost,
-        0
-      ) || 0,
-    ingredients:
-      categorizedInventory["ingredients"]?.reduce(
-        (sum, item) => sum + item.quantity * item.cost,
-        0
-      ) || 0,
-    supplies:
-      categorizedInventory["supplies"]?.reduce(
-        (sum, item) => sum + item.quantity * item.cost,
-        0
-      ) || 0,
-    beverages:
-      categorizedInventory["beverages"]?.reduce(
-        (sum, item) => sum + item.quantity * item.cost,
-        0
-      ) || 0,
-  };
-
-  const inventoryStatsMap = {
-    "inventory-total": `${stats.totalItems} products`,
-    "inventory-low": `${stats.lowStock} low stock`,
-    "inventory-value": formatCurrency(stats.value),
-    "inventory-cakes-value": formatCurrency(categoryValues["cakes & pastries"]),
-    "inventory-ingredients-value": formatCurrency(
-      categoryValues["ingredients"]
-    ),
-    "inventory-supplies-value": formatCurrency(categoryValues["supplies"]),
-    "inventory-beverages-value": formatCurrency(categoryValues["beverages"]),
-  };
-  Object.entries(inventoryStatsMap).forEach(([id, value]) => {
-    const node = document.getElementById(id);
-    if (node) node.textContent = value;
-  });
-
-  // Populate low stock items dropdown
-  const lowStockItemsContainer = document.getElementById("low-stock-items");
-  if (lowStockItemsContainer) {
-    const lowItems = lowStockItems();
-    if (lowItems.length > 0) {
-      lowStockItemsContainer.innerHTML = lowItems
-        .map(
-          (item) =>
-            `<div style="display: flex; justify-content: space-between; padding: 4px 0;">
-              <span>${item.name}</span>
-              <strong style="color: var(--warning);">${item.quantity}</strong>
-            </div>`
-        )
-        .join("");
-    } else {
-      lowStockItemsContainer.innerHTML =
-        '<div style="color: var(--gray-500); font-size: 13px;">All items are well stocked</div>';
-    }
-  }
-
-  // Setup collapsible sections
-  const lowStockToggle = document.getElementById("low-stock-toggle");
-  const totalValueToggle = document.getElementById("total-value-toggle");
-
-  if (lowStockToggle && !lowStockToggle.dataset.bound) {
-    lowStockToggle.dataset.bound = "true";
-    lowStockToggle.addEventListener("click", () => {
-      lowStockToggle.classList.toggle("expanded");
-    });
-  }
-
-  if (totalValueToggle && !totalValueToggle.dataset.bound) {
-    totalValueToggle.dataset.bound = "true";
-    totalValueToggle.addEventListener("click", () => {
-      totalValueToggle.classList.toggle("expanded");
-    });
-  }
-
-  // Setup search functionality
-  document.querySelectorAll(".inventory-search").forEach((search) => {
-    if (search.dataset.bound) return;
-    search.dataset.bound = "true";
-    search.addEventListener("input", (e) => {
-      const category = e.target.dataset.category;
-      const searchTerm = e.target.value.toLowerCase();
-      const table = document.querySelector(
-        `.inventory-table[data-category="${category}"]`
-      );
-      if (!table) return;
-
-      const rows = table.querySelectorAll("tbody tr");
-      rows.forEach((row) => {
-        const itemName =
-          row.querySelector("td:first-child")?.textContent.toLowerCase() || "";
-        if (itemName.includes(searchTerm)) {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
-      });
-    });
-  });
-
-  const alertPanel = document.getElementById("inventory-alert");
-  if (alertPanel) {
-    const lowItems = lowStockItems();
-    const severity = !lowItems.length
-      ? "good"
-      : lowItems.length > 5
-      ? "alert"
-      : "warning";
-    alertPanel.className = `alert-panel${
-      severity !== "warning" ? ` ${severity}` : ""
-    }`;
-    if (!lowItems.length) {
-      alertPanel.innerHTML = `<strong>Inventory healthy</strong><p>All categories are above their reorder points.</p>`;
-    } else {
-      const preview = lowItems
-        .slice(0, 4)
-        .map(
-          (item) =>
-            `<span class="alert-tag">${item.name} (${item.quantity})</span>`
-        )
-        .join("");
-      const extraCount = lowItems.length - 4;
-      alertPanel.innerHTML = `<strong>${lowItems.length} low-stock ${
-        lowItems.length === 1 ? "item" : "items"
-      }</strong><p>Restock soon to avoid production gaps.</p><div class="alert-tags">${preview}${
-        extraCount > 0
-          ? `<span class="alert-tag">+${extraCount} more</span>`
-          : ""
-      }</div>`;
-    }
-  }
-
-  const sections = document.querySelectorAll(".inventory-table");
-  sections.forEach((table) => {
-    const category = table.dataset.category;
-    const tbody = table.querySelector("tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    const records = categorizeInventory()[category] || [];
-    if (!records.length) {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="6" class="empty-state">No items under ${category} yet.</td>`;
-      tbody.appendChild(row);
-      return;
-    }
-    records.forEach((item) => {
-      const row = document.createElement("tr");
-      // Different thresholds: 10 for supplies/beverages, 5 for others
-      const threshold =
-        category === "supplies" || category === "beverages" ? 10 : 5;
-      const isOutOfStock = item.quantity === 0;
-      const isLowStock = item.quantity > 0 && item.quantity < threshold;
-      const statusClass = isOutOfStock
-        ? "out-of-stock"
-        : isLowStock
-        ? "late"
-        : "present";
-      const statusText = isOutOfStock
-        ? "Out of Stock"
-        : isLowStock
-        ? "Low Stock"
-        : "Healthy";
-      const statusSymbol = isOutOfStock ? "✖" : isLowStock ? "⚠" : "✓";
-      row.innerHTML = `
-      <td>${item.name}</td>
-      <td>${item.quantity}</td>
-      <td>${formatCurrency(item.cost)}</td>
-      <td><span class="status ${statusClass}"><span class="status-text">${statusText}</span><span class="status-symbol">${statusSymbol}</span></span></td>
-      <td class="table-actions">
-        <button class="btn btn-outline" data-edit="${item.id}">Edit</button>
-        <button class="btn btn-secondary" data-delete="${
-          item.id
-        }">Delete</button>
-        <div class="table-actions-mobile">
-          <button class="table-actions-toggle" data-toggle="${item.id}">
-            ⋯
-          </button>
-          <div class="table-actions-dropdown" data-dropdown="${item.id}">
-            <button class="btn btn-outline" data-edit-mobile="${
-              item.id
-            }">Edit</button>
-            <button class="btn btn-secondary" data-delete-mobile="${
-              item.id
-            }">Delete</button>
-          </div>
-        </div>
-      </td>
-    `;
-      tbody.appendChild(row);
-    });
-  });
-
-  const canManageInventory = isAdmin();
-
-  // Handle dropdown toggles
-  document.querySelectorAll("[data-toggle]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.toggle;
-      const dropdown = document.querySelector(`[data-dropdown="${id}"]`);
-
-      // Close all other dropdowns
-      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
-        if (d !== dropdown) d.classList.remove("active");
-      });
-
-      // Toggle current dropdown
-      dropdown.classList.toggle("active");
-    });
-  });
-
-  // Close dropdowns when clicking outside
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".table-actions-mobile")) {
-      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
-        d.classList.remove("active");
-      });
-    }
-  });
-
-  // Desktop Edit buttons
-  document.querySelectorAll("[data-edit]").forEach((btn) => {
-    btn.disabled = !canManageInventory;
-    if (!canManageInventory) {
-      btn.title = "Admin only";
-      return;
-    }
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.edit;
-      const item = appState.inventory.find((record) => record.id === id);
-      if (!item) return;
-      openEditModal(item);
-    });
-  });
-
-  // Mobile Edit buttons
-  document.querySelectorAll("[data-edit-mobile]").forEach((btn) => {
-    btn.disabled = !canManageInventory;
-    if (!canManageInventory) {
-      btn.title = "Admin only";
-      return;
-    }
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.editMobile;
-      const item = appState.inventory.find((record) => record.id === id);
-      if (!item) return;
-      openEditModal(item);
-      // Close dropdown
-      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
-        d.classList.remove("active");
-      });
-    });
-  });
-
-  // Desktop Delete buttons
-  document.querySelectorAll("[data-delete]").forEach((btn) => {
-    btn.disabled = !canManageInventory;
-    if (!canManageInventory) {
-      btn.title = "Admin only";
-      return;
-    }
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.delete;
-      appState.inventory = appState.inventory.filter((item) => item.id !== id);
-      saveState();
-      renderInventory();
-    });
-  });
-
-  // Mobile Delete buttons
-  document.querySelectorAll("[data-delete-mobile]").forEach((btn) => {
-    btn.disabled = !canManageInventory;
-    if (!canManageInventory) {
-      btn.title = "Admin only";
-      return;
-    }
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.deleteMobile;
-      appState.inventory = appState.inventory.filter((item) => item.id !== id);
-      saveState();
-      renderInventory();
-      // Close dropdown
-      document.querySelectorAll(".table-actions-dropdown").forEach((d) => {
-        d.classList.remove("active");
-      });
-    });
-  });
-
-  // Setup ingredient usage form
-  setupIngredientUsageForm();
+function closeEditModal() {
+  const editModal = document.getElementById('inventory-edit-modal');
+  const editForm = document.getElementById('inventory-edit-form');
+  if (!editModal || !editForm) return;
+  
+  editModal.classList.remove('active');
+  editForm.reset();
+  delete editForm.dataset.itemId;
 }
 
 function setupIngredientUsageForm() {
-  const form = document.getElementById("ingredient-usage-form");
-  const select = document.getElementById("ingredient-select");
-
+  const form = document.getElementById('ingredient-usage-form');
+  const select = document.getElementById('ingredient-select');
+  
   if (!form || !select) return;
-
+  
   // Populate ingredient dropdown
-  const ingredients = appState.inventory.filter(
-    (i) => i.category === "ingredients"
-  );
+  const ingredients = (appState.inventory || []).filter(i => i.category === 'ingredients');
   select.innerHTML = '<option value="">Choose ingredient...</option>';
-  ingredients.forEach((ing) => {
-    const opt = document.createElement("option");
+  ingredients.forEach(ing => {
+    const opt = document.createElement('option');
     opt.value = ing.id;
     opt.textContent = `${ing.name} (Available: ${ing.quantity})`;
     select.appendChild(opt);
   });
-
+  
   if (form.dataset.bound) return;
-  form.dataset.bound = "true";
-
-  form.addEventListener("submit", (e) => {
+  form.dataset.bound = 'true';
+  
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
     const data = new FormData(form);
-    const ingredientId = data.get("ingredientId");
-    const qty = Number(data.get("quantity"));
-    const reason = data.get("reason");
-
-    const idx = appState.inventory.findIndex((i) => i.id === ingredientId);
+    const ingredientId = data.get('ingredientId');
+    const qty = Number(data.get('quantity'));
+    const reason = data.get('reason');
+    
+    const idx = appState.inventory.findIndex(i => i.id === ingredientId);
     if (idx < 0) {
-      alert("Ingredient not found");
+      alert('Ingredient not found');
       return;
     }
-
+    
     if (appState.inventory[idx].quantity < qty) {
-      alert(
-        `Insufficient quantity. Available: ${appState.inventory[idx].quantity}`
-      );
+      alert(`Insufficient quantity. Available: ${appState.inventory[idx].quantity}`);
       return;
     }
-
-    // Deduct from inventory
+    
+    // Deduct from inventory and update total used
     appState.inventory[idx].quantity -= qty;
-
+    const currentTotalUsed = appState.inventory[idx].totalUsed || appState.inventory[idx].total_used || 0;
+    appState.inventory[idx].totalUsed = currentTotalUsed + qty;
+    
     // Record usage
     const usageRecord = {
-      id: "usage-" + Date.now(),
+      id: 'usage-' + Date.now(),
       label: appState.inventory[idx].name,
       used: qty,
-      reason: reason || "Staff usage",
-      timestamp: new Date().toISOString(),
+      reason: reason || 'Staff usage',
+      timestamp: new Date().toISOString()
     };
-
+    
     if (!appState.inventoryUsage) appState.inventoryUsage = [];
     appState.inventoryUsage.push(usageRecord);
-
+    
     saveState();
-    syncStateToDatabase();
     renderInventory();
     form.reset();
-
+    
     alert(`Recorded: ${qty} of ${appState.inventory[idx].name} used`);
   });
 }
 
+function updateAlert() {
+  const alertPanel = document.getElementById('inventory-alert');
+  if (!alertPanel) return;
+  
+  const inventory = appState.inventory || [];
+  const lowItems = inventory.filter(item => {
+    const reorderPoint = item.reorderPoint || item.reorder_point || 10;
+    return item.quantity < reorderPoint && item.quantity > 0;
+  });
+  
+  const expiringItems = inventory.filter(item => {
+    const useByDate = item.useByDate || item.use_by_date;
+    if (!useByDate) return false;
+    const daysUntilExpiry = Math.floor((new Date(useByDate) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
+  });
+  
+  const totalAlerts = lowItems.length + expiringItems.length;
+  
+  if (totalAlerts === 0) {
+    alertPanel.className = 'alert-panel good';
+    alertPanel.innerHTML = `<strong>Inventory healthy</strong><p>All items are properly stocked and fresh.</p>`;
+  } else {
+    const severity = totalAlerts > 5 ? 'alert' : 'warning';
+    alertPanel.className = `alert-panel ${severity}`;
+    
+    const alerts = [];
+    if (lowItems.length > 0) {
+      alerts.push(`${lowItems.length} low-stock item${lowItems.length !== 1 ? 's' : ''}`);
+    }
+    if (expiringItems.length > 0) {
+      alerts.push(`${expiringItems.length} expiring soon`);
+    }
+    
+    const preview = [...lowItems.slice(0, 3), ...expiringItems.slice(0, 3)]
+      .slice(0, 4)
+      .map(item => `<span class="alert-tag">${item.name}</span>`)
+      .join('');
+    
+    const extraCount = totalAlerts - 4;
+    
+    alertPanel.innerHTML = `
+      <strong>${alerts.join(' • ')}</strong>
+      <p>Action required to maintain inventory health.</p>
+      <div class="alert-tags">
+        ${preview}
+        ${extraCount > 0 ? `<span class="alert-tag">+${extraCount} more</span>` : ''}
+      </div>
+    `;
+  }
+}
+
 window.pageRenderers = window.pageRenderers || {};
-window.pageRenderers["inventory"] = renderInventory;
+window.pageRenderers['inventory'] = renderInventory;

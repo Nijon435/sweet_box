@@ -151,8 +151,19 @@ async def fetch_table(conn, table):
                     item["requestedChanges"] = item.pop("requested_changes")
             if table == "sales_history" and "orders_count" in item:
                 item["ordersCount"] = item.pop("orders_count")
-            if table == "inventory" and "reorder_point" in item:
-                item["reorderPoint"] = item.pop("reorder_point")
+            if table == "inventory":
+                if "date_purchased" in item:
+                    item["datePurchased"] = item.pop("date_purchased")
+                if "use_by_date" in item:
+                    item["useByDate"] = item.pop("use_by_date")
+                if "reorder_point" in item:
+                    item["reorderPoint"] = item.pop("reorder_point")
+                if "last_restocked" in item:
+                    item["lastRestocked"] = item.pop("last_restocked")
+                if "total_used" in item:
+                    item["totalUsed"] = item.pop("total_used")
+                if "created_at" in item:
+                    item["createdAt"] = item.pop("created_at")
             result.append(item)
         
         if table == "users" and result:
@@ -405,13 +416,19 @@ async def save_state(state: dict):
         if "inventory" in state and state["inventory"]:
             for item in state["inventory"]:
                 await conn.execute(
-                    """INSERT INTO inventory (id, name, category, quantity, cost)
-                       VALUES ($1, $2, $3, $4, $5)
+                    """INSERT INTO inventory (id, name, category, quantity, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                        ON CONFLICT (id) DO UPDATE SET
                        name = EXCLUDED.name, category = EXCLUDED.category,
-                       quantity = EXCLUDED.quantity, cost = EXCLUDED.cost""",
+                       quantity = EXCLUDED.quantity, cost = EXCLUDED.cost,
+                       date_purchased = EXCLUDED.date_purchased, use_by_date = EXCLUDED.use_by_date,
+                       reorder_point = EXCLUDED.reorder_point, last_restocked = EXCLUDED.last_restocked,
+                       total_used = EXCLUDED.total_used""",
                     item.get("id"), item.get("name"), item.get("category"),
-                    item.get("quantity"), item.get("cost")
+                    item.get("quantity"), item.get("cost"),
+                    parse_date(item.get("datePurchased")), parse_date(item.get("useByDate")),
+                    item.get("reorderPoint", 10), parse_date(item.get("lastRestocked")),
+                    item.get("totalUsed", 0)
                 )
         
         # Save orders (upsert - don't delete existing)
