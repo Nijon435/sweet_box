@@ -706,6 +706,7 @@ function inventoryPreviousPage() {
   if (currentPage > 1) {
     currentPage--;
     renderUnifiedTable();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
@@ -742,6 +743,7 @@ function inventoryNextPage() {
   if (currentPage < totalPages) {
     currentPage++;
     renderUnifiedTable();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 

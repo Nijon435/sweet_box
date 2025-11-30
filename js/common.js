@@ -180,7 +180,9 @@ async function syncStateToDatabase() {
   // DATABASE SYNC PERMANENTLY DISABLED
   // Data is now read-only from the server to prevent data loss
   // All updates go through individual API endpoints (PUT /api/inventory, etc.)
-  console.log("ℹ️ Database sync disabled - using individual API endpoints for updates");
+  console.log(
+    "ℹ️ Database sync disabled - using individual API endpoints for updates"
+  );
   return;
 
   try {

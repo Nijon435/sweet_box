@@ -610,11 +610,13 @@ function attendancePreviousPage() {
   if (attendanceCurrentPage > 1) {
     attendanceCurrentPage--;
     renderAttendance();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
 function attendanceNextPage() {
-  const logFilterValue = document.getElementById("attendance-log-filter")?.value || "all";
+  const logFilterValue =
+    document.getElementById("attendance-log-filter")?.value || "all";
   const filteredLogs = getTodaysLogs().filter((log) => {
     if (logFilterValue === "all") return true;
     const shift = (log.shift || "").toLowerCase();
@@ -628,6 +630,7 @@ function attendanceNextPage() {
   if (attendanceCurrentPage < totalPages) {
     attendanceCurrentPage++;
     renderAttendance();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
