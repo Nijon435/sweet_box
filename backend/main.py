@@ -63,6 +63,7 @@ TABLES = [
     "orders",
     "sales_history",
     "inventory_usage",
+    "ingredient_usage_logs",
     "requests"  # Renamed from leave_requests
 ]
 
@@ -147,12 +148,21 @@ async def fetch_table(conn, table):
                     item["datePurchased"] = item.pop("date_purchased")
                 if "use_by_date" in item:
                     item["useByDate"] = item.pop("use_by_date")
+                if "expiry_date" in item:
+                    item["expiryDate"] = item.pop("expiry_date")
                 if "reorder_point" in item:
                     item["reorderPoint"] = item.pop("reorder_point")
                 if "last_restocked" in item:
                     item["lastRestocked"] = item.pop("last_restocked")
                 if "total_used" in item:
                     item["totalUsed"] = item.pop("total_used")
+                if "created_at" in item:
+                    item["createdAt"] = item.pop("created_at")
+            if table == "ingredient_usage_logs":
+                if "inventory_item_id" in item:
+                    item["inventoryItemId"] = item.pop("inventory_item_id")
+                if "order_id" in item:
+                    item["orderId"] = item.pop("order_id")
                 if "created_at" in item:
                     item["createdAt"] = item.pop("created_at")
             result.append(item)
