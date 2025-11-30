@@ -71,7 +71,15 @@ function getItemStatus(item) {
   const reorderPoint = item.reorderPoint || item.reorder_point || 10;
   const useByDate = item.useByDate || item.use_by_date;
 
-  // Check expiration first
+  // Check stock levels first (highest priority)
+  if (item.quantity === 0)
+    return {
+      status: "out-of-stock",
+      text: "Out of Stock",
+      class: "out-of-stock",
+    };
+
+  // Then check expiration (only if in stock)
   if (useByDate) {
     const daysUntilExpiry = Math.floor(
       (new Date(useByDate) - new Date()) / (1000 * 60 * 60 * 24)
@@ -82,13 +90,7 @@ function getItemStatus(item) {
       return { status: "expiring-soon", text: "Expiring Soon", class: "late" };
   }
 
-  // Check stock levels
-  if (item.quantity === 0)
-    return {
-      status: "out-of-stock",
-      text: "Out of Stock",
-      class: "out-of-stock",
-    };
+  // Finally check low stock
   if (item.quantity < reorderPoint)
     return { status: "low-stock", text: "Low Stock", class: "late" };
 
