@@ -96,172 +96,209 @@
             <h2>Inventory Metrics</h2>
             <span class="pill">Live</span>
           </div>
-          
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem">
-            <div style="text-align: center; padding: 1rem; background: #f9fafb; border-radius: 0.5rem">
-              <small style="color: #666; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Total SKUs</small>
-              <strong style="font-size: 1.75rem; color: #333" id="metric-total-skus">0</strong>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 1.5rem;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <div
+              style="
+                text-align: center;
+                padding: 1rem;
+                background: #f9fafb;
+                border-radius: 0.5rem;
+              "
+            >
+              <small
+                style="
+                  color: #666;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.5rem;
+                "
+                >Total SKUs</small
+              >
+              <strong
+                style="font-size: 1.75rem; color: #333"
+                id="metric-total-skus"
+                >0</strong
+              >
             </div>
-            <div style="text-align: center; padding: 1rem; background: #fff3cd; border-radius: 0.5rem">
-              <small style="color: #856404; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Low Stock Items</small>
-              <strong style="font-size: 1.75rem; color: #856404" id="metric-low-stock">0</strong>
+            <div
+              style="
+                text-align: center;
+                padding: 1rem;
+                background: #fff3cd;
+                border-radius: 0.5rem;
+              "
+            >
+              <small
+                style="
+                  color: #856404;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.5rem;
+                "
+                >Low Stock Items</small
+              >
+              <strong
+                style="font-size: 1.75rem; color: #856404"
+                id="metric-low-stock"
+                >0</strong
+              >
             </div>
-            <div style="text-align: center; padding: 1rem; background: #f8d7da; border-radius: 0.5rem">
-              <small style="color: #721c24; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Expiring Soon</small>
-              <strong style="font-size: 1.75rem; color: #721c24" id="metric-expiring-soon">0</strong>
+            <div
+              style="
+                text-align: center;
+                padding: 1rem;
+                background: #f8d7da;
+                border-radius: 0.5rem;
+              "
+            >
+              <small
+                style="
+                  color: #721c24;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.5rem;
+                "
+                >Expiring Soon</small
+              >
+              <strong
+                style="font-size: 1.75rem; color: #721c24"
+                id="metric-expiring-soon"
+                >0</strong
+              >
             </div>
-            <div style="text-align: center; padding: 1rem; background: #d1ecf1; border-radius: 0.5rem">
-              <small style="color: #0c5460; font-size: 0.875rem; display: block; margin-bottom: 0.5rem">Total Inventory Value</small>
-              <strong style="font-size: 1.75rem; color: #0c5460" id="metric-total-value">₱0.00</strong>
+            <div
+              style="
+                text-align: center;
+                padding: 1rem;
+                background: #d1ecf1;
+                border-radius: 0.5rem;
+              "
+            >
+              <small
+                style="
+                  color: #0c5460;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.5rem;
+                "
+                >Total Inventory Value</small
+              >
+              <strong
+                style="font-size: 1.75rem; color: #0c5460"
+                id="metric-total-value"
+                >₱0.00</strong
+              >
             </div>
           </div>
         </section>
 
-        <section class="split">
-          <article class="card">
-            <div class="section-heading">
-              <h2>Add or Update Item</h2>
-              <span class="pill">CRUD enabled</span>
-            </div>
-            <form id="inventory-form" data-role="admin">
-              <input type="hidden" name="itemId" />
-              <label for="item-category">Category</label>
-              <select id="item-category" name="category" required>
-                <option value="">Select category</option>
-                <option value="cakes & pastries">Cakes & Pastries</option>
-                <option value="ingredients">Ingredients</option>
-                <option value="supplies">Supplies</option>
-                <option value="beverages">Beverages</option>
-              </select>
+        <!-- Use Ingredients Card -->
+        <section class="card" style="margin-bottom: 2rem">
+          <div class="section-heading">
+            <h2>Use Ingredients</h2>
+            <span class="pill">Staff Access</span>
+          </div>
+          <form id="ingredient-usage-form" style="max-width: 600px">
+            <label for="ingredient-select">Select Ingredient</label>
+            <select id="ingredient-select" name="ingredientId" required>
+              <option value="">Choose ingredient...</option>
+            </select>
 
-              <label for="item-name">Item name</label>
-              <input
-                id="item-name"
-                name="name"
-                placeholder="Chocolate Mousse Slice"
-                required
-              />
+            <label for="usage-qty">Quantity to Use</label>
+            <input
+              id="usage-qty"
+              name="quantity"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="0"
+              required
+            />
 
-              <label for="item-qty">Quantity on hand</label>
-              <input
-                id="item-qty"
-                name="quantity"
-                type="number"
-                min="0"
-                step="1"
-                required
-              />
+            <label for="usage-reason">Reason (Optional)</label>
+            <input
+              id="usage-reason"
+              name="reason"
+              type="text"
+              placeholder="e.g., Baking batch #5"
+            />
 
-              <label for="item-cost">Unit cost (₱)</label>
-              <input
-                id="item-cost"
-                name="cost"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-              />
-
-              <label for="item-date-purchased">Date Purchased</label>
-              <input
-                id="item-date-purchased"
-                name="datePurchased"
-                type="date"
-              />
-
-              <label for="item-use-by-date">Use By Date</label>
-              <input
-                id="item-use-by-date"
-                name="useByDate"
-                type="date"
-              />
-
-              <label for="item-reorder-point">Reorder Point</label>
-              <input
-                id="item-reorder-point"
-                name="reorderPoint"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="10"
-              />
-
-              <button class="btn btn-primary" type="submit">Save Item</button>
-            </form>
-          </article>
-
-          <article class="card">
-            <div class="section-heading">
-              <h2>Use Ingredients</h2>
-              <span class="pill">Staff Access</span>
-            </div>
-            <form id="ingredient-usage-form">
-              <label for="ingredient-select">Select Ingredient</label>
-              <select id="ingredient-select" name="ingredientId" required>
-                <option value="">Choose ingredient...</option>
-              </select>
-
-              <label for="usage-qty">Quantity to Use</label>
-              <input
-                id="usage-qty"
-                name="quantity"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="0"
-                required
-              />
-
-              <label for="usage-reason">Reason (Optional)</label>
-              <input
-                id="usage-reason"
-                name="reason"
-                type="text"
-                placeholder="e.g., Baking batch #5"
-              />
-
-              <button class="btn btn-primary" type="submit">
-                Record Usage
-              </button>
-            </form>
-          </article>
+            <button class="btn btn-primary" type="submit">
+              Record Usage
+            </button>
+          </form>
         </section>
 
         <!-- Unified Inventory Table -->
         <section class="table-wrapper" style="margin-top: 2rem">
-          <div class="section-heading" style="margin-bottom: 1rem; align-items: center; flex-wrap: wrap; gap: 1rem">
+          <div class="section-heading" style="margin-bottom: 1rem; align-items: center; justify-content: space-between">
             <div>
               <h2>All Inventory Items</h2>
               <span class="pill">Unified View</span>
             </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap">
-              <!-- Search Bar -->
-              <input
-                type="search"
-                id="unified-search"
-                placeholder="Search items..."
-                style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 0.375rem; min-width: 250px"
-              />
-              
-              <!-- Category Filter -->
-              <select id="category-filter" style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 0.375rem">
-                <option value="">All Categories</option>
-                <option value="cakes & pastries">Cakes & Pastries</option>
-                <option value="ingredients">Ingredients</option>
-                <option value="supplies">Supplies</option>
-                <option value="beverages">Beverages</option>
-              </select>
-              
-              <!-- Status Filter -->
-              <select id="status-filter" style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 0.375rem">
-                <option value="">All Status</option>
-                <option value="in-stock">In Stock</option>
-                <option value="low-stock">Low Stock</option>
-                <option value="expiring-soon">Expiring Soon</option>
-              </select>
+            <div style="display: flex; gap: 0.75rem; align-items: center">
+              <button class="btn btn-primary" id="add-item-btn" data-role="admin">
+                + Add Item
+              </button>
             </div>
           </div>
           
+          <!-- Filters Row -->
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem">
+            <!-- Search Bar -->
+            <input
+              type="search"
+              id="unified-search"
+              placeholder="Search items..."
+              style="
+                padding: 0.5rem 1rem;
+                border: 1px solid #ddd;
+                border-radius: 0.375rem;
+                flex: 1;
+                min-width: 200px;
+              "
+            />
+
+            <!-- Category Filter -->
+            <select
+              id="category-filter"
+              style="
+                padding: 0.5rem 1rem;
+                border: 1px solid #ddd;
+                border-radius: 0.375rem;
+              "
+            >
+              <option value="">All Categories</option>
+              <option value="cakes & pastries">Cakes & Pastries</option>
+              <option value="ingredients">Ingredients</option>
+              <option value="supplies">Supplies</option>
+              <option value="beverages">Beverages</option>
+            </select>
+
+            <!-- Status Filter -->
+            <select
+              id="status-filter"
+              style="
+                padding: 0.5rem 1rem;
+                border: 1px solid #ddd;
+                border-radius: 0.375rem;
+              "
+            >
+              <option value="">All Status</option>
+              <option value="in-stock">In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="expiring-soon">Expiring Soon</option>
+            </select>
+          </div>
+
           <table id="unified-inventory-table">
             <thead>
               <tr>
@@ -279,7 +316,10 @@
             </thead>
             <tbody id="unified-inventory-tbody">
               <tr>
-                <td colspan="10" style="text-align: center; padding: 2rem; color: #999">
+                <td
+                  colspan="10"
+                  style="text-align: center; padding: 2rem; color: #999"
+                >
                   No inventory items found
                 </td>
               </tr>
@@ -288,11 +328,98 @@
         </section>
 
         <p class="footer-note">
-          Use the form above to add new SKUs or update existing counts. Filter and search to find specific items.
+          Use the form above to add new SKUs or update existing counts. Filter
+          and search to find specific items.
         </p>
       </main>
     </div>
 
+    <!-- Add Item Modal -->
+    <div class="modal-overlay" id="inventory-add-modal">
+      <div class="modal-card">
+        <div class="modal-card__header">
+          <h2>Add Inventory Item</h2>
+          <button
+            class="btn btn-outline"
+            type="button"
+            id="inventory-add-close"
+          >
+            Close
+          </button>
+        </div>
+        <form id="inventory-form" data-role="admin">
+          <label for="item-category">Category</label>
+          <select id="item-category" name="category" required>
+            <option value="">Select category</option>
+            <option value="cakes & pastries">Cakes & Pastries</option>
+            <option value="ingredients">Ingredients</option>
+            <option value="supplies">Supplies</option>
+            <option value="beverages">Beverages</option>
+          </select>
+
+          <label for="item-name">Item name</label>
+          <input
+            id="item-name"
+            name="name"
+            placeholder="Chocolate Mousse Slice"
+            required
+          />
+
+          <label for="item-qty">Quantity on hand</label>
+          <input
+            id="item-qty"
+            name="quantity"
+            type="number"
+            min="0"
+            step="1"
+            required
+          />
+
+          <label for="item-cost">Unit cost (₱)</label>
+          <input
+            id="item-cost"
+            name="cost"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+          />
+
+          <label for="item-date-purchased">Date Purchased</label>
+          <input
+            id="item-date-purchased"
+            name="datePurchased"
+            type="date"
+          />
+
+          <label for="item-use-by-date">Use By Date</label>
+          <input id="item-use-by-date" name="useByDate" type="date" />
+
+          <label for="item-reorder-point">Reorder Point</label>
+          <input
+            id="item-reorder-point"
+            name="reorderPoint"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="10"
+          />
+
+          <div class="modal-card__actions">
+            <button
+              class="btn btn-secondary"
+              type="button"
+              id="inventory-add-cancel"
+            >
+              Cancel
+            </button>
+            <button class="btn btn-primary" type="submit">Add Item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Item Modal -->
     <div class="modal-overlay" id="inventory-edit-modal">
       <div class="modal-card">
         <div class="modal-card__header">
@@ -346,11 +473,7 @@
           />
 
           <label for="edit-item-use-by-date">Use By Date</label>
-          <input
-            id="edit-item-use-by-date"
-            name="useByDate"
-            type="date"
-          />
+          <input id="edit-item-use-by-date" name="useByDate" type="date" />
 
           <label for="edit-item-reorder-point">Reorder Point</label>
           <input

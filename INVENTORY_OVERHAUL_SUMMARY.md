@@ -3,7 +3,9 @@
 ## Changes Implemented (November 30, 2025)
 
 ### 1. File Cleanup ✅
+
 **Removed unnecessary one-time scripts and documentation:**
+
 - Deleted 12 Python scripts: `add_leave_table.py`, `add_note_column.py`, `check_constraints.py`, `check_users.py`, `cleanup_database_schema.py`, `delete_front_desk.py`, `delete_test_user.py`, `delete_users_local.py`, `final_database_cleanup.py`, `fix_attendance_foreign_key.py`, `fix_primary_keys.py`, `fix_sales_history.py`
 - Deleted 6 MD files: `DASHBOARD_SUGGESTIONS.md`, `DATABASE_CLEANUP_SUMMARY.md`, `DEPLOYMENT_FIX_GUIDE.md`, `DEPLOYMENT_GUIDE.md`, `MANAGER_PERMISSION_MIGRATION.md`, `PROFILE_EDIT_REQUEST_STATUS.md`, `SCRIPTS_README.md`
 - Kept: `README.md`, `sync_data_from_render.py` (still useful)
@@ -11,6 +13,7 @@
 ### 2. Database Schema Updates ✅
 
 **Updated `sql/schema.sql`:**
+
 ```sql
 CREATE TABLE IF NOT EXISTS inventory (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -28,11 +31,13 @@ CREATE TABLE IF NOT EXISTS inventory (
 ```
 
 **Created `sql/add_inventory_fields.sql`:**
+
 - Migration script to add new columns to existing databases
 - Sets default values based on category
 - Applied successfully to production database ✅
 
 **Updated `sql/seeds.sql`:**
+
 - All inventory items now include realistic date data
 - `date_purchased`: Set to various dates in the past (1-20 days ago)
 - `use_by_date`: Category-specific expiration dates:
@@ -48,18 +53,21 @@ CREATE TABLE IF NOT EXISTS inventory (
 **New `inventory.html` Features:**
 
 1. **Metrics Dashboard** (Top Section)
+
    - Total SKUs count
    - Low Stock Items count (below reorder point)
    - Expiring Soon count (within 7 days of use-by date)
    - Total Inventory Value
 
 2. **Unified Table** (Replaces 4 separate tables)
+
    - Single comprehensive table with 10 columns:
      - Item, Category, Qty, Cost, Purchased, Use By, Reorder Point, Total Used, Status, Actions
    - Real-time filtering and search
    - Color-coded status badges (In Stock/Low Stock/Expiring Soon/Expired/Out of Stock)
 
 3. **Advanced Filtering**
+
    - **Search Bar**: Global search across item names and categories
    - **Category Filter**: All/Cakes & Pastries/Ingredients/Supplies/Beverages
    - **Status Filter**: All/In Stock/Low Stock/Expiring Soon
@@ -73,6 +81,7 @@ CREATE TABLE IF NOT EXISTS inventory (
    - Ingredient usage tracking updates `total_used` field
 
 **Removed:**
+
 - 4 separate category tables (Cakes & Pastries, Ingredients, Supplies, Beverages)
 - Old expandable "Inventory Snapshot" sidebar
 - Per-category search boxes
@@ -82,6 +91,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 **Updated `backend/main.py`:**
 
 1. **fetch_table() Enhancement:**
+
    - Added camelCase conversion for new inventory fields:
      - `date_purchased` → `datePurchased`
      - `use_by_date` → `useByDate`
@@ -112,11 +122,13 @@ CREATE TABLE IF NOT EXISTS inventory (
 ```
 
 **Smart Status Detection:**
+
 1. Checks expiration first (Expired/Expiring Soon)
 2. Then checks stock levels (Out of Stock/Low Stock/In Stock)
 3. Priority: Expired > Expiring Soon > Out of Stock > Low Stock > In Stock
 
 **Filter Implementation:**
+
 - Global `currentFilters` object tracks active filters
 - Real-time filtering without page reload
 - Combines search + category + status filters
@@ -131,6 +143,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 4. **Total Value**: Sum of (quantity × cost) for all items
 
 **Usage Tracking:**
+
 - `total_used` field tracks cumulative usage
 - Updated automatically when ingredients are used via form
 - Displayed in unified table for analysis
@@ -138,11 +151,13 @@ CREATE TABLE IF NOT EXISTS inventory (
 ### 7. Migration Status ✅
 
 **Databases Updated:**
+
 - ✅ Production (Render): Migration applied successfully
 - ✅ Local: Migration applied (via production connection)
 - ✅ Both databases now have all new inventory fields
 
 **Verification:**
+
 ```
 Inventory table columns:
   - id, category, name, quantity, cost, created_at
@@ -156,6 +171,7 @@ Inventory table columns:
 **Message**: "Major inventory system overhaul: Added unified table with filters, metrics, date tracking, and cleaned up unnecessary files"
 
 **Files Changed**: 28 files
+
 - 3,150 deletions (cleanup)
 - 711 additions (new features)
 
@@ -166,6 +182,7 @@ Inventory table columns:
 ## How to Use New Inventory System
 
 ### For Admins:
+
 1. **View Metrics**: Top dashboard shows inventory health at a glance
 2. **Search Items**: Use global search bar to find any item instantly
 3. **Filter by Category**: Dropdown to show only specific categories
@@ -174,11 +191,13 @@ Inventory table columns:
 6. **Monitor Expiration**: System alerts items expiring within 7 days
 
 ### For Kitchen Staff:
+
 1. **Use Ingredients**: Same form as before, now updates `total_used` field
 2. **Check Stock**: Unified table shows all items with usage history
 3. **View Alerts**: Top panel shows low stock and expiring items
 
 ### Status Colors:
+
 - 🟢 **Green (In Stock)**: Healthy stock levels
 - 🟡 **Yellow (Low Stock)**: Below reorder point, needs restocking
 - 🔴 **Red (Expiring Soon/Expired)**: Expiration priority alert
@@ -225,5 +244,5 @@ psql -h <host> -U <user> -d sweetbox -f sql/add_inventory_fields.sql
 
 ---
 
-*Generated: November 30, 2025*
-*Commit: d612cd9*
+_Generated: November 30, 2025_
+_Commit: d612cd9_

@@ -197,54 +197,108 @@ function setupFilters() {
 }
 
 function setupForms() {
-  setupMainForm();
+  setupAddModal();
   setupEditModal();
 }
 
-function setupMainForm() {
-  const form = document.getElementById('inventory-form');
-  if (!form || form.dataset.bound) return;
+function setupAddModal() {
+  const addBtn = document.getElementById('add-item-btn');
+  const addModal = document.getElementById('inventory-add-modal');
+  const addForm = document.getElementById('inventory-form');
+  const addClose = document.getElementById('inventory-add-close');
+  const addCancel = document.getElementById('inventory-add-cancel');
   
-  form.dataset.bound = 'true';
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    if (!isAdmin()) {
-      alert('Only administrators can add or update inventory items.');
-      return;
-    }
-    
-    const data = new FormData(form);
-    const payload = {
-      id: data.get('itemId') || `inv-${Date.now()}`,
-      category: data.get('category'),
-      name: data.get('name'),
-      quantity: Number(data.get('quantity')) || 0,
-      cost: Number(data.get('cost')) || 0,
-      datePurchased: data.get('datePurchased') || null,
-      useByDate: data.get('useByDate') || null,
-      reorderPoint: Number(data.get('reorderPoint')) || 10,
-      lastRestocked: new Date().toISOString().split('T')[0],
-      totalUsed: 0
-    };
-    
-    if (!payload.category || !payload.name) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-    
-    const idx = appState.inventory.findIndex(i => i.id === payload.id);
-    if (idx >= 0) {
-      appState.inventory[idx] = { ...appState.inventory[idx], ...payload };
-    } else {
+  // Add button click
+  if (addBtn && !addBtn.dataset.bound) {
+    addBtn.dataset.bound = 'true';
+    addBtn.addEventListener('click', () => {
+      if (!isAdmin()) {
+        alert('Only administrators can add inventory items.');
+        return;
+      }
+      openAddModal();
+    });
+  }
+  
+  // Close buttons
+  if (addClose && !addClose.dataset.bound) {
+    addClose.dataset.bound = 'true';
+    addClose.addEventListener('click', closeAddModal);
+  }
+  
+  if (addCancel && !addCancel.dataset.bound) {
+    addCancel.dataset.bound = 'true';
+    addCancel.addEventListener('click', closeAddModal);
+  }
+  
+  // Click outside to close
+  if (addModal && !addModal.dataset.bound) {
+    addModal.dataset.bound = 'true';
+    addModal.addEventListener('click', (e) => {
+      if (e.target === addModal) closeAddModal();
+    });
+  }
+  
+  // Form submission
+  if (addForm && !addForm.dataset.bound) {
+    addForm.dataset.bound = 'true';
+    addForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      if (!isAdmin()) {
+        alert('Only administrators can add inventory items.');
+        return;
+      }
+      
+      const data = new FormData(addForm);
+      const payload = {
+        id: `inv-${Date.now()}`,
+        category: data.get('category'),
+        name: data.get('name'),
+        quantity: Number(data.get('quantity')) || 0,
+        cost: Number(data.get('cost')) || 0,
+        datePurchased: data.get('datePurchased') || null,
+        useByDate: data.get('useByDate') || null,
+        reorderPoint: Number(data.get('reorderPoint')) || 10,
+        lastRestocked: new Date().toISOString().split('T')[0],
+        totalUsed: 0
+      };
+      
+      if (!payload.category || !payload.name) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+      
       appState.inventory.push(payload);
-    }
-    
-    saveState();
-    form.reset();
-    renderInventory();
-    alert('Inventory item saved successfully!');
-  });
+      saveState();
+      closeAddModal();
+      renderInventory();
+      alert('Inventory item added successfully!');
+    });
+  }
+}
+
+function openAddModal() {
+  const addModal = document.getElementById('inventory-add-modal');
+  const addForm = document.getElementById('inventory-form');
+  if (!addModal || !addForm) return;
+  
+  addForm.reset();
+  addModal.classList.add('active');
+}
+
+function closeAddModal() {
+  const addModal = document.getElementById('inventory-add-modal');
+  const addForm = document.getElementById('inventory-form');
+  if (!addModal || !addForm) return;
+  
+  addModal.classList.remove('active');
+  addForm.reset();
+}
+
+function setupMainForm() {
+  // This function is no longer needed as form is in modal
+  // Kept for compatibility, actual form setup is in setupAddModal
 }
 
 function setupEditModal() {
