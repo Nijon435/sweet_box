@@ -478,6 +478,9 @@ function renderEmployees() {
   attachRemovalHandlers();
   updateQuickMetrics();
   attachQuickActionHandlers();
+  
+  // Render leave/request approvals
+  renderLeaveApprovals();
 }
 
 // Update team overview with permission distribution and stats
@@ -551,7 +554,8 @@ function updateTeamOverview() {
   const deliveryLegend = document.getElementById("permission-legend-delivery");
 
   if (adminLegend) adminLegend.textContent = `${permissionCounts.admin} Admin`;
-  if (managerLegend) managerLegend.textContent = `${permissionCounts.manager} Manager`;
+  if (managerLegend)
+    managerLegend.textContent = `${permissionCounts.manager} Manager`;
   if (kitchenLegend)
     kitchenLegend.textContent = `${permissionCounts.kitchen_staff} Kitchen`;
   if (frontLegend)
@@ -841,9 +845,6 @@ function openAddEmployeeModal() {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
   });
-
-  // Render leave approval list
-  renderLeaveApprovals();
 }
 
 function renderLeaveApprovals() {
@@ -958,12 +959,24 @@ window.approveLeave = function (leaveId) {
 
   const currentUser = getCurrentUser();
   leave.status = "approved";
-  leave.approvedBy = currentUser.id;
-  leave.approvedAt = new Date().toISOString();
+  leave.reviewedBy = currentUser.id;
+  leave.reviewedAt = new Date().toISOString();
 
   saveState();
   renderEmployees();
-  alert("Request approved!");
+  
+  // Show custom success popup
+  const popup = document.createElement("div");
+  popup.style.cssText =
+    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
+  popup.innerHTML = `
+    <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
+    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Request Approved!</h3>
+    <p style="margin: 0; color: #666;">The request has been approved successfully.</p>
+    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+  `;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
 };
 
 window.rejectLeave = function (leaveId) {
@@ -977,12 +990,24 @@ window.rejectLeave = function (leaveId) {
 
   const currentUser = getCurrentUser();
   leave.status = "rejected";
-  leave.approvedBy = currentUser.id;
-  leave.approvedAt = new Date().toISOString();
+  leave.reviewedBy = currentUser.id;
+  leave.reviewedAt = new Date().toISOString();
 
   saveState();
   renderEmployees();
-  alert("Request rejected.");
+  
+  // Show custom rejection popup
+  const popup = document.createElement("div");
+  popup.style.cssText =
+    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
+  popup.innerHTML = `
+    <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
+    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Request Rejected</h3>
+    <p style="margin: 0; color: #666;">The request has been rejected.</p>
+    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+  `;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
 };
 
 window.approveProfileEdit = function (requestId) {
@@ -1028,7 +1053,19 @@ window.approveProfileEdit = function (requestId) {
 
   saveState();
   renderEmployees();
-  alert("Profile edit request approved and changes applied!");
+  
+  // Show custom success popup
+  const popup = document.createElement("div");
+  popup.style.cssText =
+    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
+  popup.innerHTML = `
+    <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
+    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Approved!</h3>
+    <p style="margin: 0; color: #666;">Profile changes have been applied successfully.</p>
+    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+  `;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
 };
 
 window.rejectProfileEdit = function (requestId) {
@@ -1055,7 +1092,19 @@ window.rejectProfileEdit = function (requestId) {
 
   saveState();
   renderEmployees();
-  alert("Profile edit request rejected.");
+  
+  // Show custom rejection popup
+  const popup = document.createElement("div");
+  popup.style.cssText =
+    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
+  popup.innerHTML = `
+    <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
+    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Rejected</h3>
+    <p style="margin: 0; color: #666;">The profile edit request has been rejected.</p>
+    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+  `;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
 };
 
 window.pageRenderers = window.pageRenderers || {};
