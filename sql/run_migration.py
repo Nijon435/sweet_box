@@ -7,7 +7,7 @@ import os
 
 def run_migration():
     # Get database URL from environment or use default
-    database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/sweetbox')
+    database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:4305@localhost:5432/sweetbox')
     
     # Parse the database URL
     result = urlparse(database_url)
