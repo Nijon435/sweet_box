@@ -6,6 +6,10 @@ let currentFilters = {
   status: "",
 };
 
+// Pagination state
+let currentPage = 1;
+const itemsPerPage = 20;
+
 function renderInventory() {
   renderMetrics();
   setupForms();
@@ -36,6 +40,12 @@ function renderMetrics() {
     return daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
   });
 
+  const expiredItems = inventory.filter((item) => {
+    const expiryDate = item.expiryDate || item.expiry_date;
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date();
+  });
+
   const totalValue = inventory.reduce(
     (sum, item) => sum + item.quantity * item.cost,
     0
@@ -46,6 +56,7 @@ function renderMetrics() {
     "metric-total-skus": totalSKUs,
     "metric-low-stock": lowStockItems.length,
     "metric-expiring-soon": expiringItems.length,
+    "metric-expired": expiredItems.length,
     "metric-total-value": formatCurrency(totalValue),
   };
 
@@ -136,6 +147,15 @@ function renderUnifiedTable() {
     return true;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const endIdx = startIdx + itemsPerPage;
+  const pageItems = filteredInventory.slice(startIdx, endIdx);
+
+  // Update pagination UI
+  updatePaginationControls(totalPages);
+
   if (filteredInventory.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -149,7 +169,7 @@ function renderUnifiedTable() {
 
   const canManageInventory = isAdmin();
 
-  tbody.innerHTML = filteredInventory
+  tbody.innerHTML = pageItems
     .map((item) => {
       const statusInfo = getItemStatus(item);
       const datePurchased = item.datePurchased || item.date_purchased;
@@ -214,6 +234,7 @@ function setupFilters() {
     searchInput.dataset.bound = "true";
     searchInput.addEventListener("input", (e) => {
       currentFilters.search = e.target.value;
+      currentPage = 1; // Reset to first page on filter change
       renderUnifiedTable();
     });
   }
@@ -222,6 +243,7 @@ function setupFilters() {
     categoryFilter.dataset.bound = "true";
     categoryFilter.addEventListener("change", (e) => {
       currentFilters.category = e.target.value;
+      currentPage = 1; // Reset to first page on filter change
       renderUnifiedTable();
     });
   }
@@ -230,6 +252,7 @@ function setupFilters() {
     statusFilter.dataset.bound = "true";
     statusFilter.addEventListener("change", (e) => {
       currentFilters.status = e.target.value;
+      currentPage = 1; // Reset to first page on filter change
       renderUnifiedTable();
     });
   }
@@ -238,6 +261,7 @@ function setupFilters() {
     unitFilter.dataset.bound = "true";
     unitFilter.addEventListener("change", (e) => {
       currentFilters.unit = e.target.value;
+      currentPage = 1; // Reset to first page on filter change
       renderUnifiedTable();
     });
   }
@@ -647,6 +671,75 @@ function updateAlert() {
         }
       </div>
     `;
+  }
+}
+
+// Pagination functions
+function updatePaginationControls(totalPages) {
+  const currentPageEl = document.getElementById("inventory-current-page");
+  const totalPagesEl = document.getElementById("inventory-total-pages");
+  const prevBtn = document.getElementById("inventory-prev-btn");
+  const nextBtn = document.getElementById("inventory-next-btn");
+  const pagination = document.getElementById("inventory-pagination");
+
+  if (!currentPageEl || !totalPagesEl || !prevBtn || !nextBtn) return;
+
+  // Hide pagination if only one page
+  if (totalPages <= 1) {
+    pagination.style.display = "none";
+    return;
+  } else {
+    pagination.style.display = "flex";
+  }
+
+  currentPageEl.textContent = currentPage;
+  totalPagesEl.textContent = totalPages;
+
+  // Enable/disable buttons
+  prevBtn.disabled = currentPage === 1;
+  nextBtn.disabled = currentPage >= totalPages;
+}
+
+function inventoryPreviousPage() {
+  if (currentPage > 1) {
+    currentPage--;
+    renderUnifiedTable();
+  }
+}
+
+function inventoryNextPage() {
+  const inventory = appState.inventory || [];
+  const filteredInventory = inventory.filter((item) => {
+    if (currentFilters.search) {
+      const searchLower = currentFilters.search.toLowerCase();
+      const itemName = (item.name || "").toLowerCase();
+      const itemCategory = (item.category || "").toLowerCase();
+      if (
+        !itemName.includes(searchLower) &&
+        !itemCategory.includes(searchLower)
+      ) {
+        return false;
+      }
+    }
+    if (currentFilters.category && item.category !== currentFilters.category) {
+      return false;
+    }
+    if (currentFilters.status) {
+      const itemStatus = getItemStatus(item);
+      if (itemStatus.status !== currentFilters.status) {
+        return false;
+      }
+    }
+    if (currentFilters.unit && item.unit !== currentFilters.unit) {
+      return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderUnifiedTable();
   }
 }
 

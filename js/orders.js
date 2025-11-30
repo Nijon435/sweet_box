@@ -1,3 +1,7 @@
+// Pagination state for completed orders
+let ordersCurrentPage = 1;
+const ordersItemsPerPage = 20;
+
 function renderOrders() {
   const form = document.getElementById("orders-form");
   const filterSelect = document.getElementById("orders-filter");
@@ -171,25 +175,35 @@ function renderOrders() {
       const row = document.createElement("tr");
       row.innerHTML = `<td colspan="5" class="empty-state">No completed orders yet.</td>`;
       completedBody.appendChild(row);
+      updateOrdersPaginationControls(0);
     } else {
-      completedOrders
-        .sort(
-          (a, b) =>
-            new Date(b.servedAt || b.timestamp) -
-            new Date(a.servedAt || a.timestamp)
-        )
-        .forEach((order) => {
-          const orderTypeKey = normalizeOrderType(order.type);
-          const orderTypeTag = `<span class="pill pill-ghost order-type-tag order-type-${orderTypeKey}">${getOrderTypeLabel(
-            orderTypeKey
-          )}</span>`;
-          const servedTime = order.servedAt || order.timestamp;
-          const row = document.createElement("tr");
-          row.innerHTML = `
+      const sortedOrders = completedOrders.sort(
+        (a, b) =>
+          new Date(b.servedAt || b.timestamp) -
+          new Date(a.servedAt || a.timestamp)
+      );
+
+      // Calculate pagination
+      const totalPages = Math.ceil(sortedOrders.length / ordersItemsPerPage);
+      const startIdx = (ordersCurrentPage - 1) * ordersItemsPerPage;
+      const endIdx = startIdx + ordersItemsPerPage;
+      const pageOrders = sortedOrders.slice(startIdx, endIdx);
+
+      // Update pagination UI
+      updateOrdersPaginationControls(totalPages);
+
+      pageOrders.forEach((order) => {
+        const orderTypeKey = normalizeOrderType(order.type);
+        const orderTypeTag = `<span class="pill pill-ghost order-type-tag order-type-${orderTypeKey}">${getOrderTypeLabel(
+          orderTypeKey
+        )}</span>`;
+        const servedTime = order.servedAt || order.timestamp;
+        const row = document.createElement("tr");
+        row.innerHTML = `
           <td>${order.id}</td>
           <td><strong>${order.customer}</strong><br/><small>${
-            order.items
-          }</small><div class="order-tags">${orderTypeTag}</div></td>
+          order.items
+        }</small><div class="order-tags">${orderTypeTag}</div></td>
           <td>${formatCurrency(order.total)}</td>
           <td>${formatTime(servedTime)}</td>
           <td>
@@ -201,8 +215,8 @@ function renderOrders() {
             }">Delete</button>
           </td>
         `;
-          completedBody.appendChild(row);
-        });
+        completedBody.appendChild(row);
+      });
     }
   }
 
@@ -699,6 +713,50 @@ function initializeOrderForm() {
     renderOrderItems();
   } catch (err) {
     console.warn("initializeOrderForm failed", err);
+  }
+}
+
+// Pagination functions for completed orders
+function updateOrdersPaginationControls(totalPages) {
+  const currentPageEl = document.getElementById("orders-current-page");
+  const totalPagesEl = document.getElementById("orders-total-pages");
+  const prevBtn = document.getElementById("orders-prev-btn");
+  const nextBtn = document.getElementById("orders-next-btn");
+  const pagination = document.getElementById("orders-pagination");
+
+  if (!currentPageEl || !totalPagesEl || !prevBtn || !nextBtn) return;
+
+  // Hide pagination if only one page or no orders
+  if (totalPages <= 1) {
+    pagination.style.display = "none";
+    return;
+  } else {
+    pagination.style.display = "flex";
+  }
+
+  currentPageEl.textContent = ordersCurrentPage;
+  totalPagesEl.textContent = totalPages;
+
+  // Enable/disable buttons
+  prevBtn.disabled = ordersCurrentPage === 1;
+  nextBtn.disabled = ordersCurrentPage >= totalPages;
+}
+
+function ordersPreviousPage() {
+  if (ordersCurrentPage > 1) {
+    ordersCurrentPage--;
+    renderOrders();
+  }
+}
+
+function ordersNextPage() {
+  const completedOrders = appState.orders
+    ? appState.orders.filter((o) => o.status === "served")
+    : [];
+  const totalPages = Math.ceil(completedOrders.length / ordersItemsPerPage);
+  if (ordersCurrentPage < totalPages) {
+    ordersCurrentPage++;
+    renderOrders();
   }
 }
 

@@ -179,6 +179,29 @@
               style="
                 text-align: center;
                 padding: 1rem;
+                background: #dc3545;
+                border-radius: 0.5rem;
+              "
+            >
+              <small
+                style="
+                  color: #fff;
+                  font-size: 0.875rem;
+                  display: block;
+                  margin-bottom: 0.5rem;
+                "
+                >Expired Items</small
+              >
+              <strong
+                style="font-size: 1.75rem; color: #fff"
+                id="metric-expired"
+                >0</strong
+              >
+            </div>
+            <div
+              style="
+                text-align: center;
+                padding: 1rem;
                 background: #d1ecf1;
                 border-radius: 0.5rem;
               "
@@ -349,6 +372,40 @@
               </tr>
             </tbody>
           </table>
+
+          <!-- Pagination Controls -->
+          <div
+            id="inventory-pagination"
+            style="
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              gap: 1rem;
+              margin-top: 1.5rem;
+              padding: 1rem 0;
+            "
+          >
+            <button
+              id="inventory-prev-btn"
+              class="btn btn-outline"
+              onclick="inventoryPreviousPage()"
+              disabled
+            >
+              ← Previous
+            </button>
+            <span style="font-size: 0.9rem; color: #666">
+              Page <strong id="inventory-current-page">1</strong> of
+              <strong id="inventory-total-pages">1</strong>
+            </span>
+            <button
+              id="inventory-next-btn"
+              class="btn btn-outline"
+              onclick="inventoryNextPage()"
+              disabled
+            >
+              Next →
+            </button>
+          </div>
         </section>
 
         <p class="footer-note">

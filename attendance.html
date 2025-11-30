@@ -229,6 +229,40 @@
             </thead>
             <tbody></tbody>
           </table>
+
+          <!-- Pagination Controls -->
+          <div
+            id="attendance-pagination"
+            style="
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              gap: 1rem;
+              margin-top: 1.5rem;
+              padding: 1rem 0;
+            "
+          >
+            <button
+              id="attendance-prev-btn"
+              class="btn btn-outline"
+              onclick="attendancePreviousPage()"
+              disabled
+            >
+              ← Previous
+            </button>
+            <span style="font-size: 0.9rem; color: #666">
+              Page <strong id="attendance-current-page">1</strong> of
+              <strong id="attendance-total-pages">1</strong>
+            </span>
+            <button
+              id="attendance-next-btn"
+              class="btn btn-outline"
+              onclick="attendanceNextPage()"
+              disabled
+            >
+              Next →
+            </button>
+          </div>
         </section>
       </main>
     </div>

@@ -1,3 +1,7 @@
+// Pagination state for attendance logs
+let attendanceCurrentPage = 1;
+const attendanceItemsPerPage = 20;
+
 function renderAttendance() {
   const currentUser = getCurrentUser();
   const clockInBtn = document.getElementById("clock-in-btn");
@@ -308,7 +312,10 @@ function renderAttendance() {
   // Log filter handler
   if (logFilter && !logFilter.dataset.bound) {
     logFilter.dataset.bound = "true";
-    logFilter.addEventListener("change", renderAttendance);
+    logFilter.addEventListener("change", () => {
+      attendanceCurrentPage = 1; // Reset to first page on filter change
+      renderAttendance();
+    });
   }
 
   const logFilterValue = logFilter?.value || "all";
@@ -400,7 +407,17 @@ function renderAttendance() {
           : shift.includes("afternoon");
       })
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    filteredLogs.forEach((log) => {
+
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredLogs.length / attendanceItemsPerPage);
+    const startIdx = (attendanceCurrentPage - 1) * attendanceItemsPerPage;
+    const endIdx = startIdx + attendanceItemsPerPage;
+    const pageLogs = filteredLogs.slice(startIdx, endIdx);
+
+    // Update pagination UI
+    updateAttendancePaginationControls(totalPages);
+
+    pageLogs.forEach((log) => {
       const employee = getEmployee(log.employeeId);
       const actionMeta = getAttendanceActionMeta(log.action);
       const row = document.createElement("tr");
@@ -561,6 +578,57 @@ function openRequestLeaveModal(user) {
     modal.remove();
     alert("Leave request submitted successfully! Awaiting admin approval.");
   });
+}
+
+// Pagination functions for attendance logs
+function updateAttendancePaginationControls(totalPages) {
+  const currentPageEl = document.getElementById("attendance-current-page");
+  const totalPagesEl = document.getElementById("attendance-total-pages");
+  const prevBtn = document.getElementById("attendance-prev-btn");
+  const nextBtn = document.getElementById("attendance-next-btn");
+  const pagination = document.getElementById("attendance-pagination");
+
+  if (!currentPageEl || !totalPagesEl || !prevBtn || !nextBtn) return;
+
+  // Hide pagination if only one page or no logs
+  if (totalPages <= 1) {
+    pagination.style.display = "none";
+    return;
+  } else {
+    pagination.style.display = "flex";
+  }
+
+  currentPageEl.textContent = attendanceCurrentPage;
+  totalPagesEl.textContent = totalPages;
+
+  // Enable/disable buttons
+  prevBtn.disabled = attendanceCurrentPage === 1;
+  nextBtn.disabled = attendanceCurrentPage >= totalPages;
+}
+
+function attendancePreviousPage() {
+  if (attendanceCurrentPage > 1) {
+    attendanceCurrentPage--;
+    renderAttendance();
+  }
+}
+
+function attendanceNextPage() {
+  const logFilterValue = document.getElementById("attendance-log-filter")?.value || "all";
+  const filteredLogs = getTodaysLogs().filter((log) => {
+    if (logFilterValue === "all") return true;
+    const shift = (log.shift || "").toLowerCase();
+    if (!shift) return false;
+    return logFilterValue === "morning"
+      ? shift.includes("morning")
+      : shift.includes("afternoon");
+  });
+
+  const totalPages = Math.ceil(filteredLogs.length / attendanceItemsPerPage);
+  if (attendanceCurrentPage < totalPages) {
+    attendanceCurrentPage++;
+    renderAttendance();
+  }
 }
 
 window.pageRenderers = window.pageRenderers || {};
