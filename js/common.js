@@ -369,7 +369,7 @@ const getTodaysLogs = () =>
 const computeEmployeeStatus = (employee) => {
   // Check if employee is on approved leave today
   const today = todayKey();
-  
+
   // Find active leave for this employee
   let activeLeave = null;
   (appState.requests || []).forEach((leave) => {
@@ -380,13 +380,13 @@ const computeEmployeeStatus = (employee) => {
     }
     const start = leave.startDate || leave.start_date;
     const end = leave.endDate || leave.end_date;
-    
+
     // Auto-remove expired leaves (end date has passed)
     if (today > end) {
-      leave.status = 'completed';
+      leave.status = "completed";
       return;
     }
-    
+
     // Check if on leave today
     if (today >= start && today <= end) {
       activeLeave = leave;
@@ -396,9 +396,18 @@ const computeEmployeeStatus = (employee) => {
   if (activeLeave) {
     const start = activeLeave.startDate || activeLeave.start_date;
     const end = activeLeave.endDate || activeLeave.end_date;
-    const startDate = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const endDate = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return { status: "on-leave", timestamp: `On Leave (${startDate} - ${endDate})` };
+    const startDate = new Date(start).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    const endDate = new Date(end).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    return {
+      status: "on-leave",
+      timestamp: `On Leave (${startDate} - ${endDate})`,
+    };
   }
 
   const todayLogs = appState.attendanceLogs
@@ -760,7 +769,7 @@ function applyRolePermissions(user) {
       .split(",")
       .map((r) => r.trim())
       .filter(Boolean);
-    
+
     // Admin permission grants access to everything
     // Check if user's permission matches any required role
     const allowed =
@@ -768,7 +777,7 @@ function applyRolePermissions(user) {
       (user.permission === "admin" ||
         requiredRoles.length === 0 ||
         requiredRoles.includes(user.permission));
-    
+
     const hideWhenDenied = node.dataset.hideWhenDenied === "true";
     if (!allowed && hideWhenDenied) {
       node.style.display = "none";

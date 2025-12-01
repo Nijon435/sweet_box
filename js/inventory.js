@@ -23,8 +23,10 @@ function renderInventory() {
 const canManageInventory = () => {
   const user = getCurrentUser();
   if (!user) return false;
-  const permission = user.permission || '';
-  return ['admin', 'manager', 'kitchen_staff', 'front_staff'].includes(permission);
+  const permission = user.permission || "";
+  return ["admin", "manager", "kitchen_staff", "front_staff"].includes(
+    permission
+  );
 };
 
 function renderMetrics() {
