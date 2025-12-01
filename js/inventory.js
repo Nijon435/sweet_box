@@ -226,6 +226,7 @@ function renderUnifiedTable() {
         item.archivedBy = currentUser?.id || null;
 
         // Save to database using individual endpoint
+        showLoading("Archiving item...");
         try {
           const apiBase = window.API_BASE_URL || "";
           let response = await fetch(`${apiBase}/api/inventory/${item.id}`, {
@@ -249,13 +250,16 @@ function renderUnifiedTable() {
           if (!response.ok) {
             throw new Error("Failed to archive item");
           }
+
+          hideLoading();
+          renderInventory();
+          alert("Item archived successfully");
         } catch (error) {
+          hideLoading();
           console.error("Error archiving item:", error);
           alert("Failed to archive item");
           return;
         }
-
-        renderInventory();
       }
     });
   });
@@ -382,6 +386,7 @@ function setupAddModal() {
 
       // Save to database using individual endpoint
       (async () => {
+        showLoading("Adding item...");
         try {
           const apiBase = window.API_BASE_URL || "";
           let response = await fetch(`${apiBase}/api/inventory/${payload.id}`, {
@@ -406,10 +411,12 @@ function setupAddModal() {
             throw new Error("Failed to add inventory item");
           }
 
+          hideLoading();
           closeAddModal();
           renderInventory();
           alert("Inventory item added successfully!");
         } catch (error) {
+          hideLoading();
           console.error("Error adding inventory item:", error);
           alert("Failed to add inventory item");
         }
@@ -503,6 +510,7 @@ function setupEditModal() {
 
       // Save to database using individual endpoint
       (async () => {
+        showLoading("Saving changes...");
         try {
           const apiBase = window.API_BASE_URL || "";
           let response = await fetch(`${apiBase}/api/inventory/${itemId}`, {
@@ -527,10 +535,12 @@ function setupEditModal() {
             throw new Error("Failed to update inventory");
           }
 
+          hideLoading();
           closeEditModal();
           renderInventory();
           alert("Inventory item updated successfully!");
         } catch (error) {
+          hideLoading();
           console.error("Error updating inventory:", error);
           alert("Failed to update inventory item");
         }

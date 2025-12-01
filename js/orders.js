@@ -525,6 +525,7 @@ async function processOrder(customer, orderType) {
   appState.orders.push(order);
 
   // Save to database immediately - try individual endpoint first, fallback to bulk
+  showLoading("Processing order...");
   try {
     const apiBase = window.API_BASE_URL || "";
     let response = await fetch(`${apiBase}/api/orders/${order.id}`, {
@@ -552,10 +553,13 @@ async function processOrder(customer, orderType) {
 
     if (!response.ok) {
       console.error("Failed to save order to database");
+      hideLoading();
     } else {
       console.log("Order saved to database successfully");
+      hideLoading();
     }
   } catch (error) {
+    hideLoading();
     console.error("Error saving order to database:", error);
   }
 

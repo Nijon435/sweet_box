@@ -1162,21 +1162,51 @@ if (typeof window !== "undefined") {
 }
 
 function showConfirm(message, onConfirm) {
-  const modal = document.getElementById("confirm-modal");
-  const msg = document.getElementById("confirm-message");
-  const ok = document.getElementById("confirm-ok");
-  const cancel = document.getElementById("confirm-cancel");
-  if (!modal || !msg || !ok || !cancel) {
+  // Check if custom modal already exists, if not create it
+  let modal = document.getElementById("custom-confirm-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "custom-confirm-modal";
+    modal.className = "custom-confirm-modal";
+    modal.innerHTML = `
+      <div class="custom-confirm-content">
+        <div class="custom-confirm-icon">⚠️</div>
+        <div class="custom-confirm-message" id="custom-confirm-message"></div>
+        <div class="custom-confirm-buttons">
+          <button class="custom-confirm-btn custom-confirm-btn-ok" id="custom-confirm-ok">Confirm</button>
+          <button class="custom-confirm-btn custom-confirm-btn-cancel" id="custom-confirm-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Click outside to cancel
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("active");
+      }
+    });
+  }
+
+  const msg = document.getElementById("custom-confirm-message");
+  const ok = document.getElementById("custom-confirm-ok");
+  const cancel = document.getElementById("custom-confirm-cancel");
+
+  if (!msg || !ok || !cancel) {
+    // Fallback to native confirm
     if (window.confirm(message)) onConfirm();
     return;
   }
+
   msg.textContent = message;
   modal.classList.add("active");
+
   const cleanup = () => {
     modal.classList.remove("active");
     ok.removeEventListener("click", okHandler);
     cancel.removeEventListener("click", cancelHandler);
   };
+
   const okHandler = () => {
     cleanup();
     try {
@@ -1185,11 +1215,44 @@ function showConfirm(message, onConfirm) {
       console.error(err);
     }
   };
+
   const cancelHandler = () => {
     cleanup();
   };
+
   ok.addEventListener("click", okHandler);
   cancel.addEventListener("click", cancelHandler);
+}
+
+// Loading overlay utilities
+function showLoading(message = "Processing...") {
+  let overlay = document.getElementById("loading-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "loading-overlay";
+    overlay.className = "loading-overlay";
+    overlay.innerHTML = `
+      <div class="loading-spinner-wrapper">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  const loadingText = document.getElementById("loading-text");
+  if (loadingText) {
+    loadingText.textContent = message;
+  }
+
+  overlay.classList.add("active");
+}
+
+function hideLoading() {
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) {
+    overlay.classList.remove("active");
+  }
 }
 
 // Edit profile modal for current user
