@@ -227,6 +227,45 @@ async def root():
         "version": "1.0.0"
     }
 
+@app.get("/db-structure")
+async def check_db_structure():
+    """Check actual database table structures"""
+    try:
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        # Get orders table structure
+        orders_cols = await conn.fetch("""
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = 'orders'
+            ORDER BY ordinal_position;
+        """)
+        
+        # Get inventory table structure
+        inventory_cols = await conn.fetch("""
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = 'inventory'
+            ORDER BY ordinal_position;
+        """)
+        
+        await conn.close()
+        
+        return {
+            "orders": [dict(col) for col in orders_cols],
+            "inventory": [dict(col) for col in inventory_cols]
+        }
+    except Exception as e:
+        logger.error(f"Error checking DB structure: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/health")
 async def health_check():
     """Detailed health check with database status"""
@@ -408,7 +447,15 @@ async def update_order(order_id: str, order: dict):
             ssl='require'
         )
         
-        items_json = json.dumps(order.get("items", []))
+        # Frontend sends itemsJson (array), not items (string)
+        items_data = order.get("itemsJson") or order.get("items_json") or order.get("items", [])
+        if isinstance(items_data, str):
+            # If it's already a JSON string, parse it
+            try:
+                items_data = json.loads(items_data)
+            except:
+                items_data = []
+        items_json = json.dumps(items_data)
         
         await conn.execute(
             """INSERT INTO orders (id, customer, items_json, total, type, archived, archived_at, archived_by, timestamp)
@@ -721,19 +768,19 @@ async def save_state(state: dict):
         if "inventory" in state and state["inventory"]:
             for item in state["inventory"]:
                 await conn.execute(
-                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                        ON CONFLICT (id) DO UPDATE SET
                        name = EXCLUDED.name, category = EXCLUDED.category,
                        quantity = EXCLUDED.quantity, unit = EXCLUDED.unit, cost = EXCLUDED.cost,
                        date_purchased = EXCLUDED.date_purchased, use_by_date = EXCLUDED.use_by_date,
-                       expiry_date = EXCLUDED.expiry_date, reorder_point = EXCLUDED.reorder_point, 
+                       reorder_point = EXCLUDED.reorder_point, 
                        last_restocked = EXCLUDED.last_restocked, total_used = EXCLUDED.total_used,
                        archived = EXCLUDED.archived, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by""",
                     item.get("id"), item.get("name"), item.get("category"),
                     item.get("quantity"), item.get("unit", "pieces"), item.get("cost"),
                     parse_date(item.get("datePurchased")), parse_date(item.get("useByDate")),
-                    parse_date(item.get("expiryDate")), item.get("reorderPoint", 10), 
+                    item.get("reorderPoint", 10), 
                     parse_date(item.get("lastRestocked")), item.get("totalUsed", 0),
                     item.get("archived", False), parse_timestamp(item.get("archivedAt")),
                     item.get("archivedBy")
@@ -762,18 +809,18 @@ async def save_state(state: dict):
                             items_json_str = None
                 
                 await conn.execute(
-                    """INSERT INTO orders (id, customer, items_json, total, status, type, archived, archived_at, archived_by, timestamp, served_at)
-                       VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $11)
+                    """INSERT INTO orders (id, customer, items_json, total, type, archived, archived_at, archived_by, timestamp)
+                       VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9)
                        ON CONFLICT (id) DO UPDATE SET
                        customer = EXCLUDED.customer,
                        items_json = EXCLUDED.items_json, total = EXCLUDED.total,
-                       status = EXCLUDED.status, type = EXCLUDED.type,
+                       type = EXCLUDED.type,
                        archived = EXCLUDED.archived, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by,
-                       timestamp = EXCLUDED.timestamp, served_at = EXCLUDED.served_at""",
+                       timestamp = EXCLUDED.timestamp""",
                     order.get("id"), order.get("customer"),
-                    items_json_str, order.get("total"), order.get("status"),
+                    items_json_str, order.get("total"),
                     order.get("type"), order.get("archived", False), parse_timestamp(order.get("archivedAt")),
-                    order.get("archivedBy"), parse_timestamp(order.get("timestamp")), parse_timestamp(order.get("servedAt"))
+                    order.get("archivedBy"), parse_timestamp(order.get("timestamp"))
                 )
         
         # Save sales history (upsert - don't delete existing)
