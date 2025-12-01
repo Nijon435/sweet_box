@@ -106,6 +106,9 @@
           </button>
           <button class="archive-tab" data-tab="inventory">📋 Inventory</button>
           <button class="archive-tab" data-tab="users">👥 Users</button>
+          <button class="archive-tab" data-tab="attendance">
+            🕒 Attendance Logs
+          </button>
         </div>
 
         <!-- Orders Archive -->
@@ -168,6 +171,30 @@
                 <th>Role</th>
                 <th>Permission</th>
                 <th>Archived</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <!-- Attendance Logs Archive -->
+        <section class="archive-section" id="attendance-archive">
+          <div class="section-heading">
+            <h2>Archived Attendance Logs</h2>
+            <p>
+              Archived attendance records can be restored or permanently deleted
+            </p>
+          </div>
+          <table id="archive-attendance-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Action</th>
+                <th>Timestamp</th>
+                <th>Shift</th>
+                <th>Archived</th>
+                <th>Archived By</th>
                 <th>Actions</th>
               </tr>
             </thead>

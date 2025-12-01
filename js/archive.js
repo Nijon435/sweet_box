@@ -58,6 +58,8 @@ function renderArchive() {
     renderArchivedInventory();
   } else if (currentTab === "users") {
     renderArchivedUsers();
+  } else if (currentTab === "attendance") {
+    renderArchivedAttendanceLogs();
   }
 }
 
@@ -239,6 +241,81 @@ function renderArchivedUsers() {
 
   document.querySelectorAll("[data-delete-user]").forEach((btn) => {
     btn.addEventListener("click", () => deleteUser(btn.dataset.deleteUser));
+  });
+}
+
+// Render Archived Attendance Logs
+function renderArchivedAttendanceLogs() {
+  const tbody = document.querySelector("#archive-attendance-table tbody");
+  if (!tbody) return;
+
+  const archivedLogs = (appState.attendanceLogs || []).filter(
+    (log) => log.archived
+  );
+
+  tbody.innerHTML = "";
+
+  if (archivedLogs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-archive">
+          <div class="empty-archive-icon">🕒</div>
+          <div>No archived attendance logs</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  archivedLogs.forEach((log) => {
+    // Get employee name
+    const employee = (appState.users || []).find(
+      (u) => u.id === log.employeeId
+    );
+    const employeeName = employee ? employee.name : "Unknown";
+
+    // Get archived by user name
+    let archivedByName = "--";
+    if (log.archivedBy) {
+      const archivedByUser = (appState.users || []).find(
+        (u) => u.id === log.archivedBy
+      );
+      archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
+    }
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${employeeName}</strong></td>
+      <td><span class="status ${log.action === "in" ? "in" : "out"}">${
+      log.action === "in" ? "Clock In" : "Clock Out"
+    }</span></td>
+      <td>${formatTime(log.timestamp)}</td>
+      <td>${log.shift || "--"}</td>
+      <td>${log.archivedAt ? formatTime(log.archivedAt) : "--"}</td>
+      <td>${archivedByName}</td>
+      <td class="archive-actions">
+        <button class="btn-restore" data-restore-log="${
+          log.id
+        }">Restore</button>
+        <button class="btn-permanent-delete" data-delete-log="${
+          log.id
+        }">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Attach event listeners
+  document.querySelectorAll("[data-restore-log]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      restoreAttendanceLog(btn.dataset.restoreLog)
+    );
+  });
+
+  document.querySelectorAll("[data-delete-log]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      deleteAttendanceLog(btn.dataset.deleteLog)
+    );
   });
 }
 
@@ -526,6 +603,55 @@ function showDeleteConfirmation(title, message, onConfirm) {
   modal.onclick = (e) => {
     if (e.target === modal) closeModal();
   };
+}
+
+// Restore Attendance Log
+async function restoreAttendanceLog(logId) {
+  const log = appState.attendanceLogs.find((l) => l.id === logId);
+  if (!log) return;
+
+  log.archived = false;
+  log.archivedAt = null;
+  log.archivedBy = null;
+
+  try {
+    await saveToDatabase();
+    renderArchive();
+    showToast("Attendance log restored successfully", "success");
+  } catch (error) {
+    console.error("Error restoring attendance log:", error);
+    showToast("Failed to restore attendance log", "error");
+  }
+}
+
+// Delete Attendance Log
+function deleteAttendanceLog(logId) {
+  const log = appState.attendanceLogs.find((l) => l.id === logId);
+  if (!log) return;
+
+  const employee = (appState.users || []).find((u) => u.id === log.employeeId);
+  const employeeName = employee ? employee.name : "Unknown";
+
+  showDeleteConfirmation(
+    "Permanently Delete Log?",
+    `This will permanently delete the attendance log for ${employeeName} (${formatTime(
+      log.timestamp
+    )}). This action cannot be undone.`,
+    async () => {
+      try {
+        appState.attendanceLogs = appState.attendanceLogs.filter(
+          (l) => l.id !== logId
+        );
+
+        await saveToDatabase();
+        renderArchive();
+        showToast("Attendance log permanently deleted", "warning");
+      } catch (error) {
+        console.error("Error deleting attendance log:", error);
+        showToast("Failed to delete attendance log", "error");
+      }
+    }
+  );
 }
 
 // Save to Database

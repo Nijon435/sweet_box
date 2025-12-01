@@ -592,11 +592,12 @@ function closeEditModal() {
 }
 
 function setupRecordUsageButton() {
-  const recordUsageBtn = document.getElementById("record-usage-btn");
-  const modal = document.getElementById("usage-log-modal");
-  const closeBtn = document.getElementById("usage-log-close");
-  const form = document.getElementById("usage-log-form");
-  const select = document.getElementById("usage-item-select");
+  const recordUsageBtn = document.getElementById("log-usage-btn");
+  const modal = document.getElementById("log-usage-modal");
+  const closeBtn = document.getElementById("log-usage-close");
+  const cancelBtn = document.getElementById("log-usage-cancel");
+  const form = document.getElementById("log-usage-form");
+  const select = document.getElementById("usage-ingredient-select");
 
   if (!recordUsageBtn || !modal || !form || !select) return;
 
@@ -647,6 +648,13 @@ function setupRecordUsageButton() {
   closeBtn.addEventListener("click", () => {
     modal.classList.remove("active");
   });
+
+  // Cancel button
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      modal.classList.remove("active");
+    });
+  }
 
   // Close on backdrop click
   modal.addEventListener("click", (e) => {

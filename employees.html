@@ -471,83 +471,48 @@
     </div>
 
     <!-- Add Access Modal -->
-    <div id="add-access-modal" class="modal-overlay" style="display: none">
-      <div class="modal-content" style="max-width: 700px">
-        <div class="modal-header">
-          <h3>Create New Access Level</h3>
+    <div id="add-access-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 700px">
+        <div class="modal-card__header">
+          <h2>Create New Access Level</h2>
           <button
-            class="modal-close"
-            onclick="document.getElementById('add-access-modal').style.display='none'"
+            class="btn btn-outline"
+            type="button"
+            id="add-access-close"
           >
-            &times;
+            Close
           </button>
         </div>
         <form id="add-access-form">
-          <div style="margin-bottom: 1.5rem">
-            <label
-              style="
-                display: block;
-                margin-bottom: 0.5rem;
-                font-weight: 500;
-                color: #555;
-              "
-              >Access Level Name *</label
-            >
-            <input
-              type="text"
-              name="accessName"
-              placeholder="e.g., Manager, Supervisor, etc."
-              required
-              style="
-                width: 100%;
-                padding: 0.75rem;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                font-size: 1rem;
-              "
-            />
-          </div>
+          <label for="access-name">Access Level Name *</label>
+          <input
+            id="access-name"
+            type="text"
+            name="accessName"
+            placeholder="e.g., Manager, Supervisor, etc."
+            required
+          />
 
-          <div style="margin-bottom: 1.5rem">
-            <label
-              style="
-                display: block;
-                margin-bottom: 0.75rem;
-                font-weight: 500;
-                color: #555;
-              "
-              >Page Access *</label
-            >
-            <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
-              Select which pages this access level can view:
-            </p>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.75rem;
-                background: #f9f9f9;
-                padding: 1rem;
-                border-radius: 6px;
-              "
-            >
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  padding: 0.5rem;
-                  border-radius: 4px;
-                  transition: background 0.2s;
-                "
-                onmouseover="this.style.background='#fff'"
-                onmouseout="this.style.background='transparent'"
-              >
-                <input
-                  type="checkbox"
-                  name="pages"
-                  value="index.html"
+          <label>Page Access *</label>
+          <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
+            Select which pages this access level can view:
+          </p>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 0.75rem;
+              background: #f9f9f9;
+              padding: 1rem;
+              border-radius: 6px;
+              margin-bottom: 1rem;
+            "
+          >
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input
+                type="checkbox"
+                name="pages"
+                value="index.html"
                   style="width: 18px; height: 18px; cursor: pointer"
                 />
                 <span style="font-size: 0.95rem">Dashboard</span>
@@ -681,45 +646,19 @@
             </div>
           </div>
 
-          <div style="margin-bottom: 1.5rem">
-            <label
-              style="
-                display: block;
-                margin-bottom: 0.5rem;
-                font-weight: 500;
-                color: #555;
-              "
-              >Description (Optional)</label
-            >
-            <textarea
-              name="description"
-              placeholder="Brief description of this access level's responsibilities..."
-              rows="3"
-              style="
-                width: 100%;
-                padding: 0.75rem;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                font-size: 1rem;
-                font-family: inherit;
-                resize: vertical;
-              "
-            ></textarea>
-          </div>
+          <label for="access-description">Description (Optional)</label>
+          <textarea
+            id="access-description"
+            name="description"
+            placeholder="Brief description of this access level's responsibilities..."
+            rows="3"
+          ></textarea>
 
-          <div
-            style="
-              display: flex;
-              gap: 0.75rem;
-              justify-content: flex-end;
-              padding-top: 1rem;
-              border-top: 1px solid #eee;
-            "
-          >
+          <div class="modal-card__actions">
             <button
               type="button"
-              class="btn btn-outline"
-              onclick="document.getElementById('add-access-modal').style.display='none'"
+              class="btn btn-secondary"
+              id="add-access-cancel"
             >
               Cancel
             </button>

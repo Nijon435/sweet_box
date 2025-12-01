@@ -10,19 +10,14 @@ function initLoginPage() {
   console.log("=== LOGIN PAGE INITIALIZING ===");
 
   const loginSection = document.getElementById("login-section");
-  const registerSection = document.getElementById("register-section");
   const passwordResetSection = document.getElementById(
     "password-reset-section"
   );
   const loginForm = document.getElementById("login-form");
-  const registerForm = document.getElementById("register-form");
   const passwordResetForm = document.getElementById("password-reset-form");
-  const showRegisterBtn = document.getElementById("show-register");
-  const showLoginBtn = document.getElementById("show-login");
 
   console.log("Forms found:", {
     loginForm: !!loginForm,
-    registerForm: !!registerForm,
     passwordResetForm: !!passwordResetForm,
   });
 
@@ -41,13 +36,6 @@ function initLoginPage() {
         if (submitBtn) {
           submitBtn.disabled = true;
           console.log("Login button disabled during load");
-        }
-      }
-      if (registerForm) {
-        const submitBtn = registerForm.querySelector('button[type="submit"]');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          console.log("Register button disabled during load");
         }
       }
 
@@ -108,13 +96,6 @@ function initLoginPage() {
           console.log("Login button enabled");
         }
       }
-      if (registerForm) {
-        const submitBtn = registerForm.querySelector('button[type="submit"]');
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          console.log("Register button enabled");
-        }
-      }
       console.log("=== DATA INITIALIZATION COMPLETE ===");
     }
   }
@@ -122,25 +103,6 @@ function initLoginPage() {
   // Initialize on page load
   console.log("Calling initializeData...");
   initializeData();
-
-  // Toggle between login and register
-  if (showRegisterBtn) {
-    showRegisterBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      loginSection.style.display = "none";
-      registerSection.style.display = "block";
-      document.getElementById("register-error").textContent = "";
-    });
-  }
-
-  if (showLoginBtn) {
-    showLoginBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      registerSection.style.display = "none";
-      loginSection.style.display = "block";
-      document.getElementById("login-error").textContent = "";
-    });
-  }
 
   // Validation helper functions
   function validateEmail(email) {
@@ -264,16 +226,20 @@ function initLoginPage() {
       );
 
       if (!user) {
-        errorNode.textContent = "Invalid email or password";
-        console.log("❌ Login failed for:", email);
-        // Try to find by email only to see if email exists
-        const emailMatch = appState.users.find((u) => u.email === email);
-        if (emailMatch) {
-          console.log("Email found but password mismatch");
-          console.log("Stored password:", emailMatch.password);
-          console.log("Entered password:", password);
+        // Check if email exists in system
+        const emailExists = appState.users.find((u) => u.email === email);
+
+        if (emailExists) {
+          showError(errorNode, "Incorrect password. Please try again.");
+          passwordInput.style.borderColor = "#f44336";
+          console.log("❌ Login failed: incorrect password for:", email);
         } else {
-          console.log("Email not found in database");
+          showError(
+            errorNode,
+            "Email not found in system. Please contact an administrator."
+          );
+          emailInput.style.borderColor = "#f44336";
+          console.log("❌ Login failed: email not found:", email);
         }
         return;
       }
@@ -325,263 +291,6 @@ function initLoginPage() {
     });
   } else {
     console.log("❌ Login form not found!");
-  }
-
-  // Add real-time validation for register form
-  if (registerForm) {
-    const nameInput = document.getElementById("register-name");
-    const emailInput = document.getElementById("register-email");
-    const phoneInput = document.getElementById("register-phone");
-    const passwordInput = document.getElementById("register-password");
-    const confirmPasswordInput = document.getElementById(
-      "register-password-confirm"
-    );
-    const errorNode = document.getElementById("register-error");
-
-    // Name validation
-    nameInput.addEventListener("blur", () => {
-      const name = nameInput.value.trim();
-      if (name && name.length < 2) {
-        showError(errorNode, "Name must be at least 2 characters");
-        nameInput.style.borderColor = "#f44336";
-      } else {
-        nameInput.style.borderColor = "";
-      }
-    });
-
-    nameInput.addEventListener("input", () => {
-      if (errorNode.textContent.includes("Name")) {
-        clearError(errorNode);
-      }
-      nameInput.style.borderColor = "";
-    });
-
-    // Email validation
-    emailInput.addEventListener("blur", () => {
-      const email = emailInput.value.trim();
-      if (email && !validateEmail(email)) {
-        showError(errorNode, "Please enter a valid email address");
-        emailInput.style.borderColor = "#f44336";
-      } else if (email && appState?.users?.find((u) => u.email === email)) {
-        showError(errorNode, "Email already registered");
-        emailInput.style.borderColor = "#f44336";
-      } else {
-        emailInput.style.borderColor = "";
-      }
-    });
-
-    emailInput.addEventListener("input", () => {
-      if (errorNode.textContent.includes("email")) {
-        clearError(errorNode);
-      }
-      emailInput.style.borderColor = "";
-    });
-
-    // Phone validation
-    phoneInput.addEventListener("blur", () => {
-      const phone = phoneInput.value.trim();
-      if (phone && phone.length !== 11) {
-        showError(errorNode, "Phone number must be exactly 11 digits");
-        phoneInput.style.borderColor = "#f44336";
-      } else if (phone && !/^\d{11}$/.test(phone)) {
-        showError(errorNode, "Phone number must contain only digits");
-        phoneInput.style.borderColor = "#f44336";
-      } else {
-        phoneInput.style.borderColor = "";
-      }
-    });
-
-    phoneInput.addEventListener("input", () => {
-      if (errorNode.textContent.includes("phone")) {
-        clearError(errorNode);
-      }
-      phoneInput.style.borderColor = "";
-    });
-
-    // Password validation
-    passwordInput.addEventListener("input", () => {
-      const password = passwordInput.value;
-      if (password && password.length < 6) {
-        showError(errorNode, "Password must be at least 6 characters");
-        passwordInput.style.borderColor = "#f44336";
-      } else {
-        passwordInput.style.borderColor = "";
-        if (errorNode.textContent.includes("Password")) {
-          clearError(errorNode);
-        }
-      }
-    });
-
-    // Confirm password validation
-    confirmPasswordInput.addEventListener("input", () => {
-      const password = passwordInput.value;
-      const confirmPassword = confirmPasswordInput.value;
-      if (confirmPassword && password !== confirmPassword) {
-        showError(errorNode, "Passwords do not match");
-        confirmPasswordInput.style.borderColor = "#f44336";
-      } else {
-        confirmPasswordInput.style.borderColor = "";
-        if (errorNode.textContent.includes("match")) {
-          clearError(errorNode);
-        }
-      }
-    });
-  }
-
-  // Handle Registration
-  if (registerForm) {
-    registerForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const nameInput = document.getElementById("register-name");
-      const emailInput = document.getElementById("register-email");
-      const phoneInput = document.getElementById("register-phone");
-      const passwordInput = document.getElementById("register-password");
-      const confirmPasswordInput = document.getElementById(
-        "register-password-confirm"
-      );
-      const name = nameInput.value.trim();
-      const email = emailInput.value.trim();
-      const phone = phoneInput.value.trim();
-      const password = passwordInput.value;
-      const confirmPassword = confirmPasswordInput.value;
-      const errorNode = document.getElementById("register-error");
-
-      // Clear previous errors
-      clearError(errorNode);
-      nameInput.style.borderColor = "";
-      emailInput.style.borderColor = "";
-      phoneInput.style.borderColor = "";
-      passwordInput.style.borderColor = "";
-      confirmPasswordInput.style.borderColor = "";
-
-      // Validation
-      if (!name || !email || !phone || !password || !confirmPassword) {
-        showError(errorNode, "Please fill in all fields");
-        if (!name) nameInput.style.borderColor = "#f44336";
-        if (!email) emailInput.style.borderColor = "#f44336";
-        if (!phone) phoneInput.style.borderColor = "#f44336";
-        if (!password) passwordInput.style.borderColor = "#f44336";
-        if (!confirmPassword)
-          confirmPasswordInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      if (name.length < 2) {
-        showError(errorNode, "Name must be at least 2 characters");
-        nameInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      if (!validateEmail(email)) {
-        showError(errorNode, "Please enter a valid email address");
-        emailInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      if (phone.length !== 11) {
-        showError(errorNode, "Phone number must be exactly 11 digits");
-        phoneInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      if (!/^\d{11}$/.test(phone)) {
-        showError(errorNode, "Phone number must contain only digits");
-        phoneInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      if (!validatePassword(password)) {
-        showError(errorNode, "Password must be at least 6 characters");
-        passwordInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        showError(errorNode, "Passwords do not match");
-        confirmPasswordInput.style.borderColor = "#f44336";
-        return;
-      }
-
-      // Check if data is loaded
-      if (!isDataLoaded || typeof appState === "undefined" || !appState.users) {
-        errorNode.textContent = "System loading, please wait...";
-        return;
-      }
-
-      // Check if email already exists
-      if (appState.users.find((u) => u.email === email)) {
-        errorNode.textContent = "Email already registered";
-        return;
-      }
-
-      // Create new user with default role: staff
-      const newUser = {
-        id: "user-" + Date.now(),
-        name: name,
-        email: email,
-        phone: phone,
-        password: password, // In production, this should be hashed
-        role: "staff",
-        permission: "staff",
-        status: "active",
-        hireDate: new Date().toISOString().split("T")[0], // Set hire date to today (YYYY-MM-DD)
-        createdAt: new Date().toISOString(),
-      };
-
-      console.log("Creating new user:", newUser.email);
-
-      // Disable submit button to prevent double submission
-      const submitBtn = registerForm.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Creating Account...";
-      }
-
-      // Save to database via API
-      try {
-        const endpoint =
-          window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
-
-        // Add new user to appState temporarily
-        appState.users.push(newUser);
-
-        // Send the entire state with the new user
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(appState),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log("✅ User saved to database successfully:", result);
-
-        // Auto login after registration
-        if (typeof setSession === "function") {
-          setSession(newUser.id);
-          const landing =
-            typeof getLandingPageForRole === "function"
-              ? getLandingPageForRole(newUser.role)
-              : "index.html";
-          window.location.href = landing;
-        }
-      } catch (error) {
-        console.error("❌ Error saving user:", error);
-        showError(errorNode, "Failed to create account. Please try again.");
-        // Remove user from array if save failed
-        const index = appState.users.findIndex((u) => u.id === newUser.id);
-        if (index > -1) {
-          appState.users.splice(index, 1);
-        }
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Create Account";
-        }
-      }
-    });
   }
 
   // Add real-time validation for password reset form

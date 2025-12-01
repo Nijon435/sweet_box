@@ -994,10 +994,23 @@ function renderOrders() {
       if (receiptFields.customer)
         receiptFields.customer.textContent = order.customer;
       if (receiptFields.itemsList) {
-        const items = order.items
-          .split(",")
-          .map((part) => part.trim())
-          .filter(Boolean);
+        // Handle both string and array formats for items
+        let items = [];
+        if (typeof order.items === "string") {
+          items = order.items
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean);
+        } else if (Array.isArray(order.items)) {
+          items = order.items.map((item) =>
+            typeof item === "object"
+              ? `${item.name} x${item.quantity}`
+              : String(item)
+          );
+        } else if (order.items) {
+          items = [String(order.items)];
+        }
+
         receiptFields.itemsList.innerHTML = items.length
           ? items.map((itemText) => `<li>${itemText}</li>`).join("")
           : "<li>No item details recorded</li>";

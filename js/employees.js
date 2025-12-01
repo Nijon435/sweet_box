@@ -1665,6 +1665,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const addAccessBtn = document.getElementById("add-access-btn");
   const addAccessModal = document.getElementById("add-access-modal");
   const addAccessForm = document.getElementById("add-access-form");
+  const addAccessClose = document.getElementById("add-access-close");
+  const addAccessCancel = document.getElementById("add-access-cancel");
 
   if (addAccessBtn) {
     addAccessBtn.addEventListener("click", () => {
@@ -1672,7 +1674,23 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Only administrators can create new access levels.");
         return;
       }
-      addAccessModal.style.display = "flex";
+      addAccessModal.classList.add("active");
+    });
+  }
+
+  // Close button handler
+  if (addAccessClose) {
+    addAccessClose.addEventListener("click", () => {
+      addAccessModal.classList.remove("active");
+      addAccessForm.reset();
+    });
+  }
+
+  // Cancel button handler
+  if (addAccessCancel) {
+    addAccessCancel.addEventListener("click", () => {
+      addAccessModal.classList.remove("active");
+      addAccessForm.reset();
     });
   }
 
@@ -1707,7 +1725,7 @@ document.addEventListener("DOMContentLoaded", () => {
       saveState();
 
       // Close modal and reset form
-      addAccessModal.style.display = "none";
+      addAccessModal.classList.remove("active");
       addAccessForm.reset();
 
       // Show success message
