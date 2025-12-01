@@ -324,10 +324,8 @@ function completeOrder() {
     items: posCart.map((item) => `${item.qty}x ${item.name}`).join(", "),
     itemsJson: posCart,
     total: total,
-    status: "pending",
     type: orderType,
     timestamp: new Date().toISOString(),
-    servedAt: null,
   };
 
   appState.orders = appState.orders || [];
@@ -437,10 +435,8 @@ function renderOrders() {
           "",
         itemsJson: itemsArr,
         total: Number(data.get("total")) || 0,
-        status: data.get("status") || "pending",
         type: orderType,
         timestamp: new Date().toISOString(),
-        servedAt: null,
       };
 
       // Update usage logs with correct order ID
@@ -460,39 +456,24 @@ function renderOrders() {
     });
   }
 
-  const activeOrders = appState.orders.filter(
-    (order) => order.status !== "served"
-  );
-  const completedOrders = appState.orders.filter(
-    (order) => order.status === "served"
-  );
   const tableBody = document.querySelector("#orders-table tbody");
-  const filter = filterSelect?.value || "all";
   if (tableBody) {
     tableBody.innerHTML = "";
-    const filteredActive = activeOrders.filter((order) =>
-      filter === "all" ? true : order.status === filter
+    // Show all orders (no status filtering)
+    const allOrders = (appState.orders || []).sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
     );
-    if (!filteredActive.length) {
+
+    if (!allOrders.length) {
       const emptyRow = document.createElement("tr");
-      emptyRow.innerHTML = `<td colspan="6" class="empty-state">No active orders under this filter.</td>`;
+      emptyRow.innerHTML = `<td colspan="5" class="empty-state">No orders yet.</td>`;
       tableBody.appendChild(emptyRow);
     } else {
-      filteredActive.forEach((order) => {
+      allOrders.forEach((order) => {
         const orderTypeKey = normalizeOrderType(order.type);
         const orderTypeTag = `<span class="pill pill-ghost order-type-tag order-type-${orderTypeKey}">${getOrderTypeLabel(
           orderTypeKey
         )}</span>`;
-        const statusControl = `<select class="order-status" data-order="${
-          order.id
-        }">${["pending", "preparing", "ready"]
-          .map(
-            (status) =>
-              `<option value="${status}" ${
-                order.status === status ? "selected" : ""
-              }>${status}</option>`
-          )
-          .join("")}</select>`;
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${order.id}</td>
@@ -500,15 +481,11 @@ function renderOrders() {
           order.items
         }</small><div class="order-tags">${orderTypeTag}</div></td>
           <td>${formatCurrency(order.total)}</td>
-          <td>${statusControl}</td>
           <td>${formatTime(order.timestamp)}</td>
           <td class="orders-actions">
             <button class="btn btn-outline" data-receipt="${
               order.id
             }">Receipt</button>
-            <button class="btn btn-secondary" data-serve="${
-              order.id
-            }">Mark served</button>
             <button class="btn btn-danger" data-delete="${
               order.id
             }">Delete</button>
@@ -517,134 +494,6 @@ function renderOrders() {
         tableBody.appendChild(row);
       });
     }
-  }
-
-  const completedBody = document.querySelector("#completed-orders-table tbody");
-  if (completedBody) {
-    completedBody.innerHTML = "";
-    if (!completedOrders.length) {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="5" class="empty-state">No completed orders yet.</td>`;
-      completedBody.appendChild(row);
-      updateOrdersPaginationControls(0);
-    } else {
-      const sortedOrders = completedOrders.sort(
-        (a, b) =>
-          new Date(b.servedAt || b.timestamp) -
-          new Date(a.servedAt || a.timestamp)
-      );
-
-      // Calculate pagination
-      const totalPages = Math.ceil(sortedOrders.length / ordersItemsPerPage);
-      const startIdx = (ordersCurrentPage - 1) * ordersItemsPerPage;
-      const endIdx = startIdx + ordersItemsPerPage;
-      const pageOrders = sortedOrders.slice(startIdx, endIdx);
-
-      // Update pagination UI
-      updateOrdersPaginationControls(totalPages);
-
-      pageOrders.forEach((order) => {
-        const orderTypeKey = normalizeOrderType(order.type);
-        const orderTypeTag = `<span class="pill pill-ghost order-type-tag order-type-${orderTypeKey}">${getOrderTypeLabel(
-          orderTypeKey
-        )}</span>`;
-        const servedTime = order.servedAt || order.timestamp;
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${order.id}</td>
-          <td><strong>${order.customer}</strong><br/><small>${
-          order.items
-        }</small><div class="order-tags">${orderTypeTag}</div></td>
-          <td>${formatCurrency(order.total)}</td>
-          <td>${formatTime(servedTime)}</td>
-          <td>
-            <button class="btn btn-outline" data-receipt="${
-              order.id
-            }">Receipt</button>
-            <button class="btn btn-secondary" data-delete-completed="${
-              order.id
-            }">Delete</button>
-          </td>
-        `;
-        completedBody.appendChild(row);
-      });
-    }
-  }
-
-  document.querySelectorAll(".order-status").forEach((select) => {
-    select.addEventListener("change", () => {
-      const order = appState.orders.find(
-        (item) => item.id === select.dataset.order
-      );
-      if (!order) return;
-      order.status = select.value;
-      saveState();
-      renderOrders();
-    });
-  });
-
-  document.querySelectorAll("[data-serve]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const order = appState.orders.find(
-        (item) => item.id === button.dataset.serve
-      );
-      if (!order || order.status === "served") return;
-      order.status = "served";
-      order.servedAt = new Date().toISOString();
-
-      // Update sales history
-      if (typeof updateSalesHistory === "function") {
-        updateSalesHistory(order.total);
-      }
-
-      saveState();
-      renderOrders();
-    });
-  });
-
-  const insightContainer = document.getElementById("order-status-breakdown");
-  if (insightContainer) {
-    insightContainer.innerHTML = "";
-    const statuses = ["pending", "preparing", "ready", "served"];
-    statuses.forEach((status) => {
-      const ordersInStatus = (appState.orders || []).filter(
-        (o) => o.status === status
-      );
-      const chip = document.createElement("div");
-      chip.className = "chip has-details";
-      const header = document.createElement("div");
-      header.style.display = "flex";
-      header.style.justifyContent = "space-between";
-      header.style.alignItems = "center";
-      header.innerHTML = `<span style="font-weight:600">${status}</span><span style="opacity:0.9">${ordersInStatus.length}</span>`;
-      const details = document.createElement("div");
-      details.className = "chip-details";
-      details.style.display = "none";
-      details.style.marginTop = "0.5rem";
-      details.style.fontSize = "0.85rem";
-      if (!ordersInStatus.length) {
-        details.innerHTML = '<div class="muted">No orders</div>';
-      } else {
-        details.innerHTML = ordersInStatus
-          .slice(0, 6)
-          .map(
-            (o) =>
-              `<div>${o.id} — ${o.customer} — ${formatCurrency(o.total)}</div>`
-          )
-          .join("");
-        if (ordersInStatus.length > 6)
-          details.innerHTML += `<div class="muted">+${
-            ordersInStatus.length - 6
-          } more</div>`;
-      }
-      chip.appendChild(header);
-      chip.appendChild(details);
-      header.style.cursor = "pointer";
-      header.addEventListener("click", () => {
-        details.style.display = details.style.display === "none" ? "" : "none";
-      });
-      insightContainer.appendChild(chip);
-    });
   }
 
   document.querySelectorAll("[data-receipt]").forEach((button) => {
@@ -676,9 +525,7 @@ function renderOrders() {
         receiptFields.time.textContent = formatTime(order.timestamp);
       if (receiptFields.note) {
         receiptFields.note.textContent =
-          order.status === "served"
-            ? "Order completed. Please retain this stub for reference."
-            : "Please present this stub when claiming your order.";
+          "Please retain this receipt for your reference.";
       }
       if (receiptFields.serviceTag) {
         receiptFields.serviceTag.textContent = getOrderTypeService(order.type);
@@ -718,30 +565,6 @@ function renderOrders() {
       );
     });
   });
-
-  document
-    .querySelectorAll("#completed-orders-table [data-delete-completed]")
-    .forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.deleteCompleted;
-        const idx = appState.orders.findIndex((o) => o.id === id);
-        if (idx === -1) return;
-        showConfirm(
-          `Delete completed order ${id}? This action cannot be undone.`,
-          () => {
-            appState.orders.splice(idx, 1);
-
-            // Recalculate sales history after deletion
-            if (typeof recalculateSalesHistory === "function") {
-              recalculateSalesHistory();
-            }
-
-            saveState();
-            renderOrders();
-          }
-        );
-      });
-    });
 
   const closeReceipt = () => {
     selectedReceiptOrder = null;
@@ -1064,52 +887,6 @@ function initializeOrderForm() {
     renderOrderItems();
   } catch (err) {
     console.warn("initializeOrderForm failed", err);
-  }
-}
-
-// Pagination functions for completed orders
-function updateOrdersPaginationControls(totalPages) {
-  const currentPageEl = document.getElementById("orders-current-page");
-  const totalPagesEl = document.getElementById("orders-total-pages");
-  const prevBtn = document.getElementById("orders-prev-btn");
-  const nextBtn = document.getElementById("orders-next-btn");
-  const pagination = document.getElementById("orders-pagination");
-
-  if (!currentPageEl || !totalPagesEl || !prevBtn || !nextBtn) return;
-
-  // Hide pagination if only one page or no orders
-  if (totalPages <= 1) {
-    pagination.style.display = "none";
-    return;
-  } else {
-    pagination.style.display = "flex";
-  }
-
-  currentPageEl.textContent = ordersCurrentPage;
-  totalPagesEl.textContent = totalPages;
-
-  // Enable/disable buttons
-  prevBtn.disabled = ordersCurrentPage === 1;
-  nextBtn.disabled = ordersCurrentPage >= totalPages;
-}
-
-function ordersPreviousPage() {
-  if (ordersCurrentPage > 1) {
-    ordersCurrentPage--;
-    renderOrders();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-}
-
-function ordersNextPage() {
-  const completedOrders = appState.orders
-    ? appState.orders.filter((o) => o.status === "served")
-    : [];
-  const totalPages = Math.ceil(completedOrders.length / ordersItemsPerPage);
-  if (ordersCurrentPage < totalPages) {
-    ordersCurrentPage++;
-    renderOrders();
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 

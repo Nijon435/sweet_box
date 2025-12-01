@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   phone VARCHAR(32),
   role VARCHAR(128) NOT NULL,
-  permission VARCHAR(32) NOT NULL DEFAULT 'front_staff',
+  permission VARCHAR(32) NOT NULL DEFAULT 'staff',
   shift_start TIME,
   hire_date DATE,
   status VARCHAR(32) DEFAULT 'active',
@@ -89,10 +89,8 @@ CREATE TABLE IF NOT EXISTS orders (
   customer VARCHAR(255),
   items_json JSONB,
   total NUMERIC(12,2) DEFAULT 0,
-  status VARCHAR(32) DEFAULT 'pending',
   type VARCHAR(32) DEFAULT 'dine-in',
-  timestamp TIMESTAMP NOT NULL,
-  served_at TIMESTAMP DEFAULT NULL
+  timestamp TIMESTAMP NOT NULL
 );
 
 -- Sales history (daily totals)

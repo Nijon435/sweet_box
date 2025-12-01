@@ -186,10 +186,6 @@
         <section class="order-history-view">
         <section class="split">
           <article class="card">
-            <div class="section-heading">
-              <h2>New Order Ticket</h2>
-              <span class="pill">Cashier</span>
-            </div>
             <form id="orders-form">
               <label for="order-customer"
                 ><span id="order-customer-label">Customer / Table</span></label
@@ -361,28 +357,11 @@
               <button class="btn btn-primary" type="submit">Add Order</button>
             </form>
           </article>
-
-          <article class="card card-compact">
-            <div class="section-heading">
-              <h2>Status Breakdown</h2>
-              <span class="pill">Live</span>
-            </div>
-            <div class="chips" id="order-status-breakdown"></div>
-            <p class="meta">
-              Statuses update automatically as the kitchen progresses.
-            </p>
-          </article>
         </section>
 
-        <section class="table-wrapper" style="margin-top: 2rem">
+        <section class="table-wrapper">
           <div class="section-heading">
-            <h2>Order Board</h2>
-            <select id="orders-filter" class="filter-select">
-              <option value="all" selected>All statuss</option>
-              <option value="pending">Pending</option>
-              <option value="preparing">Preparing</option>
-              <option value="ready">Ready</option>
-            </select>
+            <h2>All Orders</h2>
           </div>
           <table id="orders-table">
             <thead>
@@ -390,66 +369,12 @@
                 <th>Ticket</th>
                 <th>Customer</th>
                 <th>Total</th>
-                <th>Status</th>
-                <th>Updated</th>
+                <th>Time</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
-        </section>
-
-        <section class="table-wrapper" id="completed-orders-panel">
-          <div class="section-heading">
-            <h2>Completed Orders</h2>
-            <span class="pill">Served</span>
-          </div>
-          <table id="completed-orders-table">
-            <thead>
-              <tr>
-                <th>Ticket</th>
-                <th>Customer</th>
-                <th>Total</th>
-                <th>Served at</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-
-          <!-- Pagination Controls -->
-          <div
-            id="orders-pagination"
-            style="
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              gap: 1rem;
-              margin-top: 1.5rem;
-              padding: 1rem 0;
-            "
-          >
-            <button
-              id="orders-prev-btn"
-              class="btn btn-outline"
-              onclick="ordersPreviousPage()"
-              disabled
-            >
-              ← Previous
-            </button>
-            <span style="font-size: 0.9rem; color: #666">
-              Page <strong id="orders-current-page">1</strong> of
-              <strong id="orders-total-pages">1</strong>
-            </span>
-            <button
-              id="orders-next-btn"
-              class="btn btn-outline"
-              onclick="ordersNextPage()"
-              disabled
-            >
-              Next →
-            </button>
-          </div>
         </section>
 
         <p class="footer-note" style="display: none;">

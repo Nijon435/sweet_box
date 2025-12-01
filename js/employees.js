@@ -403,16 +403,20 @@ function renderEmployees() {
               <select name="permission" required>
                 <option value="admin" ${
                   user.permission === "admin" ? "selected" : ""
-                }>Admin</option>
+                }>Admin - Full Access</option>
+                <option value="manager" ${
+                  user.permission === "manager" ? "selected" : ""
+                }>Manager</option>
                 <option value="kitchen_staff" ${
                   user.permission === "kitchen_staff" ? "selected" : ""
                 }>Kitchen Staff</option>
-                <option value="front_staff" ${
-                  user.permission === "front_staff" ? "selected" : ""
-                }>Front Staff</option>
-                <option value="delivery_staff" ${
-                  user.permission === "delivery_staff" ? "selected" : ""
-                }>Delivery Staff</option>
+                <option value="staff" ${
+                  user.permission === "staff" ||
+                  user.permission === "front_staff" ||
+                  user.permission === "delivery_staff"
+                    ? "selected"
+                    : ""
+                }>Staff</option>
               </select>
             </div>
             <div>
@@ -1372,15 +1376,19 @@ window.openEditEmployeeModal = function (userId) {
               <option value="admin" ${
                 user.permission === "admin" ? "selected" : ""
               }>Admin - Full Access</option>
+              <option value="manager" ${
+                user.permission === "manager" ? "selected" : ""
+              }>Manager</option>
               <option value="kitchen_staff" ${
                 user.permission === "kitchen_staff" ? "selected" : ""
               }>Kitchen Staff</option>
-              <option value="front_staff" ${
-                user.permission === "front_staff" ? "selected" : ""
-              }>Front Staff</option>
-              <option value="delivery_staff" ${
-                user.permission === "delivery_staff" ? "selected" : ""
-              }>Delivery Staff</option>
+              <option value="staff" ${
+                user.permission === "staff" ||
+                user.permission === "front_staff" ||
+                user.permission === "delivery_staff"
+                  ? "selected"
+                  : ""
+              }>Staff</option>
             </select>
           </div>
           <div>
