@@ -133,24 +133,24 @@
           </div>
         </section>
 
-        <!-- Users Overview - Compact Summary -->
-        <section class="card section-mt-1-5">
-          <div class="section-heading">
-            <h2>Users Overview</h2>
-            <span class="pill">Live</span>
-          </div>
+        <!-- Container for Users Overview and Requests side by side -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+          "
+        >
+          <!-- Users Overview -->
+          <section class="card">
+            <div class="section-heading">
+              <h2>Users Overview</h2>
+              <span class="pill">Live</span>
+            </div>
 
-          <div
-            style="
-              display: grid;
-              grid-template-columns: 2fr 1fr;
-              grid-template-rows: auto auto;
-              gap: 1.5rem;
-              align-items: start;
-            "
-          >
-            <!-- Access Distribution (Top) -->
-            <div style="grid-column: 1; grid-row: 1">
+            <!-- Access Distribution -->
+            <div style="margin-bottom: 1.5rem">
               <strong
                 style="display: block; margin-bottom: 0.75rem; color: #555"
                 >Access Distribution</strong
@@ -308,103 +308,86 @@
               </div>
             </div>
 
-            <!-- Stats: Active Rate, Newest Hire, Average Tenure (Below Distribution) -->
-            <div style="grid-column: 1; grid-row: 2">
-              <div
-                style="
-                  display: grid;
-                  grid-template-columns: repeat(3, 1fr);
-                  gap: 1rem;
-                  padding-top: 1rem;
-                  border-top: 1px solid #eee;
-                  margin-top: 1rem;
-                "
-              >
-                <div>
-                  <small
-                    style="
-                      color: #666;
-                      font-size: 0.875rem;
-                      display: block;
-                      margin-bottom: 0.25rem;
-                    "
-                    >Active Rate</small
-                  >
-                  <strong
-                    style="font-size: 1.25rem; color: #4caf50"
-                    id="active-rate"
-                    >0%</strong
-                  >
-                </div>
-                <div>
-                  <small
-                    style="
-                      color: #666;
-                      font-size: 0.875rem;
-                      display: block;
-                      margin-bottom: 0.25rem;
-                    "
-                    >Newest Hire</small
-                  >
-                  <strong style="font-size: 1rem; color: #333" id="newest-hire"
-                    >--</strong
-                  >
-                </div>
-                <div>
-                  <small
-                    style="
-                      color: #666;
-                      font-size: 0.875rem;
-                      display: block;
-                      margin-bottom: 0.25rem;
-                    "
-                    >Average Tenure</small
-                  >
-                  <strong
-                    style="font-size: 1rem; color: #333"
-                    id="average-tenure"
-                    >--</strong
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Requests Box (Right Side, Spans Both Rows) -->
+            <!-- Stats: Active Rate, Newest Hire, Average Tenure -->
             <div
               style="
-                grid-column: 2;
-                grid-row: 1 / 3;
-                display: flex;
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid #eee;
               "
             >
-              <strong
-                style="
-                  display: block;
-                  margin-bottom: 0.75rem;
-                  color: #555;
-                  text-align: center;
-                "
-                >Requests</strong
-              >
-              <div
-                id="leave-approval-list"
-                style="flex: 1; overflow-y: auto; min-height: 200px"
-              >
-                <p
+              <div>
+                <small
                   style="
-                    color: #888;
+                    color: #666;
                     font-size: 0.875rem;
-                    text-align: center;
-                    padding: 1rem;
+                    display: block;
+                    margin-bottom: 0.25rem;
                   "
+                  >Active Rate</small
                 >
-                  No pending requests
-                </p>
+                <strong
+                  style="font-size: 1.25rem; color: #4caf50"
+                  id="active-rate"
+                  >0%</strong
+                >
+              </div>
+              <div>
+                <small
+                  style="
+                    color: #666;
+                    font-size: 0.875rem;
+                    display: block;
+                    margin-bottom: 0.25rem;
+                  "
+                  >Newest Hire</small
+                >
+                <strong style="font-size: 1rem; color: #333" id="newest-hire"
+                  >--</strong
+                >
+              </div>
+              <div>
+                <small
+                  style="
+                    color: #666;
+                    font-size: 0.875rem;
+                    display: block;
+                    margin-bottom: 0.25rem;
+                  "
+                  >Average Tenure</small
+                >
+                <strong style="font-size: 1rem; color: #333" id="average-tenure"
+                  >--</strong
+                >
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+
+          <!-- Requests - Separate Card -->
+          <section class="card">
+            <div class="section-heading">
+              <h2>Requests</h2>
+              <span class="pill">Pending</span>
+            </div>
+            <div
+              id="leave-approval-list"
+              style="overflow-y: auto; min-height: 250px; max-height: 400px"
+            >
+              <p
+                style="
+                  color: #888;
+                  font-size: 0.875rem;
+                  text-align: center;
+                  padding: 1rem;
+                "
+              >
+                No pending requests
+              </p>
+            </div>
+          </section>
+        </div>
 
         <section class="table-wrapper" style="margin-top: 2rem">
           <div
