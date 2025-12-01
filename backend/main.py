@@ -424,7 +424,7 @@ async def save_state(state: dict):
                            shift_start = EXCLUDED.shift_start, hire_date = EXCLUDED.hire_date, 
                            status = EXCLUDED.status, require_password_reset = EXCLUDED.require_password_reset""",
                         user.get("id"), user.get("name"), user.get("email"), user.get("password"),
-                        user.get("phone"), user.get("role"), user.get("permission", "front_staff"),
+                        user.get("phone"), user.get("role"), user.get("permission", "staff"),
                         parse_time(user.get("shiftStart")), parse_date(user.get("hireDate")), 
                         user.get("status", "active"), user.get("requirePasswordReset", False),
                         parse_timestamp(user.get("createdAt"))

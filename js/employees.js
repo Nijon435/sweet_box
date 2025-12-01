@@ -492,23 +492,24 @@ function updateTeamOverview() {
     admin: users.filter((u) => u.permission === "admin").length,
     manager: users.filter((u) => u.permission === "manager").length,
     kitchen_staff: users.filter((u) => u.permission === "kitchen_staff").length,
-    front_staff: users.filter((u) => u.permission === "front_staff").length,
-    delivery_staff: users.filter((u) => u.permission === "delivery_staff")
-      .length,
+    staff: users.filter(
+      (u) =>
+        u.permission === "staff" ||
+        u.permission === "front_staff" ||
+        u.permission === "delivery_staff"
+    ).length,
   };
 
   // Update access bar widths and labels
   const adminBar = document.getElementById("access-bar-admin");
   const managerBar = document.getElementById("access-bar-manager");
   const kitchenBar = document.getElementById("access-bar-kitchen");
-  const frontBar = document.getElementById("access-bar-front");
-  const deliveryBar = document.getElementById("access-bar-delivery");
+  const staffBar = document.getElementById("access-bar-staff");
 
   const adminPct = (accessCounts.admin / total) * 100;
   const managerPct = (accessCounts.manager / total) * 100;
   const kitchenPct = (accessCounts.kitchen_staff / total) * 100;
-  const frontPct = (accessCounts.front_staff / total) * 100;
-  const deliveryPct = (accessCounts.delivery_staff / total) * 100;
+  const staffPct = (accessCounts.staff / total) * 100;
 
   if (adminBar) {
     adminBar.style.width = `${adminPct}%`;
@@ -527,35 +528,24 @@ function updateTeamOverview() {
       accessCounts.kitchen_staff > 0 ? accessCounts.kitchen_staff : "";
     kitchenBar.style.display = kitchenPct === 0 ? "none" : "flex";
   }
-  if (frontBar) {
-    frontBar.style.width = `${frontPct}%`;
-    frontBar.textContent =
-      accessCounts.front_staff > 0 ? accessCounts.front_staff : "";
-    frontBar.style.display = frontPct === 0 ? "none" : "flex";
-  }
-  if (deliveryBar) {
-    deliveryBar.style.width = `${deliveryPct}%`;
-    deliveryBar.textContent =
-      accessCounts.delivery_staff > 0 ? accessCounts.delivery_staff : "";
-    deliveryBar.style.display = deliveryPct === 0 ? "none" : "flex";
+  if (staffBar) {
+    staffBar.style.width = `${staffPct}%`;
+    staffBar.textContent = accessCounts.staff > 0 ? accessCounts.staff : "";
+    staffBar.style.display = staffPct === 0 ? "none" : "flex";
   }
 
   // Update legend
   const adminLegend = document.getElementById("access-legend-admin");
   const managerLegend = document.getElementById("access-legend-manager");
   const kitchenLegend = document.getElementById("access-legend-kitchen");
-  const frontLegend = document.getElementById("access-legend-front");
-  const deliveryLegend = document.getElementById("access-legend-delivery");
+  const staffLegend = document.getElementById("access-legend-staff");
 
   if (adminLegend) adminLegend.textContent = `${accessCounts.admin} Admin`;
   if (managerLegend)
     managerLegend.textContent = `${accessCounts.manager} Manager`;
   if (kitchenLegend)
     kitchenLegend.textContent = `${accessCounts.kitchen_staff} Kitchen`;
-  if (frontLegend)
-    frontLegend.textContent = `${accessCounts.front_staff} Front`;
-  if (deliveryLegend)
-    deliveryLegend.textContent = `${accessCounts.delivery_staff} Delivery`;
+  if (staffLegend) staffLegend.textContent = `${accessCounts.staff} Staff`;
 
   // Calculate active rate
   const activeCount = users.filter((u) => u.status === "active").length;
@@ -773,10 +763,9 @@ function openAddEmployeeModal() {
             <select name="permission" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
               <option value="">Select Access Level</option>
               <option value="admin">Admin - Full Access</option>
-              <option value="front_staff" selected>Front Staff (Default)</option>
+              <option value="manager">Manager</option>
               <option value="kitchen_staff">Kitchen Staff</option>
-              <option value="delivery_staff">Delivery Staff</option>
-              <option value="inventory_manager">Inventory Manager</option>
+              <option value="staff" selected>Staff (Default)</option>
             </select>
           </div>
           <div style="grid-column: 1 / -1;">
@@ -1096,7 +1085,21 @@ window.approveLeave = function (leaveId) {
   leave.reviewedBy = currentUser.id;
   leave.reviewedAt = new Date().toISOString();
 
-  saveState();
+  // Save to database
+  const endpoint =
+    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(appState),
+  })
+    .then(() => {
+      console.log("✅ Leave request approved and saved to database");
+    })
+    .catch((err) => {
+      console.error("❌ Error saving to database:", err);
+    });
+
   renderEmployees();
 
   // Show custom success popup
@@ -1107,9 +1110,12 @@ window.approveLeave = function (leaveId) {
     <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
     <h3 style="margin: 0 0 0.5rem 0; color: #333;">Request Approved!</h3>
     <p style="margin: 0; color: #666;">The request has been approved successfully.</p>
-    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
   `;
   document.body.appendChild(popup);
+  popup
+    .querySelector(".popup-close-btn")
+    .addEventListener("click", () => popup.remove());
   setTimeout(() => popup.remove(), 3000);
 };
 
@@ -1127,7 +1133,21 @@ window.rejectLeave = function (leaveId) {
   leave.reviewedBy = currentUser.id;
   leave.reviewedAt = new Date().toISOString();
 
-  saveState();
+  // Save to database
+  const endpoint =
+    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(appState),
+  })
+    .then(() => {
+      console.log("✅ Leave request rejected and saved to database");
+    })
+    .catch((err) => {
+      console.error("❌ Error saving to database:", err);
+    });
+
   renderEmployees();
 
   // Show custom rejection popup
@@ -1138,9 +1158,12 @@ window.rejectLeave = function (leaveId) {
     <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
     <h3 style="margin: 0 0 0.5rem 0; color: #333;">Request Rejected</h3>
     <p style="margin: 0; color: #666;">The request has been rejected.</p>
-    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
   `;
   document.body.appendChild(popup);
+  popup
+    .querySelector(".popup-close-btn")
+    .addEventListener("click", () => popup.remove());
   setTimeout(() => popup.remove(), 3000);
 };
 
@@ -1201,7 +1224,21 @@ window.approveProfileEdit = function (requestId) {
   request.reviewedBy = currentUser.id;
   request.reviewedAt = new Date().toISOString();
 
-  saveState();
+  // Save to database
+  const endpoint =
+    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(appState),
+  })
+    .then(() => {
+      console.log("✅ Profile edit approved and saved to database");
+    })
+    .catch((err) => {
+      console.error("❌ Error saving to database:", err);
+    });
+
   renderEmployees();
 
   // Show custom success popup
@@ -1243,7 +1280,21 @@ window.rejectProfileEdit = function (requestId) {
   request.reviewedBy = currentUser.id;
   request.reviewedAt = new Date().toISOString();
 
-  saveState();
+  // Save to database
+  const endpoint =
+    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(appState),
+  })
+    .then(() => {
+      console.log("✅ Profile edit rejected and saved to database");
+    })
+    .catch((err) => {
+      console.error("❌ Error saving to database:", err);
+    });
+
   renderEmployees();
 
   // Show custom rejection popup

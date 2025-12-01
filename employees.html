@@ -208,7 +208,7 @@
                   title="Kitchen Staff"
                 ></div>
                 <div
-                  id="access-bar-front"
+                  id="access-bar-staff"
                   style="
                     background: #2196f3;
                     display: flex;
@@ -219,21 +219,7 @@
                     color: white;
                     transition: all 0.3s;
                   "
-                  title="Front Staff"
-                ></div>
-                <div
-                  id="access-bar-delivery"
-                  style="
-                    background: #4caf50;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 0.875rem;
-                    font-weight: 600;
-                    color: white;
-                    transition: all 0.3s;
-                  "
-                  title="Delivery Staff"
+                  title="Staff"
                 ></div>
               </div>
               <div
@@ -291,19 +277,7 @@
                       display: inline-block;
                     "
                   ></span>
-                  <span id="access-legend-front">0 Front</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem">
-                  <span
-                    style="
-                      width: 12px;
-                      height: 12px;
-                      background: #4caf50;
-                      border-radius: 2px;
-                      display: inline-block;
-                    "
-                  ></span>
-                  <span id="access-legend-delivery">0 Delivery</span>
+                  <span id="access-legend-staff">0 Staff</span>
                 </div>
               </div>
             </div>
@@ -432,9 +406,9 @@
               >
                 <option value="">All Access</option>
                 <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
                 <option value="kitchen_staff">Kitchen Staff</option>
-                <option value="front_staff">Front Staff</option>
-                <option value="delivery_staff">Delivery Staff</option>
+                <option value="staff">Staff</option>
               </select>
               <select
                 id="status-filter"

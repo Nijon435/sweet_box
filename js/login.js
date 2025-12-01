@@ -514,7 +514,7 @@ function initLoginPage() {
         return;
       }
 
-      // Create new user with default role: front_staff
+      // Create new user with default role: staff
       const newUser = {
         id: "user-" + Date.now(),
         name: name,
@@ -522,7 +522,7 @@ function initLoginPage() {
         phone: phone,
         password: password, // In production, this should be hashed
         role: "staff",
-        permission: "front_staff",
+        permission: "staff",
         status: "active",
         createdAt: new Date().toISOString(),
       };
