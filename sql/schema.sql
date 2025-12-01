@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS inventory (
   category VARCHAR(64),
   name VARCHAR(255) NOT NULL,
   quantity NUMERIC(12,2) DEFAULT 0,
-  unit VARCHAR(32) DEFAULT 'kg', -- kg, g, slices, whole, pieces, liters, ml, dozen, box, small, medium, large, other
+  unit VARCHAR(32) DEFAULT 'kg', 
   cost NUMERIC(12,2) DEFAULT 0,
   date_purchased DATE,
   use_by_date DATE,

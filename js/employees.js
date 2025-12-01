@@ -1315,38 +1315,50 @@ window.approveProfileEdit = function (requestId) {
   request.reviewedBy = currentUser.id;
   request.reviewedAt = new Date().toISOString();
 
-  // Save to database
-  const endpoint =
-    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(appState),
-  })
+  // Save employee changes to database
+  const userEndpoint = `${window.API_BASE_URL || ""}/api/users/${employee.id}`;
+  const requestEndpoint = `${window.API_BASE_URL || ""}/api/requests/${
+    request.id
+  }`;
+
+  Promise.all([
+    fetch(userEndpoint, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(employee),
+    }),
+    fetch(requestEndpoint, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(request),
+    }),
+  ])
     .then(() => {
       console.log("✅ Profile edit approved and saved to database");
+      renderEmployees();
+
+      // Show custom success popup
+      const popup = document.createElement("div");
+      popup.style.cssText =
+        "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
+      popup.innerHTML = `
+        <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
+        <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Approved!</h3>
+        <p style="margin: 0; color: #666;">Profile changes have been applied successfully.</p>
+        <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+      `;
+      document.body.appendChild(popup);
+      popup
+        .querySelector(".popup-close-btn")
+        .addEventListener("click", () => popup.remove());
+      setTimeout(() => popup.remove(), 3000);
     })
     .catch((err) => {
       console.error("❌ Error saving to database:", err);
+      alert("Failed to save changes to database. Please try again.");
     });
-
-  renderEmployees();
-
-  // Show custom success popup
-  const popup = document.createElement("div");
-  popup.style.cssText =
-    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
-  popup.innerHTML = `
-    <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
-    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Approved!</h3>
-    <p style="margin: 0; color: #666;">Profile changes have been applied successfully.</p>
-    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
-  `;
-  document.body.appendChild(popup);
-  popup
-    .querySelector(".popup-close-btn")
-    .addEventListener("click", () => popup.remove());
-  setTimeout(() => popup.remove(), 3000);
 };
 
 window.rejectProfileEdit = function (requestId) {
@@ -1372,37 +1384,39 @@ window.rejectProfileEdit = function (requestId) {
   request.reviewedAt = new Date().toISOString();
 
   // Save to database
-  const endpoint =
-    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
-  fetch(endpoint, {
-    method: "POST",
+  const requestEndpoint = `${window.API_BASE_URL || ""}/api/requests/${
+    request.id
+  }`;
+  fetch(requestEndpoint, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(appState),
+    credentials: "include",
+    body: JSON.stringify(request),
   })
     .then(() => {
       console.log("✅ Profile edit rejected and saved to database");
+      renderEmployees();
+
+      // Show custom rejection popup
+      const popup = document.createElement("div");
+      popup.style.cssText =
+        "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
+      popup.innerHTML = `
+        <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
+        <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Rejected</h3>
+        <p style="margin: 0; color: #666;">The profile edit request has been rejected.</p>
+        <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+      `;
+      document.body.appendChild(popup);
+      popup
+        .querySelector(".popup-close-btn")
+        .addEventListener("click", () => popup.remove());
+      setTimeout(() => popup.remove(), 3000);
     })
     .catch((err) => {
       console.error("❌ Error saving to database:", err);
+      alert("Failed to save rejection to database. Please try again.");
     });
-
-  renderEmployees();
-
-  // Show custom rejection popup
-  const popup = document.createElement("div");
-  popup.style.cssText =
-    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
-  popup.innerHTML = `
-    <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
-    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Rejected</h3>
-    <p style="margin: 0; color: #666;">The profile edit request has been rejected.</p>
-    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
-  `;
-  document.body.appendChild(popup);
-  popup
-    .querySelector(".popup-close-btn")
-    .addEventListener("click", () => popup.remove());
-  setTimeout(() => popup.remove(), 3000);
 };
 
 window.pageRenderers = window.pageRenderers || {};
