@@ -841,6 +841,9 @@ function openAddEmployeeModal() {
   });
 }
 
+// Current request index for navigation
+let currentRequestIndex = 0;
+
 function renderLeaveApprovals() {
   const leaveList = document.getElementById("leave-approval-list");
   if (!leaveList) {
@@ -875,74 +878,73 @@ function renderLeaveApprovals() {
     return;
   }
 
-  leaveList.innerHTML = pendingRequests
-    .map((request) => {
-      // Support both camelCase and snake_case
-      const empId = request.employeeId || request.employee_id;
-      const employee = appState.users.find((u) => u.id === empId);
-      const employeeName = employee ? employee.name : "Unknown";
-      const requestType =
-        request.requestType || request.request_type || "leave";
+  // Ensure current index is within bounds
+  if (currentRequestIndex >= pendingRequests.length) {
+    currentRequestIndex = 0;
+  }
 
-      if (requestType === "profile_edit") {
-        // Profile edit request
-        let changes = request.requestedChanges || request.requested_changes || {};
-        
-        // Parse if it's a JSON string
-        if (typeof changes === 'string') {
-          try {
-            changes = JSON.parse(changes);
-          } catch (e) {
-            console.error('Failed to parse requestedChanges:', e);
-            changes = {};
+  const request = pendingRequests[currentRequestIndex];
+  const empId = request.employeeId || request.employee_id;
+  const employee = appState.users.find((u) => u.id === empId);
+  const employeeName = employee ? employee.name : "Unknown";
+  const requestType = request.requestType || request.request_type || "leave";
+
+  let requestContent = "";
+
+  if (requestType === "profile_edit") {
+    // Profile edit request
+    let changes = request.requestedChanges || request.requested_changes || {};
+
+    // Parse if it's a JSON string
+    if (typeof changes === "string") {
+      try {
+        changes = JSON.parse(changes);
+      } catch (e) {
+        console.error("Failed to parse requestedChanges:", e);
+        changes = {};
+      }
+    }
+
+    // Field label mapping for better display
+    const fieldLabels = {
+      name: "Name",
+      email: "Email",
+      phone: "Phone",
+      role: "Role",
+      shiftStart: "Shift Start",
+    };
+
+    const changesList = Object.entries(changes)
+      .filter(([key, value]) => value && key !== "password")
+      .map(([key, value]) => {
+        const label =
+          fieldLabels[key] ||
+          key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1");
+
+        // Try different property name variations to find current value
+        let currentValue = "N/A";
+        if (employee) {
+          const variants = [
+            key,
+            key.toLowerCase(),
+            key.replace(/([A-Z])/g, "_$1").toLowerCase(),
+            key === "shiftStart" ? "shift_start" : key,
+          ];
+
+          for (const variant of variants) {
+            if (employee[variant] !== undefined && employee[variant] !== null) {
+              currentValue = employee[variant];
+              break;
+            }
           }
         }
 
-        // Field label mapping for better display
-        const fieldLabels = {
-          name: "Name",
-          email: "Email",
-          phone: "Phone",
-          role: "Role",
-          shiftStart: "Shift Start",
-        };
+        return `<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>${label}:</strong> ${currentValue} → ${value}</div>`;
+      })
+      .join("");
 
-        const changesList = Object.entries(changes)
-          .filter(([key, value]) => value && key !== "password")
-          .map(([key, value]) => {
-            const label =
-              fieldLabels[key] ||
-              key.charAt(0).toUpperCase() +
-                key.slice(1).replace(/([A-Z])/g, " $1");
-
-            // Try different property name variations to find current value
-            let currentValue = "N/A";
-            if (employee) {
-              // Try exact match, lowercase, or snake_case
-              const variants = [
-                key,
-                key.toLowerCase(),
-                key.replace(/([A-Z])/g, "_$1").toLowerCase(),
-                key === "shiftStart" ? "shift_start" : key,
-              ];
-
-              for (const variant of variants) {
-                if (
-                  employee[variant] !== undefined &&
-                  employee[variant] !== null
-                ) {
-                  currentValue = employee[variant];
-                  break;
-                }
-              }
-            }
-
-            return `<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>${label}:</strong> ${currentValue} → ${value}</div>`;
-          })
-          .join("");
-
-        return `
-      <div style="padding: 0.75rem; border: 1px solid #2196F3; border-radius: 4px; margin-bottom: 0.5rem; background: #e3f2fd;">
+    requestContent = `
+      <div style="padding: 0.75rem; border: 1px solid #2196F3; border-radius: 4px; background: #e3f2fd;">
         <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #1565C0;">${employeeName} - Profile Edit</div>
         <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">
           ${changesList}
@@ -953,25 +955,27 @@ function renderLeaveApprovals() {
           }
         </div>
         <div style="display: flex; gap: 0.5rem;">
-          <button onclick="approveProfileEdit('${
+          <button data-profile-id="${
             request.id
-          }')" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
-          <button onclick="rejectProfileEdit('${
+          }" class="approve-profile-btn" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
+          <button data-profile-id="${
             request.id
-          }')" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
+          }" class="reject-profile-btn" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
         </div>
       </div>
     `;
-      } else {
-        // Leave request
-        const startDate = request.startDate || request.start_date;
-        const endDate = request.endDate || request.end_date;
-        const reason = (request.reason || "")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+  } else {
+    // Leave request
+    const startDate = request.startDate || request.start_date;
+    const endDate = request.endDate || request.end_date;
+    const reason = (request.reason || "")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
 
-        return `
-      <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
+    requestContent = `
+      <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; background: white;">
         <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">${employeeName} - Leave</div>
         <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${startDate} to ${endDate}</div>
         ${
@@ -989,12 +993,35 @@ function renderLeaveApprovals() {
         </div>
       </div>
     `;
-      }
-    })
-    .join("");
+  }
 
-  // Add event listeners for leave buttons after rendering
+  // Add navigation controls
+  const navigation =
+    pendingRequests.length > 1
+      ? `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; padding: 0.5rem; background: #f5f5f5; border-radius: 4px;">
+      <button id="prev-request-btn" style="padding: 0.25rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;" ${
+        currentRequestIndex === 0
+          ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
+          : ""
+      }>← Previous</button>
+      <span style="font-size: 0.875rem; color: #666;">Request ${
+        currentRequestIndex + 1
+      } of ${pendingRequests.length}</span>
+      <button id="next-request-btn" style="padding: 0.25rem 0.75rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;" ${
+        currentRequestIndex >= pendingRequests.length - 1
+          ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
+          : ""
+      }>Next →</button>
+    </div>
+  `
+      : "";
+
+  leaveList.innerHTML = requestContent + navigation;
+
+  // Add event listeners for buttons
   setTimeout(() => {
+    // Leave request buttons
     document.querySelectorAll(".approve-leave-btn").forEach((btn) => {
       btn.addEventListener("click", function () {
         window.approveLeave(this.dataset.leaveId);
@@ -1005,7 +1032,41 @@ function renderLeaveApprovals() {
         window.rejectLeave(this.dataset.leaveId);
       });
     });
-  }, 0);
+
+    // Profile edit buttons
+    document.querySelectorAll(".approve-profile-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        window.approveProfileEdit(this.dataset.profileId);
+      });
+    });
+    document.querySelectorAll(".reject-profile-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        window.rejectProfileEdit(this.dataset.profileId);
+      });
+    });
+
+    // Navigation buttons
+    const prevBtn = document.getElementById("prev-request-btn");
+    const nextBtn = document.getElementById("next-request-btn");
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        if (currentRequestIndex > 0) {
+          currentRequestIndex--;
+          renderLeaveApprovals();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        if (currentRequestIndex < pendingRequests.length - 1) {
+          currentRequestIndex++;
+          renderLeaveApprovals();
+        }
+      });
+    }
+  });
 }
 
 window.approveLeave = function (leaveId) {
@@ -1098,17 +1159,17 @@ window.approveProfileEdit = function (requestId) {
 
   // Apply the requested changes
   let changes = request.requestedChanges || request.requested_changes || {};
-  
+
   // Parse if it's a JSON string
-  if (typeof changes === 'string') {
+  if (typeof changes === "string") {
     try {
       changes = JSON.parse(changes);
     } catch (e) {
-      console.error('Failed to parse requestedChanges:', e);
+      console.error("Failed to parse requestedChanges:", e);
       changes = {};
     }
   }
-  
+
   if (changes.name) employee.name = changes.name;
   if (changes.email) employee.email = changes.email;
   if (changes.phone) employee.phone = changes.phone;
