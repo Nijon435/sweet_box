@@ -35,7 +35,7 @@
           <a
             href="inventory.html"
             data-section="inventory"
-            data-role="admin,inventory_manager,kitchen_staff"
+            data-role="admin,manager,kitchen_staff"
             data-hide-when-denied="true"
             >Inventory</a
           >
@@ -50,7 +50,7 @@
           <a
             href="report.html"
             data-section="report"
-            data-role="admin,inventory_manager"
+            data-role="admin,manager"
             data-hide-when-denied="true"
             >Reports</a
           >
@@ -85,10 +85,105 @@
             <h1>Order Management</h1>
           </div>
           <div class="actions">
+            <div class="view-toggle">
+              <button class="btn btn-primary active" id="pos-view-btn">POS System</button>
+              <button class="btn btn-outline" id="history-view-btn">Order History</button>
+            </div>
             <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
 
+        <!-- POS View -->
+        <section class="pos-view active">
+          <div class="pos-container">
+            <!-- Product Catalog (60%) -->
+            <div class="pos-products">
+              <div class="category-tabs" id="category-tabs">
+                <button class="category-tab active" data-category="all">All Items</button>
+              </div>
+              
+              <div class="product-search">
+                <input type="text" id="product-search-input" placeholder="Search products...">
+              </div>
+              
+              <div class="products-grid" id="products-grid">
+                <!-- Sample product cards (will be populated dynamically) -->
+                <div class="product-card" data-product="Ube Cake" data-price="450">
+                  <div class="product-name">Ube Cake</div>
+                  <div class="product-price">₱450.00</div>
+                </div>
+                <div class="product-card" data-product="Chocolate Cake" data-price="400">
+                  <div class="product-name">Chocolate Cake</div>
+                  <div class="product-price">₱400.00</div>
+                </div>
+                <div class="product-card" data-product="Red Velvet Cake" data-price="500">
+                  <div class="product-name">Red Velvet Cake</div>
+                  <div class="product-price">₱500.00</div>
+                </div>
+                <div class="product-card" data-product="Cookies Box" data-price="250">
+                  <div class="product-name">Cookies Box</div>
+                  <div class="product-price">₱250.00</div>
+                </div>
+                <div class="product-card" data-product="Brownies" data-price="180">
+                  <div class="product-name">Brownies</div>
+                  <div class="product-price">₱180.00</div>
+                </div>
+                <div class="product-card" data-product="Cupcakes (6pcs)" data-price="300">
+                  <div class="product-name">Cupcakes (6pcs)</div>
+                  <div class="product-price">₱300.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cart Sidebar (40%) -->
+            <div class="pos-cart">
+              <div class="cart-header">
+                <h3>Current Order</h3>
+              </div>
+
+              <div class="customer-input-group">
+                <label for="pos-customer">Customer / Table</label>
+                <input type="text" id="pos-customer" placeholder="Table 5, Walk-in, etc.">
+              </div>
+
+              <div class="customer-input-group">
+                <label for="pos-order-type">Order Type</label>
+                <select id="pos-order-type">
+                  <option value="dine-in">Dine-in</option>
+                  <option value="takeout">Takeout</option>
+                  <option value="delivery">Delivery</option>
+                </select>
+              </div>
+
+              <div class="cart-items" id="cart-items">
+                <div class="cart-empty">
+                  <div class="cart-empty-icon">🛒</div>
+                  <div>Cart is empty</div>
+                  <small>Click on products to add</small>
+                </div>
+              </div>
+
+              <div class="cart-totals">
+                <div class="cart-total-row">
+                  <span>Subtotal:</span>
+                  <span id="cart-subtotal">₱0.00</span>
+                </div>
+                <div class="cart-total-row main">
+                  <span>Total:</span>
+                  <span id="cart-total">₱0.00</span>
+                </div>
+              </div>
+
+              <div class="cart-actions">
+                <button class="btn btn-primary" id="complete-order-btn" disabled>Complete Order</button>
+                <button class="btn btn-outline" id="clear-cart-btn">Clear Cart</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Order History View -->
+        <section class="order-history-view">
         <section class="split">
           <article class="card">
             <div class="section-heading">
@@ -357,7 +452,7 @@
           </div>
         </section>
 
-        <p class="footer-note">
+        <p class="footer-note" style="display: none;">
           Need a printed copy? Export a sales report from the Reports module.
         </p>
       </main>
