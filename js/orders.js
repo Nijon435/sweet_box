@@ -526,7 +526,8 @@ async function processOrder(customer, orderType) {
 
   // Save to database immediately - try individual endpoint first, fallback to bulk
   try {
-    let response = await fetch(`/api/orders/${order.id}`, {
+    const apiBase = window.API_BASE_URL || "";
+    let response = await fetch(`${apiBase}/api/orders/${order.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -1032,7 +1033,8 @@ function renderOrders() {
 
           // Save to database using individual endpoint
           try {
-            let response = await fetch(`/api/orders/${order.id}`, {
+            const apiBase = window.API_BASE_URL || "";
+            let response = await fetch(`${apiBase}/api/orders/${order.id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               credentials: "include",

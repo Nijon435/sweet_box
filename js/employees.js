@@ -156,11 +156,41 @@ window.editUserAccess = function (userId) {
       user.shiftStart = null;
     }
 
-    saveState();
-    modal.remove();
-    renderUserPermissions();
-    renderEmployees();
-    alert("User updated successfully!");
+    // Save to database using individual endpoint
+    (async () => {
+      try {
+        const apiBase = window.API_BASE_URL || "";
+        let response = await fetch(`${apiBase}/api/users/${user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(user),
+        });
+
+        // Fallback to bulk save if individual endpoint not available
+        if (response.status === 404) {
+          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(appState),
+          });
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to update user");
+        }
+
+        modal.remove();
+        renderUserPermissions();
+        renderEmployees();
+        alert("User updated successfully!");
+      } catch (error) {
+        console.error("Error updating user:", error);
+        alert("Failed to update user");
+      }
+    })();
   });
 };
 
@@ -471,7 +501,8 @@ function renderEmployees() {
 
       // Save to database immediately using individual endpoint
       try {
-        const response = await fetch(`/api/users/${user.id}`, {
+        const apiBase = window.API_BASE_URL || "";
+        const response = await fetch(`${apiBase}/api/users/${user.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -842,16 +873,47 @@ function openAddEmployeeModal() {
 
     appState.users = appState.users || [];
     appState.users.push(newEmployee);
-    saveState();
-    modal.remove();
-    renderEmployees();
 
-    const toast = document.createElement("div");
-    toast.style.cssText =
-      "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-    toast.textContent = "Employee added successfully!";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    // Save to database using individual endpoint
+    (async () => {
+      try {
+        const apiBase = window.API_BASE_URL || "";
+        let response = await fetch(`${apiBase}/api/users/${newEmployee.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(newEmployee),
+        });
+
+        // Fallback to bulk save if individual endpoint not available
+        if (response.status === 404) {
+          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(appState),
+          });
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to add employee");
+        }
+
+        modal.remove();
+        renderEmployees();
+
+        const toast = document.createElement("div");
+        toast.style.cssText =
+          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+        toast.textContent = "Employee added successfully!";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      } catch (error) {
+        console.error("Error adding employee:", error);
+        alert("Failed to add employee");
+      }
+    })();
   });
 }
 
@@ -1470,7 +1532,8 @@ window.openEditEmployeeModal = function (userId) {
 
     // Save to database immediately using individual endpoint
     try {
-      const response = await fetch(`/api/users/${user.id}`, {
+      const apiBase = window.API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/users/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -1537,7 +1600,8 @@ window.archiveEmployee = async function (userId) {
 
   // Save to database using individual endpoint
   try {
-    let response = await fetch(`/api/users/${user.id}`, {
+    const apiBase = window.API_BASE_URL || "";
+    let response = await fetch(`${apiBase}/api/users/${user.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

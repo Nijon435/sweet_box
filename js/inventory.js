@@ -227,7 +227,8 @@ function renderUnifiedTable() {
 
         // Save to database using individual endpoint
         try {
-          let response = await fetch(`/api/inventory/${item.id}`, {
+          const apiBase = window.API_BASE_URL || "";
+          let response = await fetch(`${apiBase}/api/inventory/${item.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -378,10 +379,41 @@ function setupAddModal() {
       }
 
       appState.inventory.push(payload);
-      saveState();
-      closeAddModal();
-      renderInventory();
-      alert("Inventory item added successfully!");
+
+      // Save to database using individual endpoint
+      (async () => {
+        try {
+          const apiBase = window.API_BASE_URL || "";
+          let response = await fetch(`${apiBase}/api/inventory/${payload.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(payload),
+          });
+
+          // Fallback to bulk save if individual endpoint not available
+          if (response.status === 404) {
+            const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+            response = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(appState),
+            });
+          }
+
+          if (!response.ok) {
+            throw new Error("Failed to add inventory item");
+          }
+
+          closeAddModal();
+          renderInventory();
+          alert("Inventory item added successfully!");
+        } catch (error) {
+          console.error("Error adding inventory item:", error);
+          alert("Failed to add inventory item");
+        }
+      })();
     });
   }
 }
@@ -468,10 +500,41 @@ function setupEditModal() {
       };
 
       appState.inventory[idx] = updated;
-      saveState();
-      closeEditModal();
-      renderInventory();
-      alert("Inventory item updated successfully!");
+
+      // Save to database using individual endpoint
+      (async () => {
+        try {
+          const apiBase = window.API_BASE_URL || "";
+          let response = await fetch(`${apiBase}/api/inventory/${itemId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updated),
+          });
+
+          // Fallback to bulk save if individual endpoint not available
+          if (response.status === 404) {
+            const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+            response = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(appState),
+            });
+          }
+
+          if (!response.ok) {
+            throw new Error("Failed to update inventory");
+          }
+
+          closeEditModal();
+          renderInventory();
+          alert("Inventory item updated successfully!");
+        } catch (error) {
+          console.error("Error updating inventory:", error);
+          alert("Failed to update inventory item");
+        }
+      })();
     });
   }
 }

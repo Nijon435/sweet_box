@@ -232,7 +232,8 @@ async function restoreOrder(orderId) {
   order.archivedBy = null;
 
   try {
-    let response = await fetch(`/api/orders/${orderId}`, {
+    const apiBase = window.API_BASE_URL || "";
+    let response = await fetch(`${apiBase}/api/orders/${orderId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -271,7 +272,8 @@ async function restoreInventory(itemId) {
   item.archivedBy = null;
 
   try {
-    let response = await fetch(`/api/inventory/${itemId}`, {
+    const apiBase = window.API_BASE_URL || "";
+    let response = await fetch(`${apiBase}/api/inventory/${itemId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -310,7 +312,8 @@ async function restoreUser(userId) {
   user.archivedBy = null;
 
   try {
-    let response = await fetch(`/api/users/${userId}`, {
+    const apiBase = window.API_BASE_URL || "";
+    let response = await fetch(`${apiBase}/api/users/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -350,7 +353,8 @@ function deleteOrder(orderId) {
     `This will permanently delete order ${orderId}. This action cannot be undone.`,
     async () => {
       try {
-        let response = await fetch(`/api/orders/${orderId}`, {
+        const apiBase = window.API_BASE_URL || "";
+        let response = await fetch(`${apiBase}/api/orders/${orderId}`, {
           method: "DELETE",
           credentials: "include",
         });
@@ -392,7 +396,8 @@ function deleteInventory(itemId) {
     `This will permanently delete ${item.name}. This action cannot be undone.`,
     async () => {
       try {
-        let response = await fetch(`/api/inventory/${itemId}`, {
+        const apiBase = window.API_BASE_URL || "";
+        let response = await fetch(`${apiBase}/api/inventory/${itemId}`, {
           method: "DELETE",
           credentials: "include",
         });
@@ -438,7 +443,8 @@ function deleteUser(userId) {
     `This will permanently delete ${user.name}. This action cannot be undone.`,
     async () => {
       try {
-        let response = await fetch(`/api/users/${userId}`, {
+        const apiBase = window.API_BASE_URL || "";
+        let response = await fetch(`${apiBase}/api/users/${userId}`, {
           method: "DELETE",
           credentials: "include",
         });
