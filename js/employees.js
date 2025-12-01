@@ -291,9 +291,9 @@ function renderEmployees() {
 
   if (rosterBody) {
     rosterBody.innerHTML = "";
-    const sorted = [...appState.users].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    const sorted = [...appState.users]
+      .filter((u) => !u.archived)
+      .sort((a, b) => a.name.localeCompare(b.name));
     if (!sorted.length) {
       const row = document.createElement("tr");
       row.innerHTML = `<td colspan="9" class="empty-state">No employees registered yet.</td>`;
@@ -323,9 +323,9 @@ function renderEmployees() {
           <button class="btn btn-outline btn-sm" onclick="openEditEmployeeModal('${
             employee.id
           }')" data-role="admin" style="margin-right: 0.5rem;">Edit</button>
-          <button class="btn btn-outline btn-sm" onclick="confirmDeleteEmployee('${
+          <button class="btn btn-outline btn-sm" onclick="confirmArchiveEmployee('${
             employee.id
-          }')" data-role="admin">Remove</button>
+          }')" data-role="admin">Archive</button>
         </td>
       `;
         rosterBody.appendChild(row);
@@ -456,7 +456,7 @@ function renderEmployees() {
     document.body.appendChild(modal);
 
     const form = modal.querySelector("#edit-employee-form");
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
 
@@ -469,7 +469,24 @@ function renderEmployees() {
       user.hireDate = formData.get("hireDate");
       user.status = formData.get("status");
 
-      saveState();
+      // Save to database immediately using individual endpoint
+      try {
+        const response = await fetch(`/api/users/${user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(user),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save user");
+        }
+      } catch (error) {
+        console.error("Error saving user to database:", error);
+        alert("Failed to save changes");
+        return;
+      }
+
       modal.remove();
       renderEmployees();
       alert("Employee updated successfully!");
@@ -614,8 +631,12 @@ function updateQuickMetrics() {
   const now = new Date();
   const currentTime = now.getHours() * 60 + now.getMinutes();
 
-  const activeUsers = appState.users.filter((u) => u.status === "active");
-  const inactiveUsers = appState.users.filter((u) => u.status === "inactive");
+  const activeUsers = appState.users.filter(
+    (u) => u.status === "active" && !u.archived
+  );
+  const inactiveUsers = appState.users.filter(
+    (u) => u.status === "inactive" && !u.archived
+  );
 
   const onShiftUsers = activeUsers.filter((u) => {
     if (!u.shiftStart) return false;
@@ -1429,7 +1450,7 @@ window.openEditEmployeeModal = function (userId) {
   document.body.appendChild(modal);
 
   const form = modal.querySelector(`#edit-employee-form-${user.id}`);
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
 
@@ -1447,7 +1468,24 @@ window.openEditEmployeeModal = function (userId) {
       user.shiftStart = null;
     }
 
-    saveState();
+    // Save to database immediately using individual endpoint
+    try {
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(user),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save user");
+      }
+    } catch (error) {
+      console.error("Error saving user to database:", error);
+      alert("Failed to save changes");
+      return;
+    }
+
     modal.remove();
     renderEmployees();
 
@@ -1460,8 +1498,8 @@ window.openEditEmployeeModal = function (userId) {
   });
 };
 
-// Custom delete confirmation modal
-window.confirmDeleteEmployee = function (userId) {
+// Custom archive confirmation modal
+window.confirmArchiveEmployee = async function (userId) {
   const user = appState.users.find((u) => u.id === userId);
   if (!user) return;
 
@@ -1472,20 +1510,64 @@ window.confirmDeleteEmployee = function (userId) {
   modal.innerHTML = `
     <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
       <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width: 60px; height: 60px; background: #ffebee; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
-          <span style="color: #f44336; font-size: 2rem;">⚠</span>
+        <div style="width: 60px; height: 60px; background: #fff3e0; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
+          <span style="color: #ff9800; font-size: 2rem;">📦</span>
         </div>
-        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Remove Employee?</h3>
-        <p style="margin: 0; color: #666; font-size: 1rem;">Are you sure you want to remove <strong>${user.name}</strong> from the roster? This action cannot be undone.</p>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Archive Employee?</h3>
+        <p style="margin: 0; color: #666; font-size: 1rem;">Archive <strong>${user.name}</strong>? This will move them to the archive. They can be restored or permanently deleted from there.</p>
       </div>
       <div style="display: flex; gap: 0.75rem; justify-content: center;">
         <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem; min-width: 100px;">Cancel</button>
-        <button onclick="deleteEmployee('${userId}')" style="padding: 0.625rem 1.5rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem; min-width: 100px;">Remove</button>
+        <button onclick="archiveEmployee('${userId}')" style="padding: 0.625rem 1.5rem; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem; min-width: 100px;">Archive</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
+};
+
+window.archiveEmployee = async function (userId) {
+  const user = appState.users.find((u) => u.id === userId);
+  if (!user) return;
+
+  const currentUser = getCurrentUser();
+  user.archived = true;
+  user.archivedAt = new Date().toISOString();
+  user.archivedBy = currentUser?.id || null;
+
+  // Save to database using individual endpoint
+  try {
+    const response = await fetch(`/api/users/${user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(user),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to archive user");
+    }
+  } catch (error) {
+    console.error("Error archiving employee:", error);
+    showToast("Failed to archive employee", "error");
+    return;
+  }
+
+  const modals = document.querySelectorAll("[style*='position: fixed']");
+  modals.forEach((m) => m.remove());
+  renderEmployees();
+
+  const toast = document.createElement("div");
+  toast.style.cssText =
+    "position: fixed; top: 20px; right: 20px; background: #ff9800; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
+  toast.textContent = "Employee archived successfully";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+};
+
+// Legacy delete function (kept for backward compatibility)
+window.confirmDeleteEmployee = function (userId) {
+  confirmArchiveEmployee(userId);
 };
 
 window.deleteEmployee = function (userId) {

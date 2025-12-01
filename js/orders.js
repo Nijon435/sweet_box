@@ -524,25 +524,26 @@ async function processOrder(customer, orderType) {
   appState.orders = appState.orders || [];
   appState.orders.push(order);
 
-  // Save to database immediately
+  // Save to database immediately using individual endpoint
   try {
-    const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
-    const response = await fetch(endpoint, {
-      method: "POST",
+    const response = await fetch(`/api/orders/${order.id}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify(appState),
+      body: JSON.stringify(order),
     });
 
     if (!response.ok) {
       console.error("Failed to save order to database");
+      showToast("Failed to save order", "error");
     } else {
       console.log("Order saved to database successfully");
     }
   } catch (error) {
     console.error("Error saving order to database:", error);
+    showToast("Error saving order", "error");
   }
 
   // Clear cart
@@ -551,21 +552,140 @@ async function processOrder(customer, orderType) {
   renderCart();
   renderProductsGrid(); // Update stock display
 
-  // Show success modal with print option
-  showOrderSuccessModal(order);
-
-  // Switch to history view to show the order
-  const historyViewBtn = document.getElementById("history-view-btn");
-  if (historyViewBtn) {
-    historyViewBtn.click();
-    // Ensure order history is updated
-    setTimeout(() => {
-      renderOrders();
-    }, 100);
-  }
+  // Show receipt in success modal (stay in POS view)
+  showOrderReceiptModal(order);
 }
 
-// Show order success modal with print option
+// Show order receipt modal directly after order completion
+function showOrderReceiptModal(order) {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  let itemsArr = [];
+  try {
+    itemsArr = Array.isArray(order.itemsJson)
+      ? order.itemsJson
+      : JSON.parse(order.itemsJson || "[]");
+  } catch {
+    itemsArr = [];
+  }
+
+  const totalQty = itemsArr.reduce((sum, it) => sum + (it.qty || 0), 0);
+  const itemsList = itemsArr
+    .map(
+      (item) => `
+        <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;">
+          <span><span style="color: #8b5cf6; font-weight: 600;">${
+            item.qty
+          }×</span> ${item.name}</span>
+          <span style="font-weight: 600;">₱${(
+            item.qty * item.unitPrice
+          ).toFixed(2)}</span>
+        </li>
+      `
+    )
+    .join("");
+
+  const orderTypeKey = normalizeOrderType(order.type);
+  const serviceTag = getOrderTypeLabel(orderTypeKey);
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out; max-height: 90vh; overflow-y: auto;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);">
+          <span style="color: white; font-size: 2rem;">✓</span>
+        </div>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #1f2937;">Order Complete!</h3>
+        <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">Sweet Box • San Juan City</p>
+      </div>
+      
+      <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="text-align: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
+          <div style="display: inline-block; background: #8b5cf6; color: white; padding: 0.375rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem;">${
+            order.id
+          }</div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
+          <div>
+            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Customer</div>
+            <div style="font-weight: 600; color: #1f2937;">${
+              order.customer
+            }</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Type</div>
+            <div style="font-weight: 600; color: #1f2937; text-transform: capitalize;">${serviceTag}</div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 0.75rem;">
+          <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">${totalQty} item${
+    totalQty !== 1 ? "s" : ""
+  }</div>
+          <ul style="list-style: none; padding: 0; margin: 0;">${itemsList}</ul>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; padding-top: 1rem; border-top: 2px solid #e5e7eb;">
+          <span style="font-size: 1.1rem; font-weight: 600; color: #1f2937;">Total</span>
+          <span style="font-size: 1.3rem; font-weight: 700; color: #10b981;">₱${order.total.toFixed(
+            2
+          )}</span>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+          <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Thank you for dining with us!</p>
+          <p style="margin: 0.25rem 0 0 0; color: #9ca3af; font-size: 0.75rem;">${formatTime(
+            order.timestamp
+          )}</p>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="close-receipt-modal" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Close</button>
+        <button id="print-order-receipt" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🖨️ Print Receipt</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document
+    .getElementById("close-receipt-modal")
+    .addEventListener("click", () => {
+      modal.remove();
+      // Update order history in background
+      renderOrders();
+    });
+
+  document
+    .getElementById("print-order-receipt")
+    .addEventListener("click", () => {
+      const receiptContent = modal.querySelector(
+        '[style*="background: #f9fafb"]'
+      );
+      if (receiptContent) {
+        const printWindow = window.open("", "", "width=800,height=600");
+        printWindow.document.write(`
+        <html>
+          <head>
+            <title>Receipt - ${order.id}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              @media print { body { padding: 0; } }
+            </style>
+          </head>
+          <body>${receiptContent.outerHTML}</body>
+        </html>
+      `);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    });
+}
+
+// Show order success modal with print option (legacy - kept for compatibility)
 function showOrderSuccessModal(order) {
   const modal = document.createElement("div");
   modal.style.cssText =
@@ -809,10 +929,10 @@ function renderOrders() {
   const tableBody = document.querySelector("#orders-table tbody");
   if (tableBody) {
     tableBody.innerHTML = "";
-    // Show all orders (no status filtering)
-    const allOrders = (appState.orders || []).sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    // Show all non-archived orders
+    const allOrders = (appState.orders || [])
+      .filter((order) => !order.archived)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     if (!allOrders.length) {
       const emptyRow = document.createElement("tr");
@@ -836,9 +956,9 @@ function renderOrders() {
             <button class="btn btn-outline" data-receipt="${
               order.id
             }">Receipt</button>
-            <button class="btn btn-danger" data-delete="${
+            <button class="btn btn-warning" data-archive="${
               order.id
-            }">Delete</button>
+            }">Archive</button>
           </td>
         `;
         tableBody.appendChild(row);
@@ -884,32 +1004,38 @@ function renderOrders() {
     });
   });
 
-  document.querySelectorAll("#orders-table [data-delete]").forEach((btn) => {
+  document.querySelectorAll("#orders-table [data-archive]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const id = btn.dataset.delete;
-      const idx = appState.orders.findIndex((o) => o.id === id);
-      if (idx === -1) return;
+      const id = btn.dataset.archive;
+      const order = appState.orders.find((o) => o.id === id);
+      if (!order) return;
       showConfirm(
-        `Delete order ${id}? This will restore any reserved inventory.`,
-        () => {
-          const order = appState.orders[idx];
+        `Archive order ${id}? This will move it to the archive.`,
+        async () => {
+          // Mark as archived
+          const currentUser = getCurrentUser();
+          order.archived = true;
+          order.archivedAt = new Date().toISOString();
+          order.archivedBy = currentUser?.id || null;
+
+          // Save to database using individual endpoint
           try {
-            const itemsJson = order.itemsJson || [];
-            (itemsJson || []).forEach((it) => {
-              if (!it || !it.source) return;
-              if (it.source === "inventory" || it.source === "supplies") {
-                const inv = appState.inventory.find((i) => i.id === it.id);
-                if (inv) {
-                  inv.quantity =
-                    Number(inv.quantity || 0) + Number(it.qty || 0);
-                }
-              }
+            const response = await fetch(`/api/orders/${order.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(order),
             });
-          } catch (err) {
-            console.warn("Failed to restore inventory for deleted order", err);
+
+            if (!response.ok) {
+              throw new Error("Failed to archive order");
+            }
+          } catch (error) {
+            console.error("Error archiving order:", error);
+            showToast("Failed to archive order", "error");
+            return;
           }
-          appState.orders.splice(idx, 1);
-          saveState();
+
           renderOrders();
         }
       );

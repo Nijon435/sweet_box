@@ -251,8 +251,9 @@ async def get_state():
         logger.error(f"Error in /api/state: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/api/inventory/{item_id}")
-async def update_inventory(item_id: str, update: InventoryUpdate):
+@app.put("/api/inventory-partial/{item_id}")
+async def update_inventory_partial(item_id: str, update: InventoryUpdate):
+    """Partial update for inventory (legacy endpoint for quantity-only updates)"""
     try:
         logger.info(f"Updating inventory item {item_id}: {update}")
         conn = await asyncpg.connect(
@@ -356,6 +357,230 @@ def parse_time(time_str):
     except:
         return None
 
+@app.put("/api/orders/{order_id}")
+async def update_order(order_id: str, order: dict):
+    """Update a single order (for archiving, status changes, etc.)"""
+    try:
+        logger.info(f"Updating order {order_id}: {order}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        items_json = json.dumps(order.get("items", []))
+        
+        await conn.execute(
+            """INSERT INTO orders (id, customer, items_json, total, status, type, archived, archived_at, archived_by, timestamp, served_at)
+               VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $11)
+               ON CONFLICT (id) DO UPDATE SET
+               customer = EXCLUDED.customer,
+               items_json = EXCLUDED.items_json,
+               total = EXCLUDED.total,
+               status = EXCLUDED.status,
+               type = EXCLUDED.type,
+               archived = EXCLUDED.archived,
+               archived_at = EXCLUDED.archived_at,
+               archived_by = EXCLUDED.archived_by,
+               timestamp = EXCLUDED.timestamp,
+               served_at = EXCLUDED.served_at""",
+            order.get("id"),
+            order.get("customer"),
+            items_json,
+            order.get("total"),
+            order.get("status"),
+            order.get("type"),
+            order.get("archived", False),
+            parse_timestamp(order.get("archivedAt")),
+            order.get("archivedBy"),
+            parse_timestamp(order.get("timestamp")),
+            parse_timestamp(order.get("servedAt"))
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully updated order {order_id}")
+        return {"success": True, "id": order_id}
+    except Exception as e:
+        logger.error(f"Error updating order: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/orders/{order_id}")
+async def delete_order(order_id: str):
+    """Permanently delete an order"""
+    try:
+        logger.info(f"Deleting order {order_id}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        await conn.execute("DELETE FROM orders WHERE id = $1", order_id)
+        await conn.close()
+        
+        logger.info(f"Successfully deleted order {order_id}")
+        return {"success": True, "id": order_id}
+    except Exception as e:
+        logger.error(f"Error deleting order: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/users/{user_id}")
+async def update_user(user_id: str, user: dict):
+    """Update a single user (for editing profile, archiving, etc.)"""
+    try:
+        logger.info(f"Updating user {user_id}: {user}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        await conn.execute(
+            """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, require_password_reset, archived, archived_at, archived_by, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+               ON CONFLICT (id) DO UPDATE SET
+               name = EXCLUDED.name,
+               email = EXCLUDED.email,
+               password = EXCLUDED.password,
+               phone = EXCLUDED.phone,
+               role = EXCLUDED.role,
+               permission = EXCLUDED.permission,
+               shift_start = EXCLUDED.shift_start,
+               hire_date = EXCLUDED.hire_date,
+               status = EXCLUDED.status,
+               require_password_reset = EXCLUDED.require_password_reset,
+               archived = EXCLUDED.archived,
+               archived_at = EXCLUDED.archived_at,
+               archived_by = EXCLUDED.archived_by""",
+            user.get("id"),
+            user.get("name"),
+            user.get("email"),
+            user.get("password"),
+            user.get("phone"),
+            user.get("role"),
+            user.get("permission", "staff"),
+            parse_time(user.get("shiftStart")),
+            parse_date(user.get("hireDate")),
+            user.get("status", "active"),
+            user.get("requirePasswordReset", False),
+            user.get("archived", False),
+            parse_timestamp(user.get("archivedAt")),
+            user.get("archivedBy"),
+            parse_timestamp(user.get("createdAt"))
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully updated user {user_id}")
+        return {"success": True, "id": user_id}
+    except Exception as e:
+        logger.error(f"Error updating user: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: str):
+    """Permanently delete a user"""
+    try:
+        logger.info(f"Deleting user {user_id}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        await conn.execute("DELETE FROM users WHERE id = $1", user_id)
+        await conn.close()
+        
+        logger.info(f"Successfully deleted user {user_id}")
+        return {"success": True, "id": user_id}
+    except Exception as e:
+        logger.error(f"Error deleting user: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/inventory/{item_id}")
+async def update_inventory_item(item_id: str, item: dict):
+    """Update a single inventory item (for editing, archiving, etc.)"""
+    try:
+        logger.info(f"Updating inventory item {item_id}: {item}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        await conn.execute(
+            """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+               ON CONFLICT (id) DO UPDATE SET
+               name = EXCLUDED.name,
+               category = EXCLUDED.category,
+               quantity = EXCLUDED.quantity,
+               unit = EXCLUDED.unit,
+               cost = EXCLUDED.cost,
+               date_purchased = EXCLUDED.date_purchased,
+               use_by_date = EXCLUDED.use_by_date,
+               expiry_date = EXCLUDED.expiry_date,
+               reorder_point = EXCLUDED.reorder_point,
+               last_restocked = EXCLUDED.last_restocked,
+               total_used = EXCLUDED.total_used,
+               archived = EXCLUDED.archived,
+               archived_at = EXCLUDED.archived_at,
+               archived_by = EXCLUDED.archived_by""",
+            item.get("id"),
+            item.get("name"),
+            item.get("category"),
+            item.get("quantity"),
+            item.get("unit", "pieces"),
+            item.get("cost"),
+            parse_date(item.get("datePurchased")),
+            parse_date(item.get("useByDate")),
+            parse_date(item.get("expiryDate")),
+            item.get("reorderPoint", 10),
+            parse_date(item.get("lastRestocked")),
+            item.get("totalUsed", 0),
+            item.get("archived", False),
+            parse_timestamp(item.get("archivedAt")),
+            item.get("archivedBy")
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully updated inventory item {item_id}")
+        return {"success": True, "id": item_id}
+    except Exception as e:
+        logger.error(f"Error updating inventory item: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/inventory/{item_id}")
+async def delete_inventory_item(item_id: str):
+    """Permanently delete an inventory item"""
+    try:
+        logger.info(f"Deleting inventory item {item_id}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
+        )
+        
+        await conn.execute("DELETE FROM inventory WHERE id = $1", item_id)
+        await conn.close()
+        
+        logger.info(f"Successfully deleted inventory item {item_id}")
+        return {"success": True, "id": item_id}
+    except Exception as e:
+        logger.error(f"Error deleting inventory item: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/requests")
 async def create_request(request: dict):
     """Create a new leave or profile edit request"""
@@ -416,18 +641,20 @@ async def save_state(state: dict):
                 try:
                     logger.info(f"Saving user {idx + 1}: {user.get('email', 'NO_EMAIL')}")
                     await conn.execute(
-                        """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, require_password_reset, created_at)
-                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                        """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, require_password_reset, archived, archived_at, archived_by, created_at)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                            ON CONFLICT (id) DO UPDATE SET
                            name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password,
                            phone = EXCLUDED.phone, role = EXCLUDED.role, permission = EXCLUDED.permission,
                            shift_start = EXCLUDED.shift_start, hire_date = EXCLUDED.hire_date, 
-                           status = EXCLUDED.status, require_password_reset = EXCLUDED.require_password_reset""",
+                           status = EXCLUDED.status, require_password_reset = EXCLUDED.require_password_reset,
+                           archived = EXCLUDED.archived, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by""",
                         user.get("id"), user.get("name"), user.get("email"), user.get("password"),
                         user.get("phone"), user.get("role"), user.get("permission", "staff"),
                         parse_time(user.get("shiftStart")), parse_date(user.get("hireDate")), 
                         user.get("status", "active"), user.get("requirePasswordReset", False),
-                        parse_timestamp(user.get("createdAt"))
+                        user.get("archived", False), parse_timestamp(user.get("archivedAt")),
+                        user.get("archivedBy"), parse_timestamp(user.get("createdAt"))
                     )
                     logger.info(f"Successfully saved user {idx + 1}")
                 except Exception as user_error:
@@ -455,19 +682,22 @@ async def save_state(state: dict):
         if "inventory" in state and state["inventory"]:
             for item in state["inventory"]:
                 await conn.execute(
-                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                        ON CONFLICT (id) DO UPDATE SET
                        name = EXCLUDED.name, category = EXCLUDED.category,
                        quantity = EXCLUDED.quantity, unit = EXCLUDED.unit, cost = EXCLUDED.cost,
                        date_purchased = EXCLUDED.date_purchased, use_by_date = EXCLUDED.use_by_date,
                        expiry_date = EXCLUDED.expiry_date, reorder_point = EXCLUDED.reorder_point, 
-                       last_restocked = EXCLUDED.last_restocked, total_used = EXCLUDED.total_used""",
+                       last_restocked = EXCLUDED.last_restocked, total_used = EXCLUDED.total_used,
+                       archived = EXCLUDED.archived, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by""",
                     item.get("id"), item.get("name"), item.get("category"),
                     item.get("quantity"), item.get("unit", "pieces"), item.get("cost"),
                     parse_date(item.get("datePurchased")), parse_date(item.get("useByDate")),
                     parse_date(item.get("expiryDate")), item.get("reorderPoint", 10), 
-                    parse_date(item.get("lastRestocked")), item.get("totalUsed", 0)
+                    parse_date(item.get("lastRestocked")), item.get("totalUsed", 0),
+                    item.get("archived", False), parse_timestamp(item.get("archivedAt")),
+                    item.get("archivedBy")
                 )
         
         # Save orders (upsert - don't delete existing)
@@ -493,16 +723,18 @@ async def save_state(state: dict):
                             items_json_str = None
                 
                 await conn.execute(
-                    """INSERT INTO orders (id, customer, items_json, total, status, type, timestamp, served_at)
-                       VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8)
+                    """INSERT INTO orders (id, customer, items_json, total, status, type, archived, archived_at, archived_by, timestamp, served_at)
+                       VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $11)
                        ON CONFLICT (id) DO UPDATE SET
                        customer = EXCLUDED.customer,
                        items_json = EXCLUDED.items_json, total = EXCLUDED.total,
                        status = EXCLUDED.status, type = EXCLUDED.type,
+                       archived = EXCLUDED.archived, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by,
                        timestamp = EXCLUDED.timestamp, served_at = EXCLUDED.served_at""",
                     order.get("id"), order.get("customer"),
                     items_json_str, order.get("total"), order.get("status"),
-                    order.get("type"), parse_timestamp(order.get("timestamp")), parse_timestamp(order.get("servedAt"))
+                    order.get("type"), order.get("archived", False), parse_timestamp(order.get("archivedAt")),
+                    order.get("archivedBy"), parse_timestamp(order.get("timestamp")), parse_timestamp(order.get("servedAt"))
                 )
         
         # Save sales history (upsert - don't delete existing)

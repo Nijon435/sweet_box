@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Archive</title>
+    <link rel="icon" href="img/sweetbox_icon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design.css" />
+    <link rel="stylesheet" href="responsive.css" />
+    <link rel="stylesheet" href="css/archive.css" />
+  </head>
+
+  <body data-page="archive">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="img/sweetbox_logo.png" alt="Sweet Box" class="brand-logo" />
+        </div>
+        <nav class="nav">
+          <a href="index.html" data-section="dashboard">Dashboard</a>
+          <a href="attendance.html" data-section="attendance">Attendance</a>
+          <a
+            href="employees.html"
+            data-section="employees"
+            data-role="admin,manager"
+            data-hide-when-denied="true"
+            >Users</a
+          >
+          <a
+            href="inventory.html"
+            data-section="inventory"
+            data-role="admin,manager,kitchen_staff"
+            data-hide-when-denied="true"
+            >Inventory</a
+          >
+          <a href="orders.html" data-section="orders">Orders</a>
+          <a
+            href="analytics.html"
+            data-section="analytics"
+            data-role="admin,manager"
+            data-hide-when-denied="true"
+            >Analytics</a
+          >
+          <a
+            href="report.html"
+            data-section="report"
+            data-role="admin,manager"
+            data-hide-when-denied="true"
+            >Reports</a
+          >
+          <a
+            href="archive.html"
+            data-section="archive"
+            data-role="admin"
+            data-hide-when-denied="true"
+            >Archive</a
+          >
+        </nav>
+        <div class="user-session">
+          <div class="user-session-info">
+            <div class="user-session-row">
+              <strong id="session-name" class="user-session-name">Guest</strong>
+              <button
+                id="edit-profile-btn"
+                type="button"
+                class="user-session-edit-btn"
+                title="Edit Profile"
+              >
+                ✏️
+              </button>
+            </div>
+            <small id="session-role" class="user-session-role"
+              >Sign in required</small
+            >
+          </div>
+          <button class="btn btn-outline" id="logout-btn" type="button">
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="page-header">
+          <div>
+            <span class="pill">Admin only</span>
+            <h1>Archive</h1>
+            <p class="page-subtitle">Review and manage archived items</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refresh-archive">
+              Refresh
+            </button>
+          </div>
+        </header>
+
+        <!-- Archive Tabs -->
+        <div class="archive-tabs">
+          <button class="archive-tab active" data-tab="orders">
+            📦 Orders
+          </button>
+          <button class="archive-tab" data-tab="inventory">📋 Inventory</button>
+          <button class="archive-tab" data-tab="users">👥 Users</button>
+        </div>
+
+        <!-- Orders Archive -->
+        <section class="archive-section active" id="orders-archive">
+          <div class="section-heading">
+            <h2>Archived Orders</h2>
+            <p>Archived orders can be permanently deleted</p>
+          </div>
+          <table id="archive-orders-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Date</th>
+                <th>Archived</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <!-- Inventory Archive -->
+        <section class="archive-section" id="inventory-archive">
+          <div class="section-heading">
+            <h2>Archived Inventory</h2>
+            <p>
+              Archived inventory items can be restored or permanently deleted
+            </p>
+          </div>
+          <table id="archive-inventory-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Archived</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <!-- Users Archive -->
+        <section class="archive-section" id="users-archive">
+          <div class="section-heading">
+            <h2>Archived Users</h2>
+            <p>Archived users can be restored or permanently deleted</p>
+          </div>
+          <table id="archive-users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Permission</th>
+                <th>Archived</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <section
+      id="delete-confirm-modal"
+      class="delete-overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="delete-dialog">
+        <header class="delete-dialog__header">
+          <h3 id="delete-title">Permanently Delete?</h3>
+        </header>
+        <div id="delete-message" class="delete-dialog__body">
+          This action cannot be undone.
+        </div>
+        <div class="delete-dialog__actions">
+          <button id="delete-cancel" class="btn btn-outline" type="button">
+            Cancel
+          </button>
+          <button id="delete-confirm" class="btn btn-danger" type="button">
+            Permanently Delete
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <script src="js/config.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/archive.js"></script>
+  </body>
+</html>

@@ -20,7 +20,7 @@ function renderInventory() {
 }
 
 function renderMetrics() {
-  const inventory = appState.inventory || [];
+  const inventory = (appState.inventory || []).filter((item) => !item.archived);
 
   // Calculate metrics
   const totalSKUs = inventory.length;
@@ -111,7 +111,7 @@ function renderUnifiedTable() {
   const tbody = document.getElementById("unified-inventory-tbody");
   if (!tbody) return;
 
-  const inventory = appState.inventory || [];
+  const inventory = (appState.inventory || []).filter((item) => !item.archived);
 
   // Apply filters
   const filteredInventory = inventory.filter((item) => {
@@ -196,9 +196,9 @@ function renderUnifiedTable() {
           <button class="btn btn-outline" data-edit="${item.id}" ${
         !canManageInventory ? "disabled" : ""
       }>Edit</button>
-          <button class="btn btn-secondary" data-delete="${item.id}" ${
+          <button class="btn btn-warning" data-archive="${item.id}" ${
         !canManageInventory ? "disabled" : ""
-      }>Delete</button>
+      }>Archive</button>
         </td>
       </tr>
     `;
@@ -214,13 +214,37 @@ function renderUnifiedTable() {
     });
   });
 
-  document.querySelectorAll("[data-delete]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.delete;
-      if (confirm("Are you sure you want to delete this item?")) {
-        appState.inventory = appState.inventory.filter((i) => i.id !== id);
-        saveState();
+  document.querySelectorAll("[data-archive]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.archive;
+      const item = appState.inventory.find((i) => i.id === id);
+      if (!item) return;
+      if (confirm(`Archive ${item.name}? This will move it to the archive.`)) {
+        const currentUser = getCurrentUser();
+        item.archived = true;
+        item.archivedAt = new Date().toISOString();
+        item.archivedBy = currentUser?.id || null;
+
+        // Save to database using individual endpoint
+        try {
+          const response = await fetch(`/api/inventory/${item.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(item),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to archive item");
+          }
+        } catch (error) {
+          console.error("Error archiving item:", error);
+          showToast("Failed to archive item", "error");
+          return;
+        }
+
         renderInventory();
+        showToast("Item archived successfully", "success");
       }
     });
   });

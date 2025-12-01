@@ -15,7 +15,11 @@ CREATE TABLE IF NOT EXISTS users (
   hire_date DATE,
   status VARCHAR(32) DEFAULT 'active',
   require_password_reset BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMP,
+  archived_by VARCHAR(64),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Attendance logs
@@ -67,7 +71,11 @@ CREATE TABLE IF NOT EXISTS inventory (
   reorder_point NUMERIC(12,2) DEFAULT 10,
   last_restocked DATE,
   total_used NUMERIC(12,2) DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMP,
+  archived_by VARCHAR(64),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Ingredient Usage Logs (new table for detailed usage tracking)
@@ -90,7 +98,11 @@ CREATE TABLE IF NOT EXISTS orders (
   items_json JSONB,
   total NUMERIC(12,2) DEFAULT 0,
   type VARCHAR(32) DEFAULT 'dine-in',
-  timestamp TIMESTAMP NOT NULL
+  archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMP,
+  archived_by VARCHAR(64),
+  timestamp TIMESTAMP NOT NULL,
+  FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Sales history (daily totals)
