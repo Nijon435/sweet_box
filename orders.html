@@ -89,9 +89,12 @@
               <button class="btn btn-primary active" id="pos-view-btn">POS System</button>
               <button class="btn btn-outline" id="history-view-btn">Order History</button>
             </div>
-            <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
+
+        <div style="margin-bottom: 1rem; text-align: right;">
+          <button class="btn btn-secondary" id="refresh-data">Refresh</button>
+        </div>
 
         <!-- POS View -->
         <section class="pos-view active">
@@ -184,17 +187,35 @@
 
         <!-- Order History View -->
         <section class="order-history-view">
+        
+        <!-- Order Statistics -->
+        <section class="grid grid-3" style="margin-bottom: 2rem;">
+          <article class="card">
+            <h3>Total Orders</h3>
+            <strong id="stat-total-orders" style="font-size: 2rem; color: #7952B3;">0</strong>
+            <small>All time orders</small>
+          </article>
+          <article class="card">
+            <h3>Today's Orders</h3>
+            <strong id="stat-today-orders" style="font-size: 2rem; color: #10b981;">0</strong>
+            <small>Orders placed today</small>
+          </article>
+          <article class="card">
+            <h3>Total Revenue</h3>
+            <strong id="stat-total-revenue" style="font-size: 2rem; color: #f59e0b;">₱0.00</strong>
+            <small>From all orders</small>
+          </article>
+        </section>
+        
         <section class="split">
           <article class="card">
             <form id="orders-form">
-              <label for="order-customer"
-                ><span id="order-customer-label">Customer / Table</span></label
-              >
+              <!-- Hidden customer field (for backward compatibility) -->
               <input
                 id="order-customer"
                 name="customer"
-                placeholder="Table 5, Delivery #8891"
-                required
+                type="hidden"
+                value="POS Order"
               />
 
               <!-- Item entry mode -->
