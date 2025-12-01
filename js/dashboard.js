@@ -33,14 +33,22 @@ function renderDashboard() {
     ? Math.round((attendanceCounts.present / nonAdminUsers.length) * 100)
     : 0;
 
+  // Calculate weekly revenue (last 7 days)
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weeklyRevenue = (appState.salesHistory || []).reduce((sum, entry) => {
+    const entryDate = new Date(entry.date);
+    return entryDate >= weekAgo ? sum + entry.total : sum;
+  }, 0);
+
   const metricMap = {
     "metric-sales": formatCurrency(todaySales),
-    "metric-orders": `${
-      orders.pending + orders.preparing + orders.ready
-    } active`,
+    "metric-orders": `${orders.served} orders`,
+    "metric-revenue": formatCurrency(weeklyRevenue),
     "metric-coverage": `${coveragePercent}%`,
     "coverage-note": `${attendanceCounts.present} of ${nonAdminUsers.length} present`,
     "sales-trend-note": `${delta}% vs. yesterday`,
+    "revenue-trend-note": "Last 7 days",
     "inventory-status-note": `${metrics.lowStock} low stock alerts`,
   };
   Object.entries(metricMap).forEach(([id, value]) => {
@@ -97,6 +105,8 @@ function renderDashboard() {
       scales: {
         y: {
           beginAtZero: true,
+          suggestedMax:
+            Math.max(...salesWindow.map((entry) => entry.total), 100) * 1.2,
           ticks: {
             callback: function (value) {
               return "₱" + value.toLocaleString();

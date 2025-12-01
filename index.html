@@ -96,18 +96,35 @@
           </div>
         </header>
 
-        <section class="grid grid-3">
-          <article class="card">
+        <section class="grid grid-4">
+          <article
+            class="card card-clickable"
+            onclick="window.location.href='orders.html'"
+          >
             <h3>Today's Sales</h3>
             <strong id="metric-sales">₱0.00</strong>
             <small id="sales-trend-note">0% vs yesterday</small>
           </article>
-          <article class="card">
-            <h3>Active Orders</h3>
-            <strong id="metric-orders">0 active</strong>
-            <small>Across dine-in, takeaway, and delivery</small>
+          <article
+            class="card card-clickable"
+            onclick="window.location.href='orders.html'"
+          >
+            <h3>Today's Orders</h3>
+            <strong id="metric-orders">0 orders</strong>
+            <small>Completed today</small>
           </article>
-          <article class="card">
+          <article
+            class="card card-clickable"
+            onclick="window.location.href='analytics.html'"
+          >
+            <h3>Weekly Revenue</h3>
+            <strong id="metric-revenue">₱0.00</strong>
+            <small id="revenue-trend-note">Last 7 days</small>
+          </article>
+          <article
+            class="card card-clickable"
+            onclick="window.location.href='attendance.html'"
+          >
             <h3>Staff Coverage</h3>
             <strong id="metric-coverage">0%</strong>
             <small id="coverage-note">Present today</small>

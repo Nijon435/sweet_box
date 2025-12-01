@@ -180,18 +180,18 @@
             data-chart-category="sales"
           >
             <div class="section-heading">
-              <h2>Revenue Mix</h2>
-              <span class="pill">By channel</span>
+              <h2>Top Selling Products</h2>
+              <span class="pill">By revenue</span>
             </div>
             <canvas id="salesMixChart" height="280"></canvas>
           </article>
           <article
             class="chart-card chart-card--compact"
-            data-chart-category="inventory"
+            data-chart-category="sales"
           >
             <div class="section-heading">
-              <h2>Inventory Usage</h2>
-              <span class="pill">Weekly</span>
+              <h2>Revenue by Day of Week</h2>
+              <span class="pill">Pattern analysis</span>
             </div>
             <canvas id="inventoryUsageChart" height="280"></canvas>
           </article>
@@ -209,10 +209,10 @@
             </div>
             <canvas id="attendanceTrendChart" height="280"></canvas>
           </article>
-          <article class="chart-card" data-chart-category="people">
+          <article class="chart-card" data-chart-category="sales">
             <div class="section-heading">
-              <h2>Employee Performance</h2>
-              <span class="pill">Ratings</span>
+              <h2>Order Type Distribution</h2>
+              <span class="pill">Dine-in vs Takeout vs Delivery</span>
             </div>
             <canvas id="performanceChart" height="280"></canvas>
           </article>
@@ -223,13 +223,13 @@
           data-chart-category="inventory"
         >
           <div class="section-heading">
-            <h2>Stock Trends</h2>
-            <span class="pill">Fast movers</span>
+            <h2>Low Stock & Expiring Items</h2>
+            <span class="pill">Needs attention</span>
           </div>
           <canvas id="stockTrendsChart" height="320"></canvas>
           <p class="meta section-mt-0-75">
-            Tracks the top items that are consumed or sold fastest so you can
-            plan production.
+            Monitor inventory items that need restocking or are approaching
+            expiration dates.
           </p>
         </section>
 

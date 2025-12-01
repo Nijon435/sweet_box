@@ -87,38 +87,140 @@ function renderAnalytics() {
     if (node) node.textContent = text;
   });
 
+  // Calculate top selling products by revenue
+  const productRevenue = {};
+  (appState.orders || []).forEach((order) => {
+    if (order.status === "served" && order.items) {
+      try {
+        const items =
+          typeof order.items === "string"
+            ? JSON.parse(order.items)
+            : order.items;
+        items.forEach((item) => {
+          const key = item.name || "Unknown";
+          const revenue = (item.unitPrice || 0) * (item.qty || 0);
+          productRevenue[key] = (productRevenue[key] || 0) + revenue;
+        });
+      } catch (e) {
+        console.error("Error parsing order items:", e);
+      }
+    }
+  });
+
+  const topProducts = Object.entries(productRevenue)
+    .map(([name, revenue]) => ({ name, revenue }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+
   ChartManager.plot("salesMixChart", {
     type: "bar",
     data: {
-      labels: ["Cakes", "Restaurant", "Beverages"],
+      labels: topProducts.map((p) =>
+        p.name.length > 15 ? p.name.substring(0, 15) + "..." : p.name
+      ),
       datasets: [
         {
-          data: [48, 38, 14],
-          backgroundColor: ["#f6c343", "#f97316", "#5c2c06"],
-          borderRadius: 12,
+          label: "Revenue",
+          data: topProducts.map((p) => p.revenue),
+          backgroundColor: [
+            "#f6c343",
+            "#f97316",
+            "#5c2c06",
+            "#fb923c",
+            "#fbbf24",
+          ],
+          borderRadius: 8,
         },
       ],
     },
     options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } },
+      indexAxis: "y",
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return (
+                "₱" +
+                context.parsed.x.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })
+              );
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "₱" + value.toLocaleString();
+            },
+          },
+        },
+      },
     },
   });
 
+  // Revenue by day of week
+  const dayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const revenueByDay = [0, 0, 0, 0, 0, 0, 0];
+  (appState.orders || []).forEach((order) => {
+    if (order.status === "served" && order.servedAt) {
+      const dayIndex = new Date(order.servedAt).getDay();
+      revenueByDay[dayIndex] += order.total || 0;
+    }
+  });
+
   ChartManager.plot("inventoryUsageChart", {
-    type: "radar",
+    type: "bar",
     data: {
-      labels: (appState.inventoryUsage || []).map((item) => item.label),
+      labels: dayNames,
       datasets: [
         {
-          data: (appState.inventoryUsage || []).map((item) => item.used),
-          borderColor: "#f6c343",
-          backgroundColor: "rgba(246,195,67,0.25)",
-          borderWidth: 2,
+          label: "Revenue",
+          data: revenueByDay,
+          backgroundColor: "#f6c343",
+          borderRadius: 8,
         },
       ],
     },
-    options: { plugins: { legend: { display: false } } },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return (
+                "₱" +
+                context.parsed.y.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })
+              );
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "₱" + value.toLocaleString();
+            },
+          },
+        },
+      },
+    },
   });
 
   ChartManager.plot("attendanceTrendChart", {
@@ -130,27 +232,150 @@ function renderAnalytics() {
           label: "Present",
           data: attendanceWindow.map((item) => item.present),
           borderColor: "#22c55e",
+          backgroundColor: "rgba(34, 197, 94, 0.1)",
           tension: 0.4,
+          fill: true,
         },
         {
           label: "Late",
           data: attendanceWindow.map((item) => item.late),
           borderColor: "#f97316",
+          backgroundColor: "rgba(249, 115, 22, 0.1)",
           tension: 0.4,
+          fill: true,
         },
         {
           label: "Absent",
           data: attendanceWindow.map((item) => item.absent),
           borderColor: "#ef4444",
+          backgroundColor: "rgba(239, 68, 68, 0.1)",
           tension: 0.4,
+          fill: true,
         },
       ],
     },
-    options: { responsive: true },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+          },
+        },
+      },
+    },
   });
 
-  // Performance and stock trends charts removed - data not necessary for POS system
-  // Charts can be re-added if needed with calculated data from orders/inventory
+  // Order Type Distribution (Dine-in vs Takeout vs Delivery)
+  const orderTypes = { "dine-in": 0, takeout: 0, delivery: 0 };
+  (appState.orders || []).forEach((order) => {
+    const type = (order.orderType || order.type || "dine-in").toLowerCase();
+    if (orderTypes.hasOwnProperty(type)) {
+      orderTypes[type]++;
+    }
+  });
+
+  ChartManager.plot("performanceChart", {
+    type: "doughnut",
+    data: {
+      labels: ["Dine-in", "Takeout", "Delivery"],
+      datasets: [
+        {
+          data: [
+            orderTypes["dine-in"],
+            orderTypes["takeout"],
+            orderTypes["delivery"],
+          ],
+          backgroundColor: ["#f6c343", "#f97316", "#5c2c06"],
+          borderColor: "#fff",
+          borderWidth: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "bottom",
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((context.parsed / total) * 100).toFixed(1);
+              return `${context.label}: ${context.parsed} orders (${percentage}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Low Stock & Expiring Items
+  const lowStockList = lowStockItems();
+  const expiringItems = (appState.inventory || []).filter((item) => {
+    const expiryDate =
+      item.expiryDate || item.expiry_date || item.useByDate || item.use_by_date;
+    if (!expiryDate) return false;
+    const daysUntilExpiry = Math.floor(
+      (new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+    );
+    return daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
+  });
+
+  const stockLabels = [];
+  const stockData = [];
+  const stockColors = [];
+
+  lowStockList.slice(0, 5).forEach((item) => {
+    stockLabels.push(
+      item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name
+    );
+    stockData.push(item.quantity);
+    stockColors.push("#fbbf24");
+  });
+
+  expiringItems.slice(0, 3).forEach((item) => {
+    stockLabels.push(
+      item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name
+    );
+    stockData.push(item.quantity || 0);
+    stockColors.push("#ef4444");
+  });
+
+  ChartManager.plot("stockTrendsChart", {
+    type: "bar",
+    data: {
+      labels: stockLabels.length > 0 ? stockLabels : ["No alerts"],
+      datasets: [
+        {
+          label: "Quantity",
+          data: stockData.length > 0 ? stockData : [0],
+          backgroundColor: stockColors.length > 0 ? stockColors : ["#94a3b8"],
+          borderRadius: 8,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return `Quantity: ${context.parsed.x}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+        },
+      },
+    },
+  });
 }
 
 window.pageRenderers = window.pageRenderers || {};
