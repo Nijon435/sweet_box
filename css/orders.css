@@ -69,11 +69,12 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+  margin-top: 1rem;
 }
 
 .view-toggle .btn {
   flex: 1;
-  max-width: 150px;
+  max-width: 200px;
 }
 
 .view-toggle .btn.active {
@@ -387,6 +388,52 @@
 
 .pos-view.active {
   display: block;
+}
+
+/* Order Statistics Grid */
+.order-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #333;
 }
 
 /* Order Tags */

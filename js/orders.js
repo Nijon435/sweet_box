@@ -346,7 +346,46 @@ function completeOrder() {
 window.updateCartQty = updateCartQty;
 window.removeFromCart = removeFromCart;
 
+// Calculate and display order statistics
+function updateOrderStatistics() {
+  const orders = appState.orders || [];
+  const totalOrders = orders.length;
+
+  // Calculate total revenue
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + (Number(order.total) || 0),
+    0
+  );
+
+  // Calculate average order value
+  const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  // Calculate today's orders
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayOrders = orders.filter((order) => {
+    const orderDate = new Date(order.timestamp);
+    orderDate.setHours(0, 0, 0, 0);
+    return orderDate.getTime() === today.getTime();
+  }).length;
+
+  // Update DOM
+  const statTotalOrders = document.getElementById("stat-total-orders");
+  const statTotalRevenue = document.getElementById("stat-total-revenue");
+  const statAvgOrder = document.getElementById("stat-avg-order");
+  const statTodayOrders = document.getElementById("stat-today-orders");
+
+  if (statTotalOrders) statTotalOrders.textContent = totalOrders;
+  if (statTotalRevenue)
+    statTotalRevenue.textContent = `₱${totalRevenue.toFixed(2)}`;
+  if (statAvgOrder) statAvgOrder.textContent = `₱${avgOrder.toFixed(2)}`;
+  if (statTodayOrders) statTodayOrders.textContent = todayOrders;
+}
+
 function renderOrders() {
+  // Update order statistics
+  updateOrderStatistics();
+
   const form = document.getElementById("orders-form");
   const filterSelect = document.getElementById("orders-filter");
   const orderTypeSelect = document.getElementById("order-type");
