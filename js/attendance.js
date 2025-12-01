@@ -575,7 +575,9 @@ function openRequestLeaveModal(user) {
     console.log("📋 Total requests:", appState.requests.length);
 
     // Save to database via API
-    const baseUrl = window.APP_STATE_ENDPOINT ? window.APP_STATE_ENDPOINT.replace('/api/state', '') : '';
+    const baseUrl = window.APP_STATE_ENDPOINT
+      ? window.APP_STATE_ENDPOINT.replace("/api/state", "")
+      : "";
     fetch(`${baseUrl}/api/requests`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

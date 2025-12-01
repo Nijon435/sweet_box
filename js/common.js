@@ -1334,7 +1334,9 @@ function openEditProfileModal() {
       appState.requests.push(newRequest);
 
       // Save to database via API
-      const baseUrl = window.APP_STATE_ENDPOINT ? window.APP_STATE_ENDPOINT.replace('/api/state', '') : '';
+      const baseUrl = window.APP_STATE_ENDPOINT
+        ? window.APP_STATE_ENDPOINT.replace("/api/state", "")
+        : "";
       fetch(`${baseUrl}/api/requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

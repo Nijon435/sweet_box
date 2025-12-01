@@ -888,21 +888,43 @@ function renderLeaveApprovals() {
         // Profile edit request
         const changes =
           request.requestedChanges || request.requested_changes || {};
-        
+
         // Field label mapping for better display
         const fieldLabels = {
           name: "Name",
           email: "Email",
           phone: "Phone",
           role: "Role",
-          shiftStart: "Shift Start"
+          shiftStart: "Shift Start",
         };
-        
+
         const changesList = Object.entries(changes)
           .filter(([key, value]) => value && key !== "password")
           .map(([key, value]) => {
-            const label = fieldLabels[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1");
-            const currentValue = employee ? (employee[key] || employee[key.toLowerCase()] || "N/A") : "N/A";
+            const label =
+              fieldLabels[key] ||
+              key.charAt(0).toUpperCase() +
+                key.slice(1).replace(/([A-Z])/g, " $1");
+            
+            // Try different property name variations to find current value
+            let currentValue = "N/A";
+            if (employee) {
+              // Try exact match, lowercase, or snake_case
+              const variants = [
+                key,
+                key.toLowerCase(),
+                key.replace(/([A-Z])/g, '_$1').toLowerCase(),
+                key === 'shiftStart' ? 'shift_start' : key
+              ];
+              
+              for (const variant of variants) {
+                if (employee[variant] !== undefined && employee[variant] !== null) {
+                  currentValue = employee[variant];
+                  break;
+                }
+              }
+            }
+            
             return `<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>${label}:</strong> ${currentValue} → ${value}</div>`;
           })
           .join("");
@@ -932,6 +954,7 @@ function renderLeaveApprovals() {
         // Leave request
         const startDate = request.startDate || request.start_date;
         const endDate = request.endDate || request.end_date;
+        const reason = (request.reason || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
         return `
       <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
@@ -939,22 +962,32 @@ function renderLeaveApprovals() {
         <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">${startDate} to ${endDate}</div>
         ${
           request.reason
-            ? `<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; font-style: italic;">"${request.reason}"</div>`
+            ? `<div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; font-style: italic;">"${reason}"</div>`
             : ""
         }
         <div style="display: flex; gap: 0.5rem;">
-          <button onclick="approveLeave('${
-            request.id
-          }')" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
-          <button onclick="rejectLeave('${
-            request.id
-          }')" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
+          <button data-leave-id="${request.id}" class="approve-leave-btn" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
+          <button data-leave-id="${request.id}" class="reject-leave-btn" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
         </div>
       </div>
     `;
       }
     })
     .join("");
+
+  // Add event listeners for leave buttons after rendering
+  setTimeout(() => {
+    document.querySelectorAll('.approve-leave-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        window.approveLeave(this.dataset.leaveId);
+      });
+    });
+    document.querySelectorAll('.reject-leave-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        window.rejectLeave(this.dataset.leaveId);
+      });
+    });
+  }, 0);
 }
 
 window.approveLeave = function (leaveId) {
