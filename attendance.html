@@ -219,12 +219,21 @@
 
         <section class="table-wrapper section-mt-1-5">
           <div class="section-heading">
-            <h2>Timestamp Log</h2>
-            <select id="attendance-log-filter" class="filter-select">
-              <option value="all" selected>All shifts</option>
-              <option value="morning">Morning shift</option>
-              <option value="afternoon">Afternoon shift</option>
-            </select>
+            <div>
+              <h2>Timestamp Log</h2>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center">
+              <select id="attendance-status-filter" class="filter-select">
+                <option value="all" selected>All status</option>
+                <option value="in">Clock In</option>
+                <option value="out">Clock Out</option>
+              </select>
+              <select id="attendance-log-filter" class="filter-select">
+                <option value="all" selected>All shifts</option>
+                <option value="morning">Morning shift</option>
+                <option value="afternoon">Afternoon shift</option>
+              </select>
+            </div>
           </div>
           <table id="attendance-log-table">
             <thead>

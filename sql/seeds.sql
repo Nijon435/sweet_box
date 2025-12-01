@@ -168,7 +168,7 @@ INSERT INTO attendance_logs (id, employee_id, action, timestamp, shift, note) VA
 ON CONFLICT (id) DO NOTHING;
 
 -- Inventory usage (sample weekly metrics)
-INSERT INTO inventory_usage (label, used) VALUES
+INSERT INTO inventory_trends (label, used) VALUES
   ('Chocolate Mousse Slice', 18),
   ('Butter Croissant', 32),
   ('Blueberry Muffin', 42),

@@ -131,7 +131,7 @@ TABLES = [
     "orders",
     "sales_history",
     "inventory_usage",
-    "ingredient_usage_logs",
+    "inventory_usage_logs",
     "requests"  # Renamed from leave_requests
 ]
 
@@ -142,7 +142,7 @@ async def fetch_table(conn, table):
             "attendance_logs": 100,  # Last 100 attendance records (reduced from 1000)
             "sales_history": 90,     # Last 90 days sales (reduced from 500)
             "orders": 200,           # Last 200 orders (reduced from 500)
-            "inventory_usage": 50,   # Last 50 usage records (reduced from 1000)
+            "inventory_trends": 50,  # Last 50 trend records for analytics graphs
             "stock_trends": 50,      # Last 50 trend records (reduced from 500)
         }
         
@@ -151,7 +151,7 @@ async def fetch_table(conn, table):
             "sales_history": "date DESC",
             "orders": "timestamp DESC",
             "attendance_logs": "timestamp DESC",
-            "inventory_usage": "id DESC",
+            "inventory_trends": "id DESC",
             "users": "created_at DESC",
         }
         
@@ -226,13 +226,17 @@ async def fetch_table(conn, table):
                     item["totalUsed"] = item.pop("total_used")
                 if "created_at" in item:
                     item["createdAt"] = item.pop("created_at")
-            if table == "ingredient_usage_logs":
+            if table == "inventory_usage_logs":
                 if "inventory_item_id" in item:
                     item["inventoryItemId"] = item.pop("inventory_item_id")
                 if "order_id" in item:
                     item["orderId"] = item.pop("order_id")
                 if "created_at" in item:
                     item["createdAt"] = item.pop("created_at")
+                if "archived_at" in item:
+                    item["archivedAt"] = item.pop("archived_at")
+                if "archived_by" in item:
+                    item["archivedBy"] = item.pop("archived_by")
             result.append(item)
         
         if table == "users" and result:
@@ -352,7 +356,8 @@ async def get_state():
             "inventory": data["inventory"],
             "orders": data["orders"],
             "salesHistory": data["sales_history"],
-            "inventoryUsage": data["inventory_usage"],
+            "inventoryTrends": data["inventory_trends"],
+            "inventoryUsageLogs": data["inventory_usage_logs"],
             "requests": data["requests"],
             "attendanceTrend": []
         }
@@ -586,6 +591,62 @@ async def update_attendance_log(log_id: str, log: dict):
         return {"success": True, "id": log_id}
     except Exception as e:
         logger.error(f"Error updating attendance log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/inventory-usage-logs/{log_id}")
+async def update_usage_log(log_id: str, log: dict):
+    """Update a single inventory usage log (for archiving, etc.)"""
+    try:
+        logger.info(f"Updating usage log {log_id}: {log}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        await conn.execute(
+            """UPDATE inventory_usage_logs SET
+               archived = $1,
+               archived_at = $2,
+               archived_by = $3
+               WHERE id = $4""",
+            log.get("archived", False),
+            parse_timestamp(log.get("archivedAt")),
+            log.get("archivedBy"),
+            log_id
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully updated usage log {log_id}")
+        return {"success": True, "id": log_id}
+    except Exception as e:
+        logger.error(f"Error updating usage log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/inventory-usage-logs/{log_id}")
+async def delete_usage_log(log_id: str):
+    """Permanently delete an inventory usage log"""
+    try:
+        logger.info(f"Deleting usage log {log_id}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        await conn.execute("DELETE FROM inventory_usage_logs WHERE id = $1", int(log_id))
+        await conn.close()
+        
+        logger.info(f"Successfully deleted usage log {log_id}")
+        return {"success": True, "id": log_id}
+    except Exception as e:
+        logger.error(f"Error deleting usage log: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/users/{user_id}")
@@ -973,7 +1034,7 @@ async def save_state(state: dict):
         if "inventoryUsage" in state and state["inventoryUsage"]:
             for usage in state["inventoryUsage"]:
                 await conn.execute(
-                    """INSERT INTO inventory_usage (id, label, used)
+                    """INSERT INTO inventory_trends (id, label, used)
                        VALUES ($1, $2, $3)
                        ON CONFLICT (id) DO UPDATE SET
                        label = EXCLUDED.label, used = EXCLUDED.used""",

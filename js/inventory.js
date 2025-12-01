@@ -203,10 +203,10 @@ function renderUnifiedTable() {
           statusInfo.class
         }"><span class="status-text">${statusInfo.text}</span></span></td>
         <td class="table-actions">
-          <button class="btn btn-outline" data-edit="${item.id}" ${
+          <button class="btn btn-outline btn-sm" data-edit="${item.id}" ${
         !canManage ? "disabled" : ""
       }>Edit</button>
-          <button class="btn btn-warning" data-archive="${item.id}" ${
+          <button class="btn btn-warning btn-sm" data-archive="${item.id}" ${
         !canManage ? "disabled" : ""
       }>Archive</button>
         </td>
@@ -902,9 +902,12 @@ function setupInventoryTabs() {
 // Load usage logs from database
 async function loadUsageLogs() {
   try {
-    const response = await fetch(`${API_BASE}/inventory_usage`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${window.API_BASE_URL || ""}/api/inventory-usage-logs`,
+      {
+        credentials: "include",
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch usage logs");
 

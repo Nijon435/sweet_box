@@ -9,6 +9,7 @@ function renderAttendance() {
   const currentUserName = document.getElementById("current-user-name");
   const lastActionDisplay = document.getElementById("last-action-display");
   const logFilter = document.getElementById("attendance-log-filter");
+  const statusFilter = document.getElementById("attendance-status-filter");
 
   // Display current user
   if (currentUserName && currentUser) {
@@ -318,7 +319,17 @@ function renderAttendance() {
     });
   }
 
+  // Status filter handler
+  if (statusFilter && !statusFilter.dataset.bound) {
+    statusFilter.dataset.bound = "true";
+    statusFilter.addEventListener("change", () => {
+      attendanceCurrentPage = 1; // Reset to first page on filter change
+      renderAttendance();
+    });
+  }
+
   const logFilterValue = logFilter?.value || "all";
+  const statusFilterValue = statusFilter?.value || "all";
 
   const employeeSnapshots = appState.users
     .filter((user) => user.permission !== "admin")
@@ -403,6 +414,12 @@ function renderAttendance() {
         // Filter out archived logs
         if (log.archived) return false;
 
+        // Apply status filter
+        if (statusFilterValue !== "all" && log.action !== statusFilterValue) {
+          return false;
+        }
+
+        // Apply shift filter
         if (logFilterValue === "all") return true;
         const shift = (log.shift || "").toLowerCase();
         if (!shift) return false;
@@ -671,7 +688,14 @@ function attendancePreviousPage() {
 function attendanceNextPage() {
   const logFilterValue =
     document.getElementById("attendance-log-filter")?.value || "all";
+  const statusFilterValue =
+    document.getElementById("attendance-status-filter")?.value || "all";
   const filteredLogs = getTodaysLogs().filter((log) => {
+    // Apply status filter
+    if (statusFilterValue !== "all" && log.action !== statusFilterValue) {
+      return false;
+    }
+    // Apply shift filter
     if (logFilterValue === "all") return true;
     const shift = (log.shift || "").toLowerCase();
     if (!shift) return false;

@@ -60,6 +60,8 @@ function renderArchive() {
     renderArchivedUsers();
   } else if (currentTab === "attendance") {
     renderArchivedAttendanceLogs();
+  } else if (currentTab === "usage-logs") {
+    renderArchivedUsageLogs();
   }
 }
 
@@ -711,6 +713,152 @@ function showToast(message, type = "success") {
     toast.style.animation = "slideOutRight 0.3s ease-out";
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+// Render Archived Usage Logs
+function renderArchivedUsageLogs() {
+  const tbody = document.querySelector("#archive-usage-logs-table tbody");
+  if (!tbody) return;
+
+  // Fetch from appState - will be loaded by getAppState
+  const archivedLogs = (appState.inventoryUsageLogs || []).filter(
+    (log) => log.archived
+  );
+
+  tbody.innerHTML = "";
+
+  if (archivedLogs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-archive">
+          <div class="empty-archive-icon">📊</div>
+          <div>No archived usage logs</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  archivedLogs.forEach((log) => {
+    // Get inventory item name
+    const inventoryItem = (appState.inventory || []).find(
+      (item) =>
+        item.id === log.inventory_item_id || item.id === log.inventoryItemId
+    );
+    const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
+
+    // Get archived by user name
+    let archivedByName = "--";
+    const archivedById = log.archivedBy || log.archived_by;
+    if (archivedById) {
+      const archivedByUser = (appState.users || []).find(
+        (u) => u.id === archivedById
+      );
+      archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
+    }
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${itemName}</strong></td>
+      <td>${log.quantity}</td>
+      <td><span class="pill" style="background: #e3f2fd; color: #1565c0; font-size: 0.75rem">${
+        log.reason || "--"
+      }</span></td>
+      <td>${log.notes || "--"}</td>
+      <td>${formatTime(log.created_at || log.timestamp)}</td>
+      <td>${archivedByName}</td>
+      <td class="archive-actions">
+        <button class="btn-restore" data-restore-usage-log="${
+          log.id
+        }">Restore</button>
+        <button class="btn-permanent-delete" data-delete-usage-log="${
+          log.id
+        }">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Attach event listeners
+  document.querySelectorAll("[data-restore-usage-log]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      restoreUsageLog(btn.dataset.restoreUsageLog)
+    );
+  });
+
+  document.querySelectorAll("[data-delete-usage-log]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      deleteUsageLog(btn.dataset.deleteUsageLog)
+    );
+  });
+}
+
+// Restore Usage Log
+async function restoreUsageLog(logId) {
+  const log = (appState.inventoryUsageLogs || []).find((l) => l.id == logId);
+  if (!log) return;
+
+  showCustomConfirm(
+    "Restore Usage Log",
+    `Are you sure you want to restore this usage log?`,
+    async () => {
+      log.archived = false;
+      log.archivedAt = null;
+      log.archivedBy = null;
+
+      try {
+        const response = await fetch(
+          `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${logId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(log),
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to restore");
+
+        showToast("Usage log restored successfully!", "#4caf50");
+        renderArchive();
+      } catch (error) {
+        console.error("Error restoring usage log:", error);
+        showToast("Failed to restore usage log", "#f44336");
+      }
+    }
+  );
+}
+
+// Delete Usage Log
+async function deleteUsageLog(logId) {
+  showCustomConfirm(
+    "Permanently Delete Usage Log",
+    "This action cannot be undone. The usage log will be permanently deleted.",
+    async () => {
+      try {
+        const response = await fetch(
+          `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${logId}`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to delete");
+
+        // Remove from appState
+        appState.inventoryUsageLogs = (
+          appState.inventoryUsageLogs || []
+        ).filter((l) => l.id != logId);
+
+        showToast("Usage log permanently deleted", "#ff9800");
+        renderArchive();
+      } catch (error) {
+        console.error("Error deleting usage log:", error);
+        showToast("Failed to delete usage log", "#f44336");
+      }
+    }
+  );
 }
 
 // Page renderer

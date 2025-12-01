@@ -51,10 +51,10 @@ const getEmptyData = () => ({
   inventory: [],
   orders: [],
   salesHistory: [],
-  inventoryUsage: [],
+  inventoryTrends: [], // Renamed from inventoryUsage - used for analytics graphs
   attendanceTrend: [],
   requests: [],
-  ingredientUsageLogs: [], // New: separate ingredient usage tracking
+  inventoryUsageLogs: [], // Renamed from ingredientUsageLogs
 });
 
 async function fetchServerState() {

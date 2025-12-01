@@ -81,17 +81,21 @@ CREATE TABLE IF NOT EXISTS inventory (
   FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Ingredient Usage Logs (new table for detailed usage tracking)
-CREATE TABLE IF NOT EXISTS ingredient_usage_logs (
-  id VARCHAR(128) NOT NULL PRIMARY KEY,
+-- Inventory Usage Logs (tracking usage of inventory items)
+CREATE TABLE IF NOT EXISTS inventory_usage_logs (
+  id SERIAL PRIMARY KEY,
   inventory_item_id VARCHAR(64) NOT NULL,
   quantity NUMERIC(12,2) NOT NULL,
   reason VARCHAR(64) NOT NULL, -- 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'other'
   order_id VARCHAR(64),
   notes TEXT,
-  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMP,
+  archived_by VARCHAR(64),
   FOREIGN KEY (inventory_item_id) REFERENCES inventory(id) ON DELETE CASCADE,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+  FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Orders
@@ -117,7 +121,7 @@ CREATE TABLE IF NOT EXISTS sales_history (
 );
 
 -- Inventory usage (simple table for weekly usage / metrics)
-CREATE TABLE IF NOT EXISTS inventory_usage (
+CREATE TABLE IF NOT EXISTS inventory_trends (
   id SERIAL PRIMARY KEY,
   label VARCHAR(255) NOT NULL UNIQUE,
   used INT DEFAULT 0

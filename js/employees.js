@@ -353,7 +353,7 @@ function renderEmployees() {
           <button class="btn btn-outline btn-sm" onclick="openEditEmployeeModal('${
             employee.id
           }')" data-role="admin,manager" style="margin-right: 0.5rem;">Edit</button>
-          <button class="btn btn-outline btn-sm" onclick="confirmArchiveEmployee('${
+          <button class="btn btn-warning btn-sm" onclick="confirmArchiveEmployee('${
             employee.id
           }')" data-role="admin,manager">Archive</button>
         </td>
@@ -808,7 +808,8 @@ function openAddEmployeeModal() {
           </div>
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Phone</label>
-            <input type="text" name="phone" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="text" name="phone" id="add-phone-input" placeholder="09XXXXXXXXX" maxlength="13" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <small style="color: #888; font-size: 0.875rem;">11 digits, spaces allowed (e.g., 09XX XXX XXXX)</small>
           </div>
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Password *</label>
@@ -856,11 +857,25 @@ function openAddEmployeeModal() {
     e.preventDefault();
     const formData = new FormData(form);
 
+    // Validate phone number
+    const phone = formData.get("phone");
+    if (phone) {
+      const digitsOnly = phone.replace(/\s/g, "");
+      if (!/^\d+$/.test(digitsOnly)) {
+        alert("Phone number must contain only digits and spaces");
+        return;
+      }
+      if (digitsOnly.length !== 11) {
+        alert("Phone number must be exactly 11 digits (excluding spaces)");
+        return;
+      }
+    }
+
     const newEmployee = {
       id: "user-" + Date.now(),
       name: formData.get("name"),
       email: formData.get("email"),
-      phone: formData.get("phone"),
+      phone: phone,
       password: formData.get("password"),
       role: formData.get("role"),
       permission: formData.get("permission"),
@@ -1457,7 +1472,8 @@ window.openEditEmployeeModal = function (userId) {
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Phone</label>
             <input type="text" name="phone" value="${
               user.phone || ""
-            }" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            }" placeholder="09XXXXXXXXX" maxlength="13" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <small style="color: #888; font-size: 0.875rem;">11 digits, spaces allowed</small>
           </div>
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Password *</label>
@@ -1534,10 +1550,29 @@ window.openEditEmployeeModal = function (userId) {
     e.preventDefault();
     const formData = new FormData(form);
 
+    // Validate phone number
+    const phone = formData.get("phone");
+    if (phone) {
+      const digitsOnly = phone.replace(/\s/g, "");
+      if (!/^\d+$/.test(digitsOnly)) {
+        alert("Phone number must contain only digits and spaces");
+        return;
+      }
+      if (digitsOnly.length !== 11) {
+        alert("Phone number must be exactly 11 digits (excluding spaces)");
+        return;
+      }
+    }
+
+    const password = formData.get("password");
+
     user.name = formData.get("name");
     user.email = formData.get("email");
-    user.phone = formData.get("phone");
-    user.password = formData.get("password");
+    user.phone = phone;
+    // Only update password if provided
+    if (password && password.trim() !== "") {
+      user.password = password;
+    }
     user.role = formData.get("role");
     user.permission = formData.get("permission");
     user.shiftStart = formData.get("shiftStart") || null;

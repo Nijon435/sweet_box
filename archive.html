@@ -109,6 +109,9 @@
           <button class="archive-tab" data-tab="attendance">
             🕒 Attendance Logs
           </button>
+          <button class="archive-tab" data-tab="usage-logs">
+            📊 Usage Logs
+          </button>
         </div>
 
         <!-- Orders Archive -->
@@ -191,6 +194,28 @@
                 <th>Action</th>
                 <th>Timestamp</th>
                 <th>Shift</th>
+                <th>Archived By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <!-- Usage Logs Archive -->
+        <section class="archive-section" id="usage-logs-archive">
+          <div class="section-heading">
+            <h2>Archived Usage Logs</h2>
+            <p>Archived usage logs can be permanently deleted</p>
+          </div>
+          <table id="archive-usage-logs-table">
+            <thead>
+              <tr>
+                <th>Inventory Item</th>
+                <th>Quantity</th>
+                <th>Reason</th>
+                <th>Notes</th>
+                <th>Logged At</th>
                 <th>Archived By</th>
                 <th>Actions</th>
               </tr>

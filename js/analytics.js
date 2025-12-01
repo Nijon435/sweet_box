@@ -46,7 +46,7 @@ function renderAnalytics() {
   const totalAttendanceKpi = (appState.attendanceLogs || []).filter(
     (log) => log.action === "in" && new Date(log.timestamp) >= kpiCutoff
   ).length;
-  const weeklyUsage = (appState.inventoryUsage || []).reduce(
+  const weeklyUsage = (appState.inventoryTrends || []).reduce(
     (sum, item) => sum + (item.used || 0),
     0
   );
