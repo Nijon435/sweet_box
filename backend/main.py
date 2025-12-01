@@ -236,7 +236,8 @@ async def health_check():
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         await conn.close()
         return {
@@ -261,7 +262,8 @@ async def get_state():
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         logger.info("DB connection successful")
         data = {}
@@ -295,7 +297,8 @@ async def update_inventory_partial(item_id: str, update: InventoryUpdate):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         # Build dynamic UPDATE query
@@ -401,7 +404,8 @@ async def update_order(order_id: str, order: dict):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         items_json = json.dumps(order.get("items", []))
@@ -446,7 +450,8 @@ async def delete_order(order_id: str):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         await conn.execute("DELETE FROM orders WHERE id = $1", order_id)
@@ -468,7 +473,8 @@ async def update_user(user_id: str, user: dict):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         await conn.execute(
@@ -522,7 +528,8 @@ async def delete_user(user_id: str):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         await conn.execute("DELETE FROM users WHERE id = $1", user_id)
@@ -544,7 +551,8 @@ async def update_inventory_item(item_id: str, item: dict):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         await conn.execute(
@@ -597,7 +605,8 @@ async def delete_inventory_item(item_id: str):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         await conn.execute("DELETE FROM inventory WHERE id = $1", item_id)
@@ -619,7 +628,8 @@ async def create_request(request: dict):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         # Insert request into database
@@ -659,7 +669,8 @@ async def save_state(state: dict):
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            ssl='require'
         )
         
         # Save users (upsert - don't delete existing)
