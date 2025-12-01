@@ -799,8 +799,8 @@ async def update_request(request_id: str, request: dict):
         )
         
         await conn.execute(
-            """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at, review_note)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                ON CONFLICT (id) DO UPDATE SET
                employee_id = EXCLUDED.employee_id,
                request_type = EXCLUDED.request_type,
@@ -811,8 +811,7 @@ async def update_request(request_id: str, request: dict):
                status = EXCLUDED.status,
                requested_at = EXCLUDED.requested_at,
                reviewed_by = EXCLUDED.reviewed_by,
-               reviewed_at = EXCLUDED.reviewed_at,
-               review_note = EXCLUDED.review_note""",
+               reviewed_at = EXCLUDED.reviewed_at""",
             request.get("id"),
             request.get("employeeId"),
             request.get("requestType"),
@@ -823,8 +822,7 @@ async def update_request(request_id: str, request: dict):
             request.get("status", "pending"),
             parse_timestamp(request.get("requestedAt")),
             request.get("reviewedBy"),
-            parse_timestamp(request.get("reviewedAt")),
-            request.get("reviewNote")
+            parse_timestamp(request.get("reviewedAt"))
         )
         
         await conn.close()

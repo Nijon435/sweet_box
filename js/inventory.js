@@ -179,7 +179,7 @@ function renderUnifiedTable() {
     return;
   }
 
-  const canManageInventory = isAdmin();
+  const canManage = canManageInventory();
 
   tbody.innerHTML = pageItems
     .map((item) => {
@@ -204,10 +204,10 @@ function renderUnifiedTable() {
         }"><span class="status-text">${statusInfo.text}</span></span></td>
         <td class="table-actions">
           <button class="btn btn-outline" data-edit="${item.id}" ${
-        !canManageInventory() ? "disabled" : ""
+        !canManage ? "disabled" : ""
       }>Edit</button>
           <button class="btn btn-warning" data-archive="${item.id}" ${
-        !canManageInventory() ? "disabled" : ""
+        !canManage ? "disabled" : ""
       }>Archive</button>
         </td>
       </tr>

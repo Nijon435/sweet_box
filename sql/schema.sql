@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   require_password_reset BOOLEAN DEFAULT FALSE,
   archived BOOLEAN DEFAULT FALSE,
   archived_at TIMESTAMP,
+  archived_by VARCHAR(64),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
