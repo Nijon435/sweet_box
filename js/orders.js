@@ -112,8 +112,10 @@ function renderProductsGrid() {
   // Filter by category
   if (currentCategory !== "all") {
     products = products.filter((item) => {
-      return item.category.toLowerCase() === "supplies" && 
-             item.category.toLowerCase() === currentCategory.toLowerCase();
+      return (
+        item.category.toLowerCase() === "supplies" &&
+        item.category.toLowerCase() === currentCategory.toLowerCase()
+      );
     });
   }
 

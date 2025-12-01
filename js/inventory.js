@@ -864,25 +864,25 @@ function inventoryNextPage() {
 
 // Tab switching functionality
 function setupInventoryTabs() {
-  const tabs = document.querySelectorAll('.inventory-tab');
-  const allItemsSection = document.getElementById('all-items-section');
-  const usageLogsSection = document.getElementById('usage-logs-section');
+  const tabs = document.querySelectorAll(".inventory-tab");
+  const allItemsSection = document.getElementById("all-items-section");
+  const usageLogsSection = document.getElementById("usage-logs-section");
 
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
       const targetTab = tab.dataset.tab;
 
       // Update active tab
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
 
       // Show/hide sections
-      if (targetTab === 'all-items') {
-        allItemsSection.style.display = 'block';
-        usageLogsSection.style.display = 'none';
-      } else if (targetTab === 'usage-logs') {
-        allItemsSection.style.display = 'none';
-        usageLogsSection.style.display = 'block';
+      if (targetTab === "all-items") {
+        allItemsSection.style.display = "block";
+        usageLogsSection.style.display = "none";
+      } else if (targetTab === "usage-logs") {
+        allItemsSection.style.display = "none";
+        usageLogsSection.style.display = "block";
         loadUsageLogs();
       }
     });
@@ -896,19 +896,19 @@ async function loadUsageLogs() {
       headers: getAuthHeaders(),
     });
 
-    if (!response.ok) throw new Error('Failed to fetch usage logs');
+    if (!response.ok) throw new Error("Failed to fetch usage logs");
 
     const logs = await response.json();
     renderUsageLogs(logs);
   } catch (error) {
-    console.error('Error loading usage logs:', error);
+    console.error("Error loading usage logs:", error);
     renderUsageLogs([]);
   }
 }
 
 // Render usage logs table
 function renderUsageLogs(logs) {
-  const tbody = document.querySelector('#usage-logs-table tbody');
+  const tbody = document.querySelector("#usage-logs-table tbody");
   if (!tbody) return;
 
   if (!logs || logs.length === 0) {
@@ -922,19 +922,22 @@ function renderUsageLogs(logs) {
     return;
   }
 
-  tbody.innerHTML = logs.map(log => {
-    const timestamp = new Date(log.timestamp || log.created_at);
-    const formattedDate = timestamp.toLocaleDateString();
-    const formattedTime = timestamp.toLocaleTimeString();
-    const item = appState.inventory?.find(i => i.id === log.inventory_item_id);
-    const itemName = item ? item.name : `Item #${log.inventory_item_id}`;
-    const quantity = log.quantity || 0;
-    const unit = item?.unit || '';
-    const reason = log.reason || 'N/A';
-    const notes = log.notes || '-';
-    const recordedBy = log.user_name || 'System';
+  tbody.innerHTML = logs
+    .map((log) => {
+      const timestamp = new Date(log.timestamp || log.created_at);
+      const formattedDate = timestamp.toLocaleDateString();
+      const formattedTime = timestamp.toLocaleTimeString();
+      const item = appState.inventory?.find(
+        (i) => i.id === log.inventory_item_id
+      );
+      const itemName = item ? item.name : `Item #${log.inventory_item_id}`;
+      const quantity = log.quantity || 0;
+      const unit = item?.unit || "";
+      const reason = log.reason || "N/A";
+      const notes = log.notes || "-";
+      const recordedBy = log.user_name || "System";
 
-    return `
+      return `
       <tr>
         <td>${formattedDate} ${formattedTime}</td>
         <td>${itemName}</td>
@@ -944,25 +947,25 @@ function renderUsageLogs(logs) {
         <td>${recordedBy}</td>
       </tr>
     `;
-  }).join('');
+    })
+    .join("");
 }
 
 // Format reason text for display
 function formatReason(reason) {
   const reasonMap = {
-    'waste': 'Waste',
-    'spoilage': 'Spoilage',
-    'testing': 'Testing',
-    'staff_consumption': 'Staff Consumption',
-    'production': 'Production',
-    'other': 'Other'
+    waste: "Waste",
+    spoilage: "Spoilage",
+    testing: "Testing",
+    staff_consumption: "Staff Consumption",
+    production: "Production",
+    other: "Other",
   };
   return reasonMap[reason] || reason;
 }
 
 window.pageRenderers = window.pageRenderers || {};
-window.pageRenderers["inventory"] = function() {
+window.pageRenderers["inventory"] = function () {
   renderInventory();
   setupInventoryTabs();
 };
-
