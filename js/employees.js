@@ -895,15 +895,28 @@ function renderLeaveApprovals() {
     // Profile edit request
     let changes = request.requestedChanges || request.requested_changes || {};
 
-    // Parse if it's a JSON string
+    console.log("Raw requestedChanges:", changes);
+    console.log("Type of requestedChanges:", typeof changes);
+
+    // Handle double-encoded JSON strings
     if (typeof changes === "string") {
       try {
         changes = JSON.parse(changes);
+        console.log("After first parse:", changes, typeof changes);
+
+        // Check if it's still a string (double-encoded)
+        if (typeof changes === "string") {
+          changes = JSON.parse(changes);
+          console.log("After second parse:", changes, typeof changes);
+        }
       } catch (e) {
         console.error("Failed to parse requestedChanges:", e);
+        console.error("Original value:", request.requestedChanges);
         changes = {};
       }
     }
+
+    console.log("Final parsed changes:", changes);
 
     // Field label mapping for better display
     const fieldLabels = {
@@ -1160,13 +1173,18 @@ window.approveProfileEdit = function (requestId) {
   // Apply the requested changes
   let changes = request.requestedChanges || request.requested_changes || {};
 
-  // Parse if it's a JSON string
+  // Handle double-encoded JSON strings
   if (typeof changes === "string") {
     try {
       changes = JSON.parse(changes);
+      // Check if it's still a string (double-encoded)
+      if (typeof changes === "string") {
+        changes = JSON.parse(changes);
+      }
     } catch (e) {
       console.error("Failed to parse requestedChanges:", e);
-      changes = {};
+      alert("Error parsing profile changes. Please contact support.");
+      return;
     }
   }
 
@@ -1194,9 +1212,12 @@ window.approveProfileEdit = function (requestId) {
     <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
     <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Approved!</h3>
     <p style="margin: 0; color: #666;">Profile changes have been applied successfully.</p>
-    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
   `;
   document.body.appendChild(popup);
+  popup
+    .querySelector(".popup-close-btn")
+    .addEventListener("click", () => popup.remove());
   setTimeout(() => popup.remove(), 3000);
 };
 
@@ -1233,9 +1254,12 @@ window.rejectProfileEdit = function (requestId) {
     <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
     <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Rejected</h3>
     <p style="margin: 0; color: #666;">The profile edit request has been rejected.</p>
-    <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
+    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
   `;
   document.body.appendChild(popup);
+  popup
+    .querySelector(".popup-close-btn")
+    .addEventListener("click", () => popup.remove());
   setTimeout(() => popup.remove(), 3000);
 };
 
