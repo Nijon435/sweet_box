@@ -57,10 +57,7 @@ function initializePOS() {
   if (clearCartBtn) {
     clearCartBtn.addEventListener("click", () => {
       if (posCart.length > 0) {
-        if (confirm("Clear all items from cart?")) {
-          posCart = [];
-          renderCart();
-        }
+        showClearCartModal();
       }
     });
   }
@@ -73,7 +70,15 @@ function getCategories() {
   const categories = new Set(["all"]);
   (appState.inventory || []).forEach((item) => {
     if (item.category && item.category !== "Supplies") {
-      categories.add(item.category);
+      // Normalize category names - merge similar categories
+      let normalizedCategory = item.category.toLowerCase();
+      if (
+        normalizedCategory.includes("cake") ||
+        normalizedCategory.includes("pastries")
+      ) {
+        normalizedCategory = "cakes";
+      }
+      categories.add(normalizedCategory);
     }
   });
   return Array.from(categories);
@@ -113,9 +118,14 @@ function renderProductsGrid() {
 
   // Filter by category
   if (currentCategory !== "all") {
-    products = products.filter(
-      (item) => item.category.toLowerCase() === currentCategory.toLowerCase()
-    );
+    products = products.filter((item) => {
+      let itemCategory = item.category.toLowerCase();
+      // Normalize category for comparison
+      if (itemCategory.includes("cake") || itemCategory.includes("pastries")) {
+        itemCategory = "cakes";
+      }
+      return itemCategory === currentCategory.toLowerCase();
+    });
   }
 
   // Filter by search term
@@ -272,18 +282,167 @@ function renderCart() {
   });
 }
 
-// Complete order
+// Complete order with styled confirmation
 function completeOrder() {
   const customerInput = document.getElementById("pos-customer");
   const orderTypeSelect = document.getElementById("pos-order-type");
 
   if (posCart.length === 0) {
-    alert("Cart is empty");
+    showStyledAlert(
+      "Cart is empty",
+      "Please add items to the cart before completing the order.",
+      "warning"
+    );
     return;
   }
 
-  const customer = customerInput?.value.trim() || "Walk-in";
+  const customer = customerInput?.value.trim();
+
+  // Validate customer name is not empty
+  if (!customer) {
+    showStyledAlert(
+      "Customer Required",
+      "Please enter a customer name or table number before completing the order.",
+      "warning"
+    );
+    if (customerInput) {
+      customerInput.focus();
+      customerInput.style.borderColor = "#ef4444";
+      setTimeout(() => {
+        customerInput.style.borderColor = "";
+      }, 2000);
+    }
+    return;
+  }
+
   const orderType = orderTypeSelect?.value || "dine-in";
+
+  // Show custom confirmation modal
+  showCompleteOrderModal(customer, orderType);
+}
+
+// Show styled alert/notification
+function showStyledAlert(title, message, type = "info") {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  const icons = {
+    success: "✓",
+    warning: "⚠",
+    error: "✕",
+    info: "ℹ",
+  };
+
+  const colors = {
+    success: "#10b981",
+    warning: "#f59e0b",
+    error: "#ef4444",
+    info: "#3b82f6",
+  };
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: ${colors[type]}; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px ${colors[type]}40;">
+          <span style="color: white; font-size: 2.5rem; font-weight: bold;">${icons[type]}</span>
+        </div>
+        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">${title}</h3>
+        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">${message}</p>
+      </div>
+      <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="width: 100%; padding: 0.875rem; background: linear-gradient(135deg, ${colors[type]} 0%, ${colors[type]}dd 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px ${colors[type]}40; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Got it</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Add animation styles
+  if (!document.getElementById("modal-animations")) {
+    const style = document.createElement("style");
+    style.id = "modal-animations";
+    style.textContent = `
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// Show complete order confirmation modal
+function showCompleteOrderModal(customer, orderType) {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  const total = posCart.reduce(
+    (sum, item) => sum + item.qty * item.unitPrice,
+    0
+  );
+  const itemCount = posCart.reduce((sum, item) => sum + item.qty, 0);
+  const itemsList = posCart
+    .map(
+      (item) =>
+        `<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;"><span>${
+          item.qty
+        }x ${item.name}</span><span style="font-weight: 600;">₱${(
+          item.qty * item.unitPrice
+        ).toFixed(2)}</span></div>`
+    )
+    .join("");
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);">
+          <span style="color: white; font-size: 2rem;">🛍️</span>
+        </div>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #1f2937;">Complete Order?</h3>
+        <p style="margin: 0; color: #6b7280; font-size: 0.95rem;">Review order details before confirming</p>
+      </div>
+      
+      <div style="background: #f9fafb; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb;">
+          <div>
+            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">Customer</div>
+            <div style="font-weight: 600; color: #1f2937;">${customer}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">Type</div>
+            <div style="font-weight: 600; color: #1f2937; text-transform: capitalize;">${orderType}</div>
+          </div>
+        </div>
+        <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">${itemCount} item${
+    itemCount !== 1 ? "s" : ""
+  }</div>
+        <div style="max-height: 150px; overflow-y: auto;">${itemsList}</div>
+        <div style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;">
+          <span style="font-size: 1.1rem; font-weight: 600; color: #1f2937;">Total</span>
+          <span style="font-size: 1.3rem; font-weight: 700; color: #8b5cf6;">₱${total.toFixed(
+            2
+          )}</span>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 0.75rem;">
+        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Cancel</button>
+        <button id="confirm-complete-order" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Confirm Order</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document
+    .getElementById("confirm-complete-order")
+    .addEventListener("click", () => {
+      modal.remove();
+      processOrder(customer, orderType);
+    });
+}
+
+// Process the actual order
+function processOrder(customer, orderType) {
+  const customerInput = document.getElementById("pos-customer");
 
   // Deduct from inventory
   posCart.forEach((cartItem) => {
@@ -335,7 +494,11 @@ function completeOrder() {
   renderCart();
   renderProductsGrid(); // Update stock display
 
-  alert(`Order ${order.id} created successfully!`);
+  showStyledAlert(
+    "Order Complete",
+    `Order ${order.id} created successfully for ${customer}!`,
+    "success"
+  );
 
   // Switch to history view to show the order
   const historyViewBtn = document.getElementById("history-view-btn");
@@ -346,46 +509,7 @@ function completeOrder() {
 window.updateCartQty = updateCartQty;
 window.removeFromCart = removeFromCart;
 
-// Calculate and display order statistics
-function updateOrderStatistics() {
-  const orders = appState.orders || [];
-  const totalOrders = orders.length;
-
-  // Calculate total revenue
-  const totalRevenue = orders.reduce(
-    (sum, order) => sum + (Number(order.total) || 0),
-    0
-  );
-
-  // Calculate average order value
-  const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-  // Calculate today's orders
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayOrders = orders.filter((order) => {
-    const orderDate = new Date(order.timestamp);
-    orderDate.setHours(0, 0, 0, 0);
-    return orderDate.getTime() === today.getTime();
-  }).length;
-
-  // Update DOM
-  const statTotalOrders = document.getElementById("stat-total-orders");
-  const statTotalRevenue = document.getElementById("stat-total-revenue");
-  const statAvgOrder = document.getElementById("stat-avg-order");
-  const statTodayOrders = document.getElementById("stat-today-orders");
-
-  if (statTotalOrders) statTotalOrders.textContent = totalOrders;
-  if (statTotalRevenue)
-    statTotalRevenue.textContent = `₱${totalRevenue.toFixed(2)}`;
-  if (statAvgOrder) statAvgOrder.textContent = `₱${avgOrder.toFixed(2)}`;
-  if (statTodayOrders) statTodayOrders.textContent = todayOrders;
-}
-
 function renderOrders() {
-  // Update order statistics
-  updateOrderStatistics();
-
   const form = document.getElementById("orders-form");
   const filterSelect = document.getElementById("orders-filter");
   const orderTypeSelect = document.getElementById("order-type");

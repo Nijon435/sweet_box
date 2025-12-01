@@ -397,7 +397,8 @@ function renderAttendance() {
   const logBody = document.querySelector("#attendance-log-table tbody");
   if (logBody) {
     logBody.innerHTML = "";
-    const filteredLogs = getTodaysLogs()
+    // Get ALL logs from appState, not just today's
+    const allLogs = (appState.attendanceLogs || [])
       .filter((log) => {
         if (logFilterValue === "all") return true;
         const shift = (log.shift || "").toLowerCase();
@@ -409,10 +410,10 @@ function renderAttendance() {
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     // Calculate pagination
-    const totalPages = Math.ceil(filteredLogs.length / attendanceItemsPerPage);
+    const totalPages = Math.ceil(allLogs.length / attendanceItemsPerPage);
     const startIdx = (attendanceCurrentPage - 1) * attendanceItemsPerPage;
     const endIdx = startIdx + attendanceItemsPerPage;
-    const pageLogs = filteredLogs.slice(startIdx, endIdx);
+    const pageLogs = allLogs.slice(startIdx, endIdx);
 
     // Update pagination UI
     updateAttendancePaginationControls(totalPages);

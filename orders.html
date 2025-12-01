@@ -85,14 +85,13 @@
             <h1>Order Management</h1>
           </div>
           <div class="actions">
+            <div class="view-toggle">
+              <button class="btn btn-primary active" id="pos-view-btn">POS System</button>
+              <button class="btn btn-outline" id="history-view-btn">Order History</button>
+            </div>
             <button class="btn btn-secondary" id="refresh-data">Refresh</button>
           </div>
         </header>
-
-        <div class="view-toggle">
-          <button class="btn btn-primary active" id="pos-view-btn">POS System</button>
-          <button class="btn btn-outline" id="history-view-btn">Order History</button>
-        </div>
 
         <!-- POS View -->
         <section class="pos-view active">
@@ -185,12 +184,37 @@
 
         <!-- Order History View -->
         <section class="order-history-view">
-          <div class="order-stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon">📦</div>
-              <div class="stat-content">
-                <div class="stat-label">Total Orders</div>
-                <div class="stat-value" id="stat-total-orders">0</div>
+        <section class="split">
+          <article class="card">
+            <form id="orders-form">
+              <label for="order-customer"
+                ><span id="order-customer-label">Customer / Table</span></label
+              >
+              <input
+                id="order-customer"
+                name="customer"
+                placeholder="Table 5, Delivery #8891"
+                required
+              />
+
+              <!-- Item entry mode -->
+              <div style="margin-top: 0.75rem">
+                <label>Item source</label>
+                <div class="chips">
+                  <label
+                    ><input
+                      type="radio"
+                      name="item-mode"
+                      value="inventory"
+                      checked
+                    />
+                    Inventory</label
+                  >
+                  <label
+                    ><input type="radio" name="item-mode" value="custom" />
+                    Custom</label
+                  >
+                </div>
               </div>
             </div>
             <div class="stat-card">
