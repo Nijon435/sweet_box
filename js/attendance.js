@@ -447,7 +447,7 @@ function renderAttendance() {
         ${
           canArchive
             ? `<td style="text-align: center;">
-                <button class="btn-archive" data-archive-log="${log.id}" title="Archive this log">🗄️</button>
+                <button class="btn btn-warning btn-sm" data-archive-log="${log.id}" title="Archive this log">Archive</button>
               </td>`
             : ""
         }
@@ -575,6 +575,19 @@ function openRequestLeaveModal(user) {
     const startDate = document.getElementById("leave-start-date").value;
     const endDate = document.getElementById("leave-end-date").value;
     const reason = document.getElementById("leave-reason").value;
+
+    // Validate dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start < today) {
+      alert(
+        "Start date cannot be in the past. Please select a current or future date."
+      );
+      return;
+    }
 
     if (startDate > endDate) {
       alert("End date must be after start date");

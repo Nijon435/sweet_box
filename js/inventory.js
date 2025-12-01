@@ -20,14 +20,14 @@ function renderInventory() {
 }
 
 // Check if user can manage inventory (admin, manager, or employee)
-const canManageInventory = () => {
+function canManageInventory() {
   const user = getCurrentUser();
   if (!user) return false;
   const permission = user.permission || "";
   return ["admin", "manager", "kitchen_staff", "front_staff"].includes(
     permission
   );
-};
+}
 
 function renderMetrics() {
   const inventory = (appState.inventory || []).filter((item) => !item.archived);

@@ -372,18 +372,25 @@ const computeEmployeeStatus = (employee) => {
 
   // Find active leave for this employee
   let activeLeave = null;
+  let needsSave = false;
+
   (appState.requests || []).forEach((leave) => {
     // Support both camelCase (frontend) and snake_case (database)
     const empId = leave.employeeId || leave.employee_id;
-    if (empId !== employee.id || leave.status !== "approved") {
+    if (
+      empId !== employee.id ||
+      leave.status !== "approved" ||
+      leave.requestType !== "leave"
+    ) {
       return;
     }
     const start = leave.startDate || leave.start_date;
     const end = leave.endDate || leave.end_date;
 
     // Auto-remove expired leaves (end date has passed)
-    if (today > end) {
+    if (today > end && leave.status === "approved") {
       leave.status = "completed";
+      needsSave = true;
       return;
     }
 
@@ -392,6 +399,11 @@ const computeEmployeeStatus = (employee) => {
       activeLeave = leave;
     }
   });
+
+  // Save state if any leaves were marked as completed
+  if (needsSave) {
+    saveState();
+  }
 
   if (activeLeave) {
     const start = activeLeave.startDate || activeLeave.start_date;
@@ -1414,7 +1426,7 @@ function openEditProfileModal() {
         id: `req-${Date.now()}`,
         employeeId: currentUser.id,
         requestType: "profile_edit",
-        requestedChanges: requestedChanges,
+        requestedChanges: JSON.stringify(requestedChanges),
         status: "pending",
         requestedAt: new Date().toISOString(),
         reviewedBy: null,
