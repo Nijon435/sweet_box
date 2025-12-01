@@ -47,6 +47,24 @@ async def startup_migrations():
             ssl='require'
         )
         
+        # Add archive columns to orders table if they don't exist
+        try:
+            await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE")
+            await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP")
+            await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS archived_by VARCHAR(64)")
+            logger.info("Added archive columns to orders table")
+        except Exception as e:
+            logger.warning(f"Could not add archive columns to orders: {e}")
+        
+        # Add archive columns to inventory table if they don't exist
+        try:
+            await conn.execute("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE")
+            await conn.execute("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP")
+            await conn.execute("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS archived_by VARCHAR(64)")
+            logger.info("Added archive columns to inventory table")
+        except Exception as e:
+            logger.warning(f"Could not add archive columns to inventory: {e}")
+        
         # Remove status and served_at columns from orders table if they exist
         try:
             await conn.execute("ALTER TABLE orders DROP COLUMN IF EXISTS status")
@@ -603,8 +621,8 @@ async def update_inventory_item(item_id: str, item: dict):
         )
         
         await conn.execute(
-            """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                ON CONFLICT (id) DO UPDATE SET
                name = EXCLUDED.name,
                category = EXCLUDED.category,
@@ -613,6 +631,7 @@ async def update_inventory_item(item_id: str, item: dict):
                cost = EXCLUDED.cost,
                date_purchased = EXCLUDED.date_purchased,
                use_by_date = EXCLUDED.use_by_date,
+               expiry_date = EXCLUDED.expiry_date,
                reorder_point = EXCLUDED.reorder_point,
                last_restocked = EXCLUDED.last_restocked,
                total_used = EXCLUDED.total_used,
@@ -627,6 +646,7 @@ async def update_inventory_item(item_id: str, item: dict):
             item.get("cost"),
             parse_date(item.get("datePurchased")),
             parse_date(item.get("useByDate")),
+            parse_date(item.get("expiryDate")),
             item.get("reorderPoint", 10),
             parse_date(item.get("lastRestocked")),
             item.get("totalUsed", 0),
@@ -768,19 +788,19 @@ async def save_state(state: dict):
         if "inventory" in state and state["inventory"]:
             for item in state["inventory"]:
                 await conn.execute(
-                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                    """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                        ON CONFLICT (id) DO UPDATE SET
                        name = EXCLUDED.name, category = EXCLUDED.category,
                        quantity = EXCLUDED.quantity, unit = EXCLUDED.unit, cost = EXCLUDED.cost,
                        date_purchased = EXCLUDED.date_purchased, use_by_date = EXCLUDED.use_by_date,
-                       reorder_point = EXCLUDED.reorder_point, 
+                       expiry_date = EXCLUDED.expiry_date, reorder_point = EXCLUDED.reorder_point, 
                        last_restocked = EXCLUDED.last_restocked, total_used = EXCLUDED.total_used,
                        archived = EXCLUDED.archived, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by""",
                     item.get("id"), item.get("name"), item.get("category"),
                     item.get("quantity"), item.get("unit", "pieces"), item.get("cost"),
                     parse_date(item.get("datePurchased")), parse_date(item.get("useByDate")),
-                    item.get("reorderPoint", 10), 
+                    parse_date(item.get("expiryDate")), item.get("reorderPoint", 10), 
                     parse_date(item.get("lastRestocked")), item.get("totalUsed", 0),
                     item.get("archived", False), parse_timestamp(item.get("archivedAt")),
                     item.get("archivedBy")
