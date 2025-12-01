@@ -689,36 +689,35 @@ function attendanceNextPage() {
 }
 
 // Archive attendance log function
-async function archiveAttendanceLog(logId) {
+function archiveAttendanceLog(logId) {
   const log = appState.attendanceLogs.find((l) => l.id === logId);
   if (!log) return;
 
-  const confirmed = await showConfirm(
+  showConfirm(
     `Are you sure you want to archive this attendance log?\n\nEmployee: ${
       getEmployee(log.employeeId)?.name || "Unknown"
-    }\nAction: ${log.action}\nTimestamp: ${formatTime(log.timestamp)}`
+    }\nAction: ${log.action}\nTimestamp: ${formatTime(log.timestamp)}`,
+    async () => {
+      showLoading("Archiving attendance log...");
+
+      try {
+        const currentUser = getCurrentUser();
+
+        // Mark the log as archived
+        log.archived = true;
+        log.archivedAt = new Date().toISOString();
+        log.archivedBy = currentUser?.id || null;
+
+        await saveState();
+        hideLoading();
+        renderAttendance();
+      } catch (error) {
+        hideLoading();
+        console.error("Error archiving attendance log:", error);
+        alert("Failed to archive attendance log. Please try again.");
+      }
+    }
   );
-
-  if (!confirmed) return;
-
-  showLoading("Archiving attendance log...");
-
-  try {
-    const currentUser = getCurrentUser();
-
-    // Mark the log as archived
-    log.archived = true;
-    log.archivedAt = new Date().toISOString();
-    log.archivedBy = currentUser?.id || null;
-
-    await saveState();
-    hideLoading();
-    renderAttendance();
-  } catch (error) {
-    hideLoading();
-    console.error("Error archiving attendance log:", error);
-    alert("Failed to archive attendance log. Please try again.");
-  }
 }
 
 window.pageRenderers = window.pageRenderers || {};

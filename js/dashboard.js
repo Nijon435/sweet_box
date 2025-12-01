@@ -24,7 +24,11 @@ function renderDashboard() {
   const attendanceCounts = nonAdminUsers.reduce(
     (acc, emp) => {
       const status = computeEmployeeStatus(emp).status;
-      acc[status] = (acc[status] || 0) + 1;
+      if (status === "on-leave") {
+        acc["on-leave"] = (acc["on-leave"] || 0) + 1;
+      } else {
+        acc[status] = (acc[status] || 0) + 1;
+      }
       return acc;
     },
     { present: 0, late: 0, absent: 0, "on-leave": 0 }
