@@ -862,5 +862,107 @@ function inventoryNextPage() {
   }
 }
 
+// Tab switching functionality
+function setupInventoryTabs() {
+  const tabs = document.querySelectorAll('.inventory-tab');
+  const allItemsSection = document.getElementById('all-items-section');
+  const usageLogsSection = document.getElementById('usage-logs-section');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.dataset.tab;
+
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Show/hide sections
+      if (targetTab === 'all-items') {
+        allItemsSection.style.display = 'block';
+        usageLogsSection.style.display = 'none';
+      } else if (targetTab === 'usage-logs') {
+        allItemsSection.style.display = 'none';
+        usageLogsSection.style.display = 'block';
+        loadUsageLogs();
+      }
+    });
+  });
+}
+
+// Load usage logs from database
+async function loadUsageLogs() {
+  try {
+    const response = await fetch(`${API_BASE}/inventory_usage`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch usage logs');
+
+    const logs = await response.json();
+    renderUsageLogs(logs);
+  } catch (error) {
+    console.error('Error loading usage logs:', error);
+    renderUsageLogs([]);
+  }
+}
+
+// Render usage logs table
+function renderUsageLogs(logs) {
+  const tbody = document.querySelector('#usage-logs-table tbody');
+  if (!tbody) return;
+
+  if (!logs || logs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
+          No usage logs recorded yet
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(log => {
+    const timestamp = new Date(log.timestamp || log.created_at);
+    const formattedDate = timestamp.toLocaleDateString();
+    const formattedTime = timestamp.toLocaleTimeString();
+    const item = appState.inventory?.find(i => i.id === log.inventory_item_id);
+    const itemName = item ? item.name : `Item #${log.inventory_item_id}`;
+    const quantity = log.quantity || 0;
+    const unit = item?.unit || '';
+    const reason = log.reason || 'N/A';
+    const notes = log.notes || '-';
+    const recordedBy = log.user_name || 'System';
+
+    return `
+      <tr>
+        <td>${formattedDate} ${formattedTime}</td>
+        <td>${itemName}</td>
+        <td>${quantity} ${unit}</td>
+        <td>${formatReason(reason)}</td>
+        <td>${notes}</td>
+        <td>${recordedBy}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Format reason text for display
+function formatReason(reason) {
+  const reasonMap = {
+    'waste': 'Waste',
+    'spoilage': 'Spoilage',
+    'testing': 'Testing',
+    'staff_consumption': 'Staff Consumption',
+    'production': 'Production',
+    'other': 'Other'
+  };
+  return reasonMap[reason] || reason;
+}
+
 window.pageRenderers = window.pageRenderers || {};
-window.pageRenderers["inventory"] = renderInventory;
+window.pageRenderers["inventory"] = function() {
+  renderInventory();
+  setupInventoryTabs();
+};
+

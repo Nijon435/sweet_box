@@ -69,16 +69,9 @@ function initializePOS() {
 function getCategories() {
   const categories = new Set(["all"]);
   (appState.inventory || []).forEach((item) => {
-    if (item.category && item.category !== "Supplies") {
-      // Normalize category names - merge similar categories
-      let normalizedCategory = item.category.toLowerCase();
-      if (
-        normalizedCategory.includes("cake") ||
-        normalizedCategory.includes("pastries")
-      ) {
-        normalizedCategory = "cakes";
-      }
-      categories.add(normalizedCategory);
+    if (item.category && item.category === "Supplies") {
+      // Only show supplies in POS
+      categories.add("supplies");
     }
   });
   return Array.from(categories);
@@ -113,18 +106,14 @@ function renderProductsGrid() {
   if (!productsGrid) return;
 
   let products = (appState.inventory || []).filter(
-    (item) => item.category && item.category.toLowerCase() !== "supplies"
+    (item) => item.category && item.category.toLowerCase() === "supplies"
   );
 
   // Filter by category
   if (currentCategory !== "all") {
     products = products.filter((item) => {
-      let itemCategory = item.category.toLowerCase();
-      // Normalize category for comparison
-      if (itemCategory.includes("cake") || itemCategory.includes("pastries")) {
-        itemCategory = "cakes";
-      }
-      return itemCategory === currentCategory.toLowerCase();
+      return item.category.toLowerCase() === "supplies" && 
+             item.category.toLowerCase() === currentCategory.toLowerCase();
     });
   }
 

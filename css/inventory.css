@@ -1,5 +1,42 @@
 /* Inventory Page Specific Styles */
 
+/* Inventory Tabs */
+.inventory-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0;
+}
+
+.inventory-tab {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.inventory-tab:hover {
+  color: #333;
+  background: #f5f5f5;
+}
+
+.inventory-tab.active {
+  color: #4a90e2;
+  border-bottom-color: #4a90e2;
+}
+
+.inventory-content {
+  display: none;
+}
+
+.inventory-content.active {
+  display: block;
+}
+
 /* Section Headers */
 .inventory-section-header {
   display: flex;
