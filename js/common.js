@@ -372,7 +372,7 @@ const computeEmployeeStatus = (employee) => {
 
   // Find active leave for this employee
   let activeLeave = null;
-  let needsSave = false;
+  const expiredLeaves = [];
 
   (appState.requests || []).forEach((leave) => {
     // Support both camelCase (frontend) and snake_case (database)
@@ -390,7 +390,7 @@ const computeEmployeeStatus = (employee) => {
     // Auto-remove expired leaves (end date has passed)
     if (today > end && leave.status === "approved") {
       leave.status = "completed";
-      needsSave = true;
+      expiredLeaves.push(leave);
       return;
     }
 
@@ -400,9 +400,26 @@ const computeEmployeeStatus = (employee) => {
     }
   });
 
-  // Save state if any leaves were marked as completed
-  if (needsSave) {
-    saveState();
+  // Save expired leaves to database
+  if (expiredLeaves.length > 0) {
+    expiredLeaves.forEach(async (leave) => {
+      try {
+        const endpoint = `${window.APP_STATE_ENDPOINT || "/api"}/requests/${
+          leave.id
+        }`;
+        await fetch(endpoint, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(leave),
+        });
+        console.log(`✅ Marked leave ${leave.id} as completed`);
+      } catch (error) {
+        console.error(`Failed to update expired leave ${leave.id}:`, error);
+      }
+    });
   }
 
   if (activeLeave) {

@@ -544,6 +544,50 @@ async def delete_order(order_id: str):
         logger.error(f"Error deleting order: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.put("/api/attendance-logs/{log_id}")
+async def update_attendance_log(log_id: str, log: dict):
+    """Update a single attendance log (for archiving, etc.)"""
+    try:
+        logger.info(f"Updating attendance log {log_id}: {log}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        await conn.execute(
+            """INSERT INTO attendance_logs (id, employee_id, timestamp, action, note, shift, archived, archived_at, archived_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+               ON CONFLICT (id) DO UPDATE SET
+               employee_id = EXCLUDED.employee_id,
+               timestamp = EXCLUDED.timestamp,
+               action = EXCLUDED.action,
+               note = EXCLUDED.note,
+               shift = EXCLUDED.shift,
+               archived = EXCLUDED.archived,
+               archived_at = EXCLUDED.archived_at,
+               archived_by = EXCLUDED.archived_by""",
+            log.get("id"),
+            log.get("employeeId"),
+            parse_timestamp(log.get("timestamp")),
+            log.get("action"),
+            log.get("note"),
+            log.get("shift"),
+            log.get("archived", False),
+            parse_timestamp(log.get("archivedAt")),
+            log.get("archivedBy")
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully updated attendance log {log_id}")
+        return {"success": True, "id": log_id}
+    except Exception as e:
+        logger.error(f"Error updating attendance log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.put("/api/users/{user_id}")
 async def update_user(user_id: str, user: dict):
     """Update a single user (for editing profile, archiving, etc.)"""
@@ -738,6 +782,56 @@ async def create_request(request: dict):
         return {"success": True, "id": request.get("id")}
     except Exception as e:
         logger.error(f"Error creating request: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/requests/{request_id}")
+async def update_request(request_id: str, request: dict):
+    """Update an existing request (for status changes, approval, etc.)"""
+    try:
+        logger.info(f"Updating request {request_id}: {request}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        await conn.execute(
+            """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at, review_note)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+               ON CONFLICT (id) DO UPDATE SET
+               employee_id = EXCLUDED.employee_id,
+               request_type = EXCLUDED.request_type,
+               start_date = EXCLUDED.start_date,
+               end_date = EXCLUDED.end_date,
+               reason = EXCLUDED.reason,
+               requested_changes = EXCLUDED.requested_changes,
+               status = EXCLUDED.status,
+               requested_at = EXCLUDED.requested_at,
+               reviewed_by = EXCLUDED.reviewed_by,
+               reviewed_at = EXCLUDED.reviewed_at,
+               review_note = EXCLUDED.review_note""",
+            request.get("id"),
+            request.get("employeeId"),
+            request.get("requestType"),
+            parse_date(request.get("startDate")),
+            parse_date(request.get("endDate")),
+            request.get("reason"),
+            json.dumps(request.get("requestedChanges")) if request.get("requestedChanges") else None,
+            request.get("status", "pending"),
+            parse_timestamp(request.get("requestedAt")),
+            request.get("reviewedBy"),
+            parse_timestamp(request.get("reviewedAt")),
+            request.get("reviewNote")
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully updated request {request_id}")
+        return {"success": True, "id": request_id}
+    except Exception as e:
+        logger.error(f"Error updating request: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/state")

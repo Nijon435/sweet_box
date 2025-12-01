@@ -708,13 +708,33 @@ function archiveAttendanceLog(logId) {
         log.archivedAt = new Date().toISOString();
         log.archivedBy = currentUser?.id || null;
 
-        await saveState();
+        // Save to database using dedicated API endpoint
+        const endpoint = `${
+          window.APP_STATE_ENDPOINT || "/api"
+        }/attendance-logs/${logId}`;
+        const response = await fetch(endpoint, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(log),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to archive: ${response.statusText}`);
+        }
+
         hideLoading();
         renderAttendance();
       } catch (error) {
         hideLoading();
         console.error("Error archiving attendance log:", error);
         alert("Failed to archive attendance log. Please try again.");
+        // Revert the changes
+        log.archived = false;
+        log.archivedAt = null;
+        log.archivedBy = null;
       }
     }
   );
