@@ -130,7 +130,7 @@ TABLES = [
     "inventory",
     "orders",
     "sales_history",
-    "inventory_usage",
+    "inventory_trends",
     "inventory_usage_logs",
     "requests"  # Renamed from leave_requests
 ]

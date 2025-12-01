@@ -107,10 +107,10 @@ function renderArchivedOrders() {
       <td>${formatTime(order.timestamp)}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
-        <button class="btn-restore" data-restore-order="${
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-order="${
           order.id
         }">Restore</button>
-        <button class="btn-permanent-delete" data-delete-order="${
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-order="${
           order.id
         }">Delete</button>
       </td>
@@ -170,10 +170,10 @@ function renderArchivedInventory() {
       <td>${item.unit || "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
-        <button class="btn-restore" data-restore-inventory="${
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-item="${
           item.id
         }">Restore</button>
-        <button class="btn-permanent-delete" data-delete-inventory="${
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-item="${
           item.id
         }">Delete</button>
       </td>
@@ -235,10 +235,10 @@ function renderArchivedUsers() {
       <td>${user.permission || "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
-        <button class="btn-restore" data-restore-user="${
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-user="${
           user.id
         }">Restore</button>
-        <button class="btn-permanent-delete" data-delete-user="${
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-user="${
           user.id
         }">Delete</button>
       </td>
@@ -306,10 +306,10 @@ function renderArchivedAttendanceLogs() {
       <td>${log.shift || "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
-        <button class="btn-restore" data-restore-log="${
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-log="${
           log.id
         }">Restore</button>
-        <button class="btn-permanent-delete" data-delete-log="${
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-log="${
           log.id
         }">Delete</button>
       </td>
@@ -768,10 +768,10 @@ function renderArchivedUsageLogs() {
       <td>${formatTime(log.created_at || log.timestamp)}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
-        <button class="btn-restore" data-restore-usage-log="${
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-usage-log="${
           log.id
         }">Restore</button>
-        <button class="btn-permanent-delete" data-delete-usage-log="${
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-usage-log="${
           log.id
         }">Delete</button>
       </td>
