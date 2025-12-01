@@ -378,23 +378,25 @@ const computeEmployeeStatus = (employee) => {
     // Support both camelCase (frontend) and snake_case (database)
     const empId = leave.employeeId || leave.employee_id;
     const leaveType = leave.requestType || leave.request_type;
-    
+
     if (empId !== employee.id || leaveType !== "leave") {
       return;
     }
-    
+
     const start = leave.startDate || leave.start_date;
     const end = leave.endDate || leave.end_date;
     const currentStatus = leave.status;
 
     // Auto-expire approved leaves that have passed their end date
     if (currentStatus === "approved" && today > end) {
-      console.log(`⏰ Expiring leave for ${employee.name}: ${start} to ${end} (today: ${today})`);
+      console.log(
+        `⏰ Expiring leave for ${employee.name}: ${start} to ${end} (today: ${today})`
+      );
       leave.status = "completed";
       expiredLeaves.push(leave);
       return;
     }
-    
+
     // Skip if already completed/rejected/pending
     if (currentStatus !== "approved") {
       return;
@@ -408,13 +410,19 @@ const computeEmployeeStatus = (employee) => {
 
   // Save expired leaves to database
   if (expiredLeaves.length > 0) {
-    console.log(`📤 Saving ${expiredLeaves.length} expired leave(s) to database...`)
+    console.log(
+      `📤 Saving ${expiredLeaves.length} expired leave(s) to database...`
+    );
     expiredLeaves.forEach((leave) => {
       // Use async IIFE to handle the API call
       (async () => {
         try {
-          const endpoint = `/api/requests/${leave.id}`;
-          console.log(`Updating leave ${leave.id} status to completed via ${endpoint}`);
+          const endpoint = `${window.API_BASE_URL || ""}/api/requests/${
+            leave.id
+          }`;
+          console.log(
+            `Updating leave ${leave.id} status to completed via ${endpoint}`
+          );
           const response = await fetch(endpoint, {
             method: "PUT",
             headers: {
@@ -423,10 +431,12 @@ const computeEmployeeStatus = (employee) => {
             credentials: "include",
             body: JSON.stringify(leave),
           });
-          
+
           if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Failed to update leave ${leave.id}: ${response.status} - ${errorText}`);
+            console.error(
+              `Failed to update leave ${leave.id}: ${response.status} - ${errorText}`
+            );
           } else {
             console.log(`✅ Marked leave ${leave.id} as completed in database`);
           }

@@ -709,7 +709,9 @@ function archiveAttendanceLog(logId) {
         log.archivedBy = currentUser?.id || null;
 
         // Save to database using dedicated API endpoint
-        const endpoint = `/api/attendance-logs/${logId}`;
+        const endpoint = `${
+          window.API_BASE_URL || ""
+        }/api/attendance-logs/${logId}`;
         const response = await fetch(endpoint, {
           method: "PUT",
           headers: {
