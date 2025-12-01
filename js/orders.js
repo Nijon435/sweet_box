@@ -4,60 +4,60 @@ const ordersItemsPerPage = 20;
 
 // POS System State
 let posCart = [];
-let currentCategory = 'all';
-let searchTerm = '';
+let currentCategory = "all";
+let searchTerm = "";
 
 // Initialize POS System
 function initializePOS() {
   // View toggle buttons
-  const posViewBtn = document.getElementById('pos-view-btn');
-  const historyViewBtn = document.getElementById('history-view-btn');
-  const posView = document.querySelector('.pos-view');
-  const historyView = document.querySelector('.order-history-view');
+  const posViewBtn = document.getElementById("pos-view-btn");
+  const historyViewBtn = document.getElementById("history-view-btn");
+  const posView = document.querySelector(".pos-view");
+  const historyView = document.querySelector(".order-history-view");
 
   if (posViewBtn && historyViewBtn && posView && historyView) {
-    posViewBtn.addEventListener('click', () => {
-      posViewBtn.classList.add('active');
-      historyViewBtn.classList.remove('active');
-      posView.classList.add('active');
-      historyView.classList.remove('active');
+    posViewBtn.addEventListener("click", () => {
+      posViewBtn.classList.add("active");
+      historyViewBtn.classList.remove("active");
+      posView.classList.add("active");
+      historyView.classList.remove("active");
     });
 
-    historyViewBtn.addEventListener('click', () => {
-      historyViewBtn.classList.add('active');
-      posViewBtn.classList.remove('active');
-      historyView.classList.add('active');
-      posView.classList.remove('active');
+    historyViewBtn.addEventListener("click", () => {
+      historyViewBtn.classList.add("active");
+      posViewBtn.classList.remove("active");
+      historyView.classList.add("active");
+      posView.classList.remove("active");
     });
   }
 
   // Initialize categories
   renderCategories();
-  
+
   // Initialize products grid
   renderProductsGrid();
 
   // Product search
-  const searchInput = document.getElementById('product-search-input');
+  const searchInput = document.getElementById("product-search-input");
   if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener("input", (e) => {
       searchTerm = e.target.value.toLowerCase();
       renderProductsGrid();
     });
   }
 
   // Cart actions
-  const completeOrderBtn = document.getElementById('complete-order-btn');
-  const clearCartBtn = document.getElementById('clear-cart-btn');
+  const completeOrderBtn = document.getElementById("complete-order-btn");
+  const clearCartBtn = document.getElementById("clear-cart-btn");
 
   if (completeOrderBtn) {
-    completeOrderBtn.addEventListener('click', completeOrder);
+    completeOrderBtn.addEventListener("click", completeOrder);
   }
 
   if (clearCartBtn) {
-    clearCartBtn.addEventListener('click', () => {
+    clearCartBtn.addEventListener("click", () => {
       if (posCart.length > 0) {
-        if (confirm('Clear all items from cart?')) {
+        if (confirm("Clear all items from cart?")) {
           posCart = [];
           renderCart();
         }
@@ -70,9 +70,9 @@ function initializePOS() {
 
 // Get unique categories from inventory
 function getCategories() {
-  const categories = new Set(['all']);
-  (appState.inventory || []).forEach(item => {
-    if (item.category && item.category !== 'Supplies') {
+  const categories = new Set(["all"]);
+  (appState.inventory || []).forEach((item) => {
+    if (item.category && item.category !== "Supplies") {
       categories.add(item.category);
     }
   });
@@ -81,19 +81,19 @@ function getCategories() {
 
 // Render category tabs
 function renderCategories() {
-  const categoriesContainer = document.getElementById('category-tabs');
+  const categoriesContainer = document.getElementById("category-tabs");
   if (!categoriesContainer) return;
 
   const categories = getCategories();
-  categoriesContainer.innerHTML = '';
+  categoriesContainer.innerHTML = "";
 
-  categories.forEach(category => {
-    const btn = document.createElement('button');
-    btn.className = 'category-tab';
-    if (category === currentCategory) btn.classList.add('active');
+  categories.forEach((category) => {
+    const btn = document.createElement("button");
+    btn.className = "category-tab";
+    if (category === currentCategory) btn.classList.add("active");
     btn.textContent = category.charAt(0).toUpperCase() + category.slice(1);
     btn.dataset.category = category;
-    btn.addEventListener('click', () => {
+    btn.addEventListener("click", () => {
       currentCategory = category;
       renderCategories();
       renderProductsGrid();
@@ -104,52 +104,59 @@ function renderCategories() {
 
 // Render products grid
 function renderProductsGrid() {
-  const productsGrid = document.getElementById('products-grid');
+  const productsGrid = document.getElementById("products-grid");
   if (!productsGrid) return;
 
-  let products = (appState.inventory || []).filter(item => 
-    item.category !== 'Supplies' && item.category !== 'supplies'
+  let products = (appState.inventory || []).filter(
+    (item) => item.category !== "Supplies" && item.category !== "supplies"
   );
 
   // Filter by category
-  if (currentCategory !== 'all') {
-    products = products.filter(item => 
-      item.category.toLowerCase() === currentCategory.toLowerCase()
+  if (currentCategory !== "all") {
+    products = products.filter(
+      (item) => item.category.toLowerCase() === currentCategory.toLowerCase()
     );
   }
 
   // Filter by search term
   if (searchTerm) {
-    products = products.filter(item =>
+    products = products.filter((item) =>
       item.name.toLowerCase().includes(searchTerm)
     );
   }
 
-  productsGrid.innerHTML = '';
+  productsGrid.innerHTML = "";
 
   if (products.length === 0) {
-    productsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #999;">No products found</div>';
+    productsGrid.innerHTML =
+      '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #999;">No products found</div>';
     return;
   }
 
-  products.forEach(product => {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    
+  products.forEach((product) => {
+    const card = document.createElement("div");
+    card.className = "product-card";
+
     const inStock = Number(product.quantity || 0) > 0;
     if (!inStock) {
-      card.classList.add('disabled');
+      card.classList.add("disabled");
     }
 
     card.innerHTML = `
-      <img src="${product.image || 'img/placeholder.png'}" alt="${product.name}" onerror="this.src='img/placeholder.png'">
+      <img src="${product.image || "img/placeholder.png"}" alt="${
+      product.name
+    }" onerror="this.src='img/placeholder.png'">
       <div class="product-name">${product.name}</div>
-      <div class="product-price">₱${Number(product.unitPrice || 0).toFixed(2)}</div>
-      <div class="product-stock ${!inStock ? 'out-of-stock' : ''}">${inStock ? `Stock: ${product.quantity}` : 'Out of Stock'}</div>
+      <div class="product-price">₱${Number(product.unitPrice || 0).toFixed(
+        2
+      )}</div>
+      <div class="product-stock ${!inStock ? "out-of-stock" : ""}">${
+      inStock ? `Stock: ${product.quantity}` : "Out of Stock"
+    }</div>
     `;
 
     if (inStock) {
-      card.addEventListener('click', () => addToCart(product));
+      card.addEventListener("click", () => addToCart(product));
     }
 
     productsGrid.appendChild(card);
@@ -158,8 +165,8 @@ function renderProductsGrid() {
 
 // Add item to cart
 function addToCart(product) {
-  const existingItem = posCart.find(item => item.id === product.id);
-  
+  const existingItem = posCart.find((item) => item.id === product.id);
+
   if (existingItem) {
     // Check if we have enough stock
     if (existingItem.qty + 1 > Number(product.quantity)) {
@@ -173,7 +180,7 @@ function addToCart(product) {
       name: product.name,
       unitPrice: Number(product.unitPrice || 0),
       qty: 1,
-      source: 'inventory'
+      source: "inventory",
     });
   }
 
@@ -182,10 +189,10 @@ function addToCart(product) {
 
 // Update cart quantity
 function updateCartQty(itemId, change) {
-  const item = posCart.find(i => i.id === itemId);
+  const item = posCart.find((i) => i.id === itemId);
   if (!item) return;
 
-  const product = appState.inventory.find(p => p.id === itemId);
+  const product = appState.inventory.find((p) => p.id === itemId);
   const maxQty = product ? Number(product.quantity || 0) : 999;
 
   item.qty += change;
@@ -203,21 +210,24 @@ function updateCartQty(itemId, change) {
 
 // Remove item from cart
 function removeFromCart(itemId) {
-  posCart = posCart.filter(item => item.id !== itemId);
+  posCart = posCart.filter((item) => item.id !== itemId);
   renderCart();
 }
 
 // Render cart
 function renderCart() {
-  const cartItemsContainer = document.getElementById('cart-items');
-  const subtotalEl = document.getElementById('cart-subtotal');
-  const totalEl = document.getElementById('cart-total');
-  const completeBtn = document.getElementById('complete-order-btn');
+  const cartItemsContainer = document.getElementById("cart-items");
+  const subtotalEl = document.getElementById("cart-subtotal");
+  const totalEl = document.getElementById("cart-total");
+  const completeBtn = document.getElementById("complete-order-btn");
 
   if (!cartItemsContainer) return;
 
   // Calculate totals
-  const subtotal = posCart.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
+  const subtotal = posCart.reduce(
+    (sum, item) => sum + item.qty * item.unitPrice,
+    0
+  );
   const total = subtotal; // Can add tax here if needed
 
   // Update totals
@@ -241,20 +251,26 @@ function renderCart() {
     return;
   }
 
-  cartItemsContainer.innerHTML = '';
-  posCart.forEach(item => {
-    const cartItem = document.createElement('div');
-    cartItem.className = 'cart-item';
+  cartItemsContainer.innerHTML = "";
+  posCart.forEach((item) => {
+    const cartItem = document.createElement("div");
+    cartItem.className = "cart-item";
     cartItem.innerHTML = `
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
         <div class="cart-item-price">₱${item.unitPrice.toFixed(2)} each</div>
       </div>
       <div class="cart-item-controls">
-        <button class="qty-btn" onclick="updateCartQty('${item.id}', -1)">−</button>
+        <button class="qty-btn" onclick="updateCartQty('${
+          item.id
+        }', -1)">−</button>
         <span class="qty-display">${item.qty}</span>
-        <button class="qty-btn" onclick="updateCartQty('${item.id}', 1)">+</button>
-        <span class="remove-item" onclick="removeFromCart('${item.id}')" title="Remove">✕</span>
+        <button class="qty-btn" onclick="updateCartQty('${
+          item.id
+        }', 1)">+</button>
+        <span class="remove-item" onclick="removeFromCart('${
+          item.id
+        }')" title="Remove">✕</span>
       </div>
     `;
     cartItemsContainer.appendChild(cartItem);
@@ -263,30 +279,31 @@ function renderCart() {
 
 // Complete order
 function completeOrder() {
-  const customerInput = document.getElementById('pos-customer');
-  const orderTypeSelect = document.getElementById('pos-order-type');
+  const customerInput = document.getElementById("pos-customer");
+  const orderTypeSelect = document.getElementById("pos-order-type");
 
   if (posCart.length === 0) {
-    alert('Cart is empty');
+    alert("Cart is empty");
     return;
   }
 
-  const customer = customerInput?.value.trim() || 'Walk-in';
-  const orderType = orderTypeSelect?.value || 'dine-in';
+  const customer = customerInput?.value.trim() || "Walk-in";
+  const orderType = orderTypeSelect?.value || "dine-in";
 
   // Deduct from inventory
-  posCart.forEach(cartItem => {
-    const invItem = appState.inventory.find(i => i.id === cartItem.id);
+  posCart.forEach((cartItem) => {
+    const invItem = appState.inventory.find((i) => i.id === cartItem.id);
     if (invItem) {
-      invItem.quantity = Number(invItem.quantity || 0) - Number(cartItem.qty || 0);
+      invItem.quantity =
+        Number(invItem.quantity || 0) - Number(cartItem.qty || 0);
       if (invItem.quantity < 0) invItem.quantity = 0;
 
       // Log ingredient usage
-      if (typeof logIngredientUsage === 'function') {
+      if (typeof logIngredientUsage === "function") {
         logIngredientUsage(
           invItem.id,
           Number(cartItem.qty),
-          'order',
+          "order",
           `ord-${Date.now()}`,
           `Order item: ${cartItem.name}`
         );
@@ -295,19 +312,22 @@ function completeOrder() {
   });
 
   // Calculate total
-  const total = posCart.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
+  const total = posCart.reduce(
+    (sum, item) => sum + item.qty * item.unitPrice,
+    0
+  );
 
   // Create order
   const order = {
     id: `ord-${Date.now()}`,
     customer: customer,
-    items: posCart.map(item => `${item.qty}x ${item.name}`).join(', '),
+    items: posCart.map((item) => `${item.qty}x ${item.name}`).join(", "),
     itemsJson: posCart,
     total: total,
-    status: 'pending',
+    status: "pending",
     type: orderType,
     timestamp: new Date().toISOString(),
-    servedAt: null
+    servedAt: null,
   };
 
   appState.orders = appState.orders || [];
@@ -318,14 +338,14 @@ function completeOrder() {
 
   // Clear cart
   posCart = [];
-  if (customerInput) customerInput.value = '';
+  if (customerInput) customerInput.value = "";
   renderCart();
   renderProductsGrid(); // Update stock display
 
   alert(`Order ${order.id} created successfully!`);
 
   // Switch to history view to show the order
-  const historyViewBtn = document.getElementById('history-view-btn');
+  const historyViewBtn = document.getElementById("history-view-btn");
   if (historyViewBtn) historyViewBtn.click();
 }
 
@@ -1094,7 +1114,7 @@ function ordersNextPage() {
 }
 
 window.pageRenderers = window.pageRenderers || {};
-window.pageRenderers["orders"] = function() {
+window.pageRenderers["orders"] = function () {
   renderOrders();
   // Initialize POS system after rendering orders
   if (!window.posInitialized) {

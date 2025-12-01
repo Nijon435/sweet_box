@@ -524,7 +524,7 @@ function initLoginPage() {
         role: "staff",
         permission: "staff",
         status: "active",
-        hireDate: new Date().toISOString().split('T')[0], // Set hire date to today (YYYY-MM-DD)
+        hireDate: new Date().toISOString().split("T")[0], // Set hire date to today (YYYY-MM-DD)
         createdAt: new Date().toISOString(),
       };
 
