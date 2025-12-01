@@ -143,13 +143,8 @@ function renderProductsGrid() {
     }
 
     card.innerHTML = `
-      <img src="${product.image || "img/placeholder.png"}" alt="${
-      product.name
-    }" onerror="this.src='img/placeholder.png'">
       <div class="product-name">${product.name}</div>
-      <div class="product-price">₱${Number(product.unitPrice || 0).toFixed(
-        2
-      )}</div>
+      <div class="product-price">₱${Number(product.cost || 0).toFixed(2)}</div>
       <div class="product-stock ${!inStock ? "out-of-stock" : ""}">${
       inStock ? `Stock: ${product.quantity}` : "Out of Stock"
     }</div>
@@ -178,7 +173,7 @@ function addToCart(product) {
     posCart.push({
       id: product.id,
       name: product.name,
-      unitPrice: Number(product.unitPrice || 0),
+      unitPrice: Number(product.cost || 0),
       qty: 1,
       source: "inventory",
     });
