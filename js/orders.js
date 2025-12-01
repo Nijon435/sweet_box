@@ -113,7 +113,7 @@ function renderProductsGrid() {
   if (!productsGrid) return;
 
   let products = (appState.inventory || []).filter(
-    (item) => item.category !== "Supplies" && item.category !== "supplies"
+    (item) => item.category && item.category.toLowerCase() !== "supplies"
   );
 
   // Filter by category
@@ -217,6 +217,44 @@ function updateCartQty(itemId, change) {
 function removeFromCart(itemId) {
   posCart = posCart.filter((item) => item.id !== itemId);
   renderCart();
+}
+
+// Show clear cart confirmation modal
+function showClearCartModal() {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: #ef4444; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);">
+          <span style="color: white; font-size: 2.5rem; font-weight: bold;">🗑️</span>
+        </div>
+        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">Clear Cart?</h3>
+        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">This will remove all items from your cart. This action cannot be undone.</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="cancel-clear-cart" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Cancel</button>
+        <button id="confirm-clear-cart" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Clear Cart</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document
+    .getElementById("cancel-clear-cart")
+    .addEventListener("click", () => modal.remove());
+  document
+    .getElementById("confirm-clear-cart")
+    .addEventListener("click", () => {
+      posCart = [];
+      const customerInput = document.getElementById("pos-customer");
+      if (customerInput) customerInput.value = "";
+      renderCart();
+      modal.remove();
+    });
 }
 
 // Render cart
@@ -502,7 +540,13 @@ function processOrder(customer, orderType) {
 
   // Switch to history view to show the order
   const historyViewBtn = document.getElementById("history-view-btn");
-  if (historyViewBtn) historyViewBtn.click();
+  if (historyViewBtn) {
+    historyViewBtn.click();
+    // Ensure order history is updated
+    setTimeout(() => {
+      renderOrders();
+    }, 100);
+  }
 }
 
 // Make functions globally available
