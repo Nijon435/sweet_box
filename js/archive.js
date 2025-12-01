@@ -232,12 +232,23 @@ async function restoreOrder(orderId) {
   order.archivedBy = null;
 
   try {
-    const response = await fetch(`/api/orders/${orderId}`, {
+    let response = await fetch(`/api/orders/${orderId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(order),
     });
+
+    // Fallback to bulk save if individual endpoint not available
+    if (response.status === 404) {
+      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(appState),
+      });
+    }
 
     if (!response.ok) {
       throw new Error("Failed to restore order");
@@ -260,12 +271,23 @@ async function restoreInventory(itemId) {
   item.archivedBy = null;
 
   try {
-    const response = await fetch(`/api/inventory/${itemId}`, {
+    let response = await fetch(`/api/inventory/${itemId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(item),
     });
+
+    // Fallback to bulk save if individual endpoint not available
+    if (response.status === 404) {
+      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(appState),
+      });
+    }
 
     if (!response.ok) {
       throw new Error("Failed to restore item");
@@ -288,12 +310,23 @@ async function restoreUser(userId) {
   user.archivedBy = null;
 
   try {
-    const response = await fetch(`/api/users/${userId}`, {
+    let response = await fetch(`/api/users/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(user),
     });
+
+    // Fallback to bulk save if individual endpoint not available
+    if (response.status === 404) {
+      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(appState),
+      });
+    }
 
     if (!response.ok) {
       throw new Error("Failed to restore user");
@@ -317,16 +350,29 @@ function deleteOrder(orderId) {
     `This will permanently delete order ${orderId}. This action cannot be undone.`,
     async () => {
       try {
-        const response = await fetch(`/api/orders/${orderId}`, {
+        let response = await fetch(`/api/orders/${orderId}`, {
           method: "DELETE",
           credentials: "include",
         });
+
+        // Fallback to bulk save if DELETE endpoint not available
+        if (response.status === 404) {
+          appState.orders = appState.orders.filter((o) => o.id !== orderId);
+          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(appState),
+          });
+        } else {
+          appState.orders = appState.orders.filter((o) => o.id !== orderId);
+        }
 
         if (!response.ok) {
           throw new Error("Failed to delete order");
         }
 
-        appState.orders = appState.orders.filter((o) => o.id !== orderId);
         renderArchive();
         showToast("Order permanently deleted", "warning");
       } catch (error) {
@@ -346,16 +392,33 @@ function deleteInventory(itemId) {
     `This will permanently delete ${item.name}. This action cannot be undone.`,
     async () => {
       try {
-        const response = await fetch(`/api/inventory/${itemId}`, {
+        let response = await fetch(`/api/inventory/${itemId}`, {
           method: "DELETE",
           credentials: "include",
         });
+
+        // Fallback to bulk save if DELETE endpoint not available
+        if (response.status === 404) {
+          appState.inventory = appState.inventory.filter(
+            (i) => i.id !== itemId
+          );
+          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(appState),
+          });
+        } else {
+          appState.inventory = appState.inventory.filter(
+            (i) => i.id !== itemId
+          );
+        }
 
         if (!response.ok) {
           throw new Error("Failed to delete item");
         }
 
-        appState.inventory = appState.inventory.filter((i) => i.id !== itemId);
         renderArchive();
         showToast("Item permanently deleted", "warning");
       } catch (error) {
@@ -375,16 +438,29 @@ function deleteUser(userId) {
     `This will permanently delete ${user.name}. This action cannot be undone.`,
     async () => {
       try {
-        const response = await fetch(`/api/users/${userId}`, {
+        let response = await fetch(`/api/users/${userId}`, {
           method: "DELETE",
           credentials: "include",
         });
+
+        // Fallback to bulk save if DELETE endpoint not available
+        if (response.status === 404) {
+          appState.users = appState.users.filter((u) => u.id !== userId);
+          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(appState),
+          });
+        } else {
+          appState.users = appState.users.filter((u) => u.id !== userId);
+        }
 
         if (!response.ok) {
           throw new Error("Failed to delete user");
         }
 
-        appState.users = appState.users.filter((u) => u.id !== userId);
         renderArchive();
         showToast("User permanently deleted", "warning");
       } catch (error) {

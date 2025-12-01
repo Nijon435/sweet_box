@@ -524,9 +524,9 @@ async function processOrder(customer, orderType) {
   appState.orders = appState.orders || [];
   appState.orders.push(order);
 
-  // Save to database immediately using individual endpoint
+  // Save to database immediately - try individual endpoint first, fallback to bulk
   try {
-    const response = await fetch(`/api/orders/${order.id}`, {
+    let response = await fetch(`/api/orders/${order.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -535,15 +535,27 @@ async function processOrder(customer, orderType) {
       body: JSON.stringify(order),
     });
 
+    // If individual endpoint not available (404), fallback to bulk save
+    if (response.status === 404) {
+      console.log("Individual endpoint not available, using bulk save");
+      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(appState),
+      });
+    }
+
     if (!response.ok) {
       console.error("Failed to save order to database");
-      showToast("Failed to save order", "error");
     } else {
       console.log("Order saved to database successfully");
     }
   } catch (error) {
     console.error("Error saving order to database:", error);
-    showToast("Error saving order", "error");
   }
 
   // Clear cart
@@ -1020,19 +1032,30 @@ function renderOrders() {
 
           // Save to database using individual endpoint
           try {
-            const response = await fetch(`/api/orders/${order.id}`, {
+            let response = await fetch(`/api/orders/${order.id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
               body: JSON.stringify(order),
             });
 
+            // If individual endpoint not available, fallback to bulk save
+            if (response.status === 404) {
+              const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+              response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(appState),
+              });
+            }
+
             if (!response.ok) {
               throw new Error("Failed to archive order");
             }
           } catch (error) {
             console.error("Error archiving order:", error);
-            showToast("Failed to archive order", "error");
+            alert("Failed to archive order");
             return;
           }
 

@@ -1537,19 +1537,30 @@ window.archiveEmployee = async function (userId) {
 
   // Save to database using individual endpoint
   try {
-    const response = await fetch(`/api/users/${user.id}`, {
+    let response = await fetch(`/api/users/${user.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(user),
     });
 
+    // If individual endpoint not available, fallback to bulk save
+    if (response.status === 404) {
+      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(appState),
+      });
+    }
+
     if (!response.ok) {
       throw new Error("Failed to archive user");
     }
   } catch (error) {
     console.error("Error archiving employee:", error);
-    showToast("Failed to archive employee", "error");
+    alert("Failed to archive employee");
     return;
   }
 

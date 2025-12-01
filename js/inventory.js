@@ -227,24 +227,34 @@ function renderUnifiedTable() {
 
         // Save to database using individual endpoint
         try {
-          const response = await fetch(`/api/inventory/${item.id}`, {
+          let response = await fetch(`/api/inventory/${item.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(item),
           });
 
+          // If individual endpoint not available, fallback to bulk save
+          if (response.status === 404) {
+            const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+            response = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(appState),
+            });
+          }
+
           if (!response.ok) {
             throw new Error("Failed to archive item");
           }
         } catch (error) {
           console.error("Error archiving item:", error);
-          showToast("Failed to archive item", "error");
+          alert("Failed to archive item");
           return;
         }
 
         renderInventory();
-        showToast("Item archived successfully", "success");
       }
     });
   });
