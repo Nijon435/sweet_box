@@ -33,6 +33,40 @@ else:
 
 app = FastAPI()
 
+@app.on_event("startup")
+async def startup_migrations():
+    """Run database migrations on startup"""
+    try:
+        logger.info("Running startup migrations...")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        # Remove status and served_at columns from orders table if they exist
+        try:
+            await conn.execute("ALTER TABLE orders DROP COLUMN IF EXISTS status")
+            logger.info("Dropped status column from orders table")
+        except Exception as e:
+            logger.warning(f"Could not drop status column: {e}")
+        
+        try:
+            await conn.execute("ALTER TABLE orders DROP COLUMN IF EXISTS served_at")
+            logger.info("Dropped served_at column from orders table")
+        except Exception as e:
+            logger.warning(f"Could not drop served_at column: {e}")
+        
+        await conn.close()
+        logger.info("Startup migrations completed successfully")
+    except Exception as e:
+        logger.error(f"Error running startup migrations: {e}")
+        # Don't fail startup if migrations fail
+        pass
+
 # CORS configuration - allow production domains
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else [
     "http://localhost:8000",
@@ -373,30 +407,26 @@ async def update_order(order_id: str, order: dict):
         items_json = json.dumps(order.get("items", []))
         
         await conn.execute(
-            """INSERT INTO orders (id, customer, items_json, total, status, type, archived, archived_at, archived_by, timestamp, served_at)
-               VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $11)
+            """INSERT INTO orders (id, customer, items_json, total, type, archived, archived_at, archived_by, timestamp)
+               VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9)
                ON CONFLICT (id) DO UPDATE SET
                customer = EXCLUDED.customer,
                items_json = EXCLUDED.items_json,
                total = EXCLUDED.total,
-               status = EXCLUDED.status,
                type = EXCLUDED.type,
                archived = EXCLUDED.archived,
                archived_at = EXCLUDED.archived_at,
                archived_by = EXCLUDED.archived_by,
-               timestamp = EXCLUDED.timestamp,
-               served_at = EXCLUDED.served_at""",
+               timestamp = EXCLUDED.timestamp""",
             order.get("id"),
             order.get("customer"),
             items_json,
             order.get("total"),
-            order.get("status"),
             order.get("type"),
             order.get("archived", False),
             parse_timestamp(order.get("archivedAt")),
             order.get("archivedBy"),
-            parse_timestamp(order.get("timestamp")),
-            parse_timestamp(order.get("servedAt"))
+            parse_timestamp(order.get("timestamp"))
         )
         
         await conn.close()
@@ -518,8 +548,8 @@ async def update_inventory_item(item_id: str, item: dict):
         )
         
         await conn.execute(
-            """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, expiry_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            """INSERT INTO inventory (id, name, category, quantity, unit, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, archived, archived_at, archived_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                ON CONFLICT (id) DO UPDATE SET
                name = EXCLUDED.name,
                category = EXCLUDED.category,
@@ -528,7 +558,6 @@ async def update_inventory_item(item_id: str, item: dict):
                cost = EXCLUDED.cost,
                date_purchased = EXCLUDED.date_purchased,
                use_by_date = EXCLUDED.use_by_date,
-               expiry_date = EXCLUDED.expiry_date,
                reorder_point = EXCLUDED.reorder_point,
                last_restocked = EXCLUDED.last_restocked,
                total_used = EXCLUDED.total_used,
@@ -543,7 +572,6 @@ async def update_inventory_item(item_id: str, item: dict):
             item.get("cost"),
             parse_date(item.get("datePurchased")),
             parse_date(item.get("useByDate")),
-            parse_date(item.get("expiryDate")),
             item.get("reorderPoint", 10),
             parse_date(item.get("lastRestocked")),
             item.get("totalUsed", 0),
