@@ -142,6 +142,59 @@ function initLoginPage() {
     });
   }
 
+  // Validation helper functions
+  function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  function validatePassword(password) {
+    return password.length >= 6;
+  }
+
+  function showError(errorNode, message) {
+    errorNode.textContent = message;
+    errorNode.style.display = "block";
+  }
+
+  function clearError(errorNode) {
+    errorNode.textContent = "";
+    errorNode.style.display = "none";
+  }
+
+  // Add real-time validation for login form
+  if (loginForm) {
+    const emailInput = document.getElementById("login-email");
+    const passwordInput = document.getElementById("login-password");
+    const errorNode = document.getElementById("login-error");
+
+    // Real-time email validation
+    emailInput.addEventListener("blur", () => {
+      const email = emailInput.value.trim();
+      if (email && !validateEmail(email)) {
+        showError(errorNode, "Please enter a valid email address");
+        emailInput.style.borderColor = "#f44336";
+      } else {
+        emailInput.style.borderColor = "";
+      }
+    });
+
+    emailInput.addEventListener("input", () => {
+      if (errorNode.textContent.includes("email")) {
+        clearError(errorNode);
+      }
+      emailInput.style.borderColor = "";
+    });
+
+    // Real-time password validation
+    passwordInput.addEventListener("input", () => {
+      if (errorNode.textContent) {
+        clearError(errorNode);
+      }
+      passwordInput.style.borderColor = "";
+    });
+  }
+
   // Handle Login
   if (loginForm) {
     console.log("✅ Login form event listener attached");
@@ -149,16 +202,40 @@ function initLoginPage() {
       event.preventDefault();
       console.log("=== LOGIN ATTEMPT ===");
 
-      const email = document.getElementById("login-email").value.trim();
-      const password = document.getElementById("login-password").value;
+      const emailInput = document.getElementById("login-email");
+      const passwordInput = document.getElementById("login-password");
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
       const errorNode = document.getElementById("login-error");
+
+      // Clear previous errors
+      clearError(errorNode);
+      emailInput.style.borderColor = "";
+      passwordInput.style.borderColor = "";
 
       console.log("Login attempt for:", email);
       console.log("Password length:", password.length);
 
+      // Validation
       if (!email || !password) {
-        errorNode.textContent = "Please fill in all fields";
+        showError(errorNode, "Please fill in all fields");
+        if (!email) emailInput.style.borderColor = "#f44336";
+        if (!password) passwordInput.style.borderColor = "#f44336";
         console.log("❌ Validation failed: empty fields");
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        showError(errorNode, "Please enter a valid email address");
+        emailInput.style.borderColor = "#f44336";
+        console.log("❌ Validation failed: invalid email format");
+        return;
+      }
+
+      if (!validatePassword(password)) {
+        showError(errorNode, "Password must be at least 6 characters");
+        passwordInput.style.borderColor = "#f44336";
+        console.log("❌ Validation failed: password too short");
         return;
       }
 
@@ -250,32 +327,178 @@ function initLoginPage() {
     console.log("❌ Login form not found!");
   }
 
+  // Add real-time validation for register form
+  if (registerForm) {
+    const nameInput = document.getElementById("register-name");
+    const emailInput = document.getElementById("register-email");
+    const phoneInput = document.getElementById("register-phone");
+    const passwordInput = document.getElementById("register-password");
+    const confirmPasswordInput = document.getElementById(
+      "register-password-confirm"
+    );
+    const errorNode = document.getElementById("register-error");
+
+    // Name validation
+    nameInput.addEventListener("blur", () => {
+      const name = nameInput.value.trim();
+      if (name && name.length < 2) {
+        showError(errorNode, "Name must be at least 2 characters");
+        nameInput.style.borderColor = "#f44336";
+      } else {
+        nameInput.style.borderColor = "";
+      }
+    });
+
+    nameInput.addEventListener("input", () => {
+      if (errorNode.textContent.includes("Name")) {
+        clearError(errorNode);
+      }
+      nameInput.style.borderColor = "";
+    });
+
+    // Email validation
+    emailInput.addEventListener("blur", () => {
+      const email = emailInput.value.trim();
+      if (email && !validateEmail(email)) {
+        showError(errorNode, "Please enter a valid email address");
+        emailInput.style.borderColor = "#f44336";
+      } else if (email && appState?.users?.find((u) => u.email === email)) {
+        showError(errorNode, "Email already registered");
+        emailInput.style.borderColor = "#f44336";
+      } else {
+        emailInput.style.borderColor = "";
+      }
+    });
+
+    emailInput.addEventListener("input", () => {
+      if (errorNode.textContent.includes("email")) {
+        clearError(errorNode);
+      }
+      emailInput.style.borderColor = "";
+    });
+
+    // Phone validation
+    phoneInput.addEventListener("blur", () => {
+      const phone = phoneInput.value.trim();
+      if (phone && phone.length !== 11) {
+        showError(errorNode, "Phone number must be exactly 11 digits");
+        phoneInput.style.borderColor = "#f44336";
+      } else if (phone && !/^\d{11}$/.test(phone)) {
+        showError(errorNode, "Phone number must contain only digits");
+        phoneInput.style.borderColor = "#f44336";
+      } else {
+        phoneInput.style.borderColor = "";
+      }
+    });
+
+    phoneInput.addEventListener("input", () => {
+      if (errorNode.textContent.includes("phone")) {
+        clearError(errorNode);
+      }
+      phoneInput.style.borderColor = "";
+    });
+
+    // Password validation
+    passwordInput.addEventListener("input", () => {
+      const password = passwordInput.value;
+      if (password && password.length < 6) {
+        showError(errorNode, "Password must be at least 6 characters");
+        passwordInput.style.borderColor = "#f44336";
+      } else {
+        passwordInput.style.borderColor = "";
+        if (errorNode.textContent.includes("Password")) {
+          clearError(errorNode);
+        }
+      }
+    });
+
+    // Confirm password validation
+    confirmPasswordInput.addEventListener("input", () => {
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      if (confirmPassword && password !== confirmPassword) {
+        showError(errorNode, "Passwords do not match");
+        confirmPasswordInput.style.borderColor = "#f44336";
+      } else {
+        confirmPasswordInput.style.borderColor = "";
+        if (errorNode.textContent.includes("match")) {
+          clearError(errorNode);
+        }
+      }
+    });
+  }
+
   // Handle Registration
   if (registerForm) {
     registerForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const name = document.getElementById("register-name").value.trim();
-      const email = document.getElementById("register-email").value.trim();
-      const phone = document.getElementById("register-phone").value.trim();
-      const password = document.getElementById("register-password").value;
-      const confirmPassword = document.getElementById(
+      const nameInput = document.getElementById("register-name");
+      const emailInput = document.getElementById("register-email");
+      const phoneInput = document.getElementById("register-phone");
+      const passwordInput = document.getElementById("register-password");
+      const confirmPasswordInput = document.getElementById(
         "register-password-confirm"
-      ).value;
+      );
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
       const errorNode = document.getElementById("register-error");
+
+      // Clear previous errors
+      clearError(errorNode);
+      nameInput.style.borderColor = "";
+      emailInput.style.borderColor = "";
+      phoneInput.style.borderColor = "";
+      passwordInput.style.borderColor = "";
+      confirmPasswordInput.style.borderColor = "";
 
       // Validation
       if (!name || !email || !phone || !password || !confirmPassword) {
-        errorNode.textContent = "Please fill in all fields";
+        showError(errorNode, "Please fill in all fields");
+        if (!name) nameInput.style.borderColor = "#f44336";
+        if (!email) emailInput.style.borderColor = "#f44336";
+        if (!phone) phoneInput.style.borderColor = "#f44336";
+        if (!password) passwordInput.style.borderColor = "#f44336";
+        if (!confirmPassword)
+          confirmPasswordInput.style.borderColor = "#f44336";
+        return;
+      }
+
+      if (name.length < 2) {
+        showError(errorNode, "Name must be at least 2 characters");
+        nameInput.style.borderColor = "#f44336";
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        showError(errorNode, "Please enter a valid email address");
+        emailInput.style.borderColor = "#f44336";
+        return;
+      }
+
+      if (phone.length !== 11) {
+        showError(errorNode, "Phone number must be exactly 11 digits");
+        phoneInput.style.borderColor = "#f44336";
+        return;
+      }
+
+      if (!/^\d{11}$/.test(phone)) {
+        showError(errorNode, "Phone number must contain only digits");
+        phoneInput.style.borderColor = "#f44336";
+        return;
+      }
+
+      if (!validatePassword(password)) {
+        showError(errorNode, "Password must be at least 6 characters");
+        passwordInput.style.borderColor = "#f44336";
         return;
       }
 
       if (password !== confirmPassword) {
-        errorNode.textContent = "Passwords do not match";
-        return;
-      }
-
-      if (password.length < 6) {
-        errorNode.textContent = "Password must be at least 6 characters";
+        showError(errorNode, "Passwords do not match");
+        confirmPasswordInput.style.borderColor = "#f44336";
         return;
       }
 
@@ -304,8 +527,7 @@ function initLoginPage() {
         createdAt: new Date().toISOString(),
       };
 
-      appState.users.push(newUser);
-      console.log("New user created:", newUser.email);
+      console.log("Creating new user:", newUser.email);
 
       // Disable submit button to prevent double submission
       const submitBtn = registerForm.querySelector('button[type="submit"]');
@@ -314,11 +536,27 @@ function initLoginPage() {
         submitBtn.textContent = "Creating Account...";
       }
 
-      // Save to database
+      // Save to database via API
       try {
-        // Force immediate sync to database
-        await syncStateToDatabase();
-        console.log("User saved to database successfully");
+        const endpoint =
+          window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
+
+        // Add new user to appState temporarily
+        appState.users.push(newUser);
+
+        // Send the entire state with the new user
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(appState),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("✅ User saved to database successfully:", result);
 
         // Auto login after registration
         if (typeof setSession === "function") {
@@ -330,8 +568,8 @@ function initLoginPage() {
           window.location.href = landing;
         }
       } catch (error) {
-        console.error("Error saving user:", error);
-        errorNode.textContent = "Failed to create account. Please try again.";
+        console.error("❌ Error saving user:", error);
+        showError(errorNode, "Failed to create account. Please try again.");
         // Remove user from array if save failed
         const index = appState.users.findIndex((u) => u.id === newUser.id);
         if (index > -1) {
@@ -345,43 +583,128 @@ function initLoginPage() {
     });
   }
 
+  // Add real-time validation for password reset form
+  if (passwordResetForm) {
+    const currentPasswordInput = document.getElementById(
+      "reset-current-password"
+    );
+    const newPasswordInput = document.getElementById("reset-new-password");
+    const confirmPasswordInput = document.getElementById(
+      "reset-confirm-password"
+    );
+    const errorNode = document.getElementById("reset-error");
+
+    // New password validation
+    newPasswordInput.addEventListener("input", () => {
+      const newPassword = newPasswordInput.value;
+      const currentPassword = currentPasswordInput.value;
+
+      if (newPassword && newPassword.length < 6) {
+        showError(errorNode, "Password must be at least 6 characters");
+        newPasswordInput.style.borderColor = "#f44336";
+      } else if (
+        newPassword &&
+        currentPassword &&
+        newPassword === currentPassword
+      ) {
+        showError(
+          errorNode,
+          "New password must be different from current password"
+        );
+        newPasswordInput.style.borderColor = "#f44336";
+      } else {
+        newPasswordInput.style.borderColor = "";
+        if (
+          errorNode.textContent.includes("Password") ||
+          errorNode.textContent.includes("different")
+        ) {
+          clearError(errorNode);
+        }
+      }
+    });
+
+    // Confirm password validation
+    confirmPasswordInput.addEventListener("input", () => {
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      if (confirmPassword && newPassword !== confirmPassword) {
+        showError(errorNode, "New passwords do not match");
+        confirmPasswordInput.style.borderColor = "#f44336";
+      } else {
+        confirmPasswordInput.style.borderColor = "";
+        if (errorNode.textContent.includes("match")) {
+          clearError(errorNode);
+        }
+      }
+    });
+
+    // Clear errors on input
+    currentPasswordInput.addEventListener("input", () => {
+      currentPasswordInput.style.borderColor = "";
+      if (errorNode.textContent) {
+        clearError(errorNode);
+      }
+    });
+  }
+
   // Handle Password Reset (First-time login)
   if (passwordResetForm) {
     passwordResetForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const currentPassword = document.getElementById(
+      const currentPasswordInput = document.getElementById(
         "reset-current-password"
-      ).value;
-      const newPassword = document.getElementById("reset-new-password").value;
-      const confirmPassword = document.getElementById(
+      );
+      const newPasswordInput = document.getElementById("reset-new-password");
+      const confirmPasswordInput = document.getElementById(
         "reset-confirm-password"
-      ).value;
+      );
+      const currentPassword = currentPasswordInput.value;
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
       const errorNode = document.getElementById("reset-error");
+
+      // Clear previous errors
+      clearError(errorNode);
+      currentPasswordInput.style.borderColor = "";
+      newPasswordInput.style.borderColor = "";
+      confirmPasswordInput.style.borderColor = "";
 
       // Validation
       if (!currentPassword || !newPassword || !confirmPassword) {
-        errorNode.textContent = "Please fill in all fields";
+        showError(errorNode, "Please fill in all fields");
+        if (!currentPassword)
+          currentPasswordInput.style.borderColor = "#f44336";
+        if (!newPassword) newPasswordInput.style.borderColor = "#f44336";
+        if (!confirmPassword)
+          confirmPasswordInput.style.borderColor = "#f44336";
         return;
       }
 
       if (currentPassword !== currentUser.password) {
-        errorNode.textContent = "Current password is incorrect";
+        showError(errorNode, "Current password is incorrect");
+        currentPasswordInput.style.borderColor = "#f44336";
+        return;
+      }
+
+      if (!validatePassword(newPassword)) {
+        showError(errorNode, "Password must be at least 6 characters");
+        newPasswordInput.style.borderColor = "#f44336";
         return;
       }
 
       if (newPassword !== confirmPassword) {
-        errorNode.textContent = "New passwords do not match";
-        return;
-      }
-
-      if (newPassword.length < 6) {
-        errorNode.textContent = "Password must be at least 6 characters";
+        showError(errorNode, "New passwords do not match");
+        confirmPasswordInput.style.borderColor = "#f44336";
         return;
       }
 
       if (newPassword === currentPassword) {
-        errorNode.textContent =
-          "New password must be different from current password";
+        showError(
+          errorNode,
+          "New password must be different from current password"
+        );
+        newPasswordInput.style.borderColor = "#f44336";
         return;
       }
 
