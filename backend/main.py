@@ -788,16 +788,22 @@ async def save_state(state: dict):
         if "attendanceLogs" in state and state["attendanceLogs"]:
             for log in state["attendanceLogs"]:
                 await conn.execute(
-                    """INSERT INTO attendance_logs (id, employee_id, timestamp, action, note)
-                       VALUES ($1, $2, $3, $4, $5)
+                    """INSERT INTO attendance_logs (id, employee_id, timestamp, action, note, shift, archived, archived_at, archived_by)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                        ON CONFLICT (id) DO UPDATE SET
                        employee_id = EXCLUDED.employee_id, 
                        timestamp = EXCLUDED.timestamp, 
                        action = EXCLUDED.action,
-                       note = EXCLUDED.note""",
+                       note = EXCLUDED.note,
+                       shift = EXCLUDED.shift,
+                       archived = EXCLUDED.archived,
+                       archived_at = EXCLUDED.archived_at,
+                       archived_by = EXCLUDED.archived_by""",
                     log.get("id"), log.get("employeeId"), 
                     parse_timestamp(log.get("timestamp")), log.get("action"),
-                    log.get("note")
+                    log.get("note"), log.get("shift"),
+                    log.get("archived", False), parse_timestamp(log.get("archivedAt")),
+                    log.get("archivedBy")
                 )
         
         # Save inventory (upsert - don't delete existing)

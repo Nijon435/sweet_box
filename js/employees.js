@@ -683,10 +683,14 @@ function updateQuickMetrics() {
     return currentTime < shiftTime;
   });
 
-  // For absent and on leave, you can add logic based on attendance data
-  // For now, using placeholder counts of 0
+  // Count employees on leave today
+  const onLeaveCount = activeUsers.filter((u) => {
+    const status = computeEmployeeStatus(u);
+    return status.status === "on-leave";
+  }).length;
+
+  // For absent count, use placeholder for now
   const absentCount = 0;
-  const onLeaveCount = 0;
 
   const activeTodayEl = document.getElementById("active-today-count");
   const onShiftEl = document.getElementById("on-shift-count");
