@@ -886,8 +886,17 @@ function renderLeaveApprovals() {
 
       if (requestType === "profile_edit") {
         // Profile edit request
-        const changes =
-          request.requestedChanges || request.requested_changes || {};
+        let changes = request.requestedChanges || request.requested_changes || {};
+        
+        // Parse if it's a JSON string
+        if (typeof changes === 'string') {
+          try {
+            changes = JSON.parse(changes);
+          } catch (e) {
+            console.error('Failed to parse requestedChanges:', e);
+            changes = {};
+          }
+        }
 
         // Field label mapping for better display
         const fieldLabels = {
@@ -905,7 +914,7 @@ function renderLeaveApprovals() {
               fieldLabels[key] ||
               key.charAt(0).toUpperCase() +
                 key.slice(1).replace(/([A-Z])/g, " $1");
-            
+
             // Try different property name variations to find current value
             let currentValue = "N/A";
             if (employee) {
@@ -913,18 +922,21 @@ function renderLeaveApprovals() {
               const variants = [
                 key,
                 key.toLowerCase(),
-                key.replace(/([A-Z])/g, '_$1').toLowerCase(),
-                key === 'shiftStart' ? 'shift_start' : key
+                key.replace(/([A-Z])/g, "_$1").toLowerCase(),
+                key === "shiftStart" ? "shift_start" : key,
               ];
-              
+
               for (const variant of variants) {
-                if (employee[variant] !== undefined && employee[variant] !== null) {
+                if (
+                  employee[variant] !== undefined &&
+                  employee[variant] !== null
+                ) {
                   currentValue = employee[variant];
                   break;
                 }
               }
             }
-            
+
             return `<div style="font-size: 0.75rem; margin: 0.25rem 0;"><strong>${label}:</strong> ${currentValue} → ${value}</div>`;
           })
           .join("");
@@ -954,7 +966,9 @@ function renderLeaveApprovals() {
         // Leave request
         const startDate = request.startDate || request.start_date;
         const endDate = request.endDate || request.end_date;
-        const reason = (request.reason || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        const reason = (request.reason || "")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
 
         return `
       <div style="padding: 0.75rem; border: 1px solid #eee; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
@@ -966,8 +980,12 @@ function renderLeaveApprovals() {
             : ""
         }
         <div style="display: flex; gap: 0.5rem;">
-          <button data-leave-id="${request.id}" class="approve-leave-btn" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
-          <button data-leave-id="${request.id}" class="reject-leave-btn" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
+          <button data-leave-id="${
+            request.id
+          }" class="approve-leave-btn" style="flex: 1; padding: 0.375rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✓ Approve</button>
+          <button data-leave-id="${
+            request.id
+          }" class="reject-leave-btn" style="flex: 1; padding: 0.375rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">✗ Reject</button>
         </div>
       </div>
     `;
@@ -977,13 +995,13 @@ function renderLeaveApprovals() {
 
   // Add event listeners for leave buttons after rendering
   setTimeout(() => {
-    document.querySelectorAll('.approve-leave-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+    document.querySelectorAll(".approve-leave-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
         window.approveLeave(this.dataset.leaveId);
       });
     });
-    document.querySelectorAll('.reject-leave-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+    document.querySelectorAll(".reject-leave-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
         window.rejectLeave(this.dataset.leaveId);
       });
     });
@@ -1079,7 +1097,18 @@ window.approveProfileEdit = function (requestId) {
   }
 
   // Apply the requested changes
-  const changes = request.requestedChanges || request.requested_changes || {};
+  let changes = request.requestedChanges || request.requested_changes || {};
+  
+  // Parse if it's a JSON string
+  if (typeof changes === 'string') {
+    try {
+      changes = JSON.parse(changes);
+    } catch (e) {
+      console.error('Failed to parse requestedChanges:', e);
+      changes = {};
+    }
+  }
+  
   if (changes.name) employee.name = changes.name;
   if (changes.email) employee.email = changes.email;
   if (changes.phone) employee.phone = changes.phone;
