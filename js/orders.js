@@ -479,31 +479,10 @@ function showCompleteOrderModal(customer, orderType) {
 }
 
 // Process the actual order
-function processOrder(customer, orderType) {
+async function processOrder(customer, orderType) {
   const customerInput = document.getElementById("pos-customer");
 
-  // Deduct from inventory
-  posCart.forEach((cartItem) => {
-    const invItem = appState.inventory.find((i) => i.id === cartItem.id);
-    if (invItem) {
-      invItem.quantity =
-        Number(invItem.quantity || 0) - Number(cartItem.qty || 0);
-      if (invItem.quantity < 0) invItem.quantity = 0;
-
-      // Log ingredient usage
-      if (typeof logIngredientUsage === "function") {
-        logIngredientUsage(
-          invItem.id,
-          Number(cartItem.qty),
-          "order",
-          `ord-${Date.now()}`,
-          `Order item: ${cartItem.name}`
-        );
-      }
-    }
-  });
-
-  // Calculate total
+  // Calculate total first
   const total = posCart.reduce(
     (sum, item) => sum + item.qty * item.unitPrice,
     0
@@ -520,11 +499,51 @@ function processOrder(customer, orderType) {
     timestamp: new Date().toISOString(),
   };
 
+  // Deduct from inventory
+  posCart.forEach((cartItem) => {
+    const invItem = appState.inventory.find((i) => i.id === cartItem.id);
+    if (invItem) {
+      invItem.quantity =
+        Number(invItem.quantity || 0) - Number(cartItem.qty || 0);
+      if (invItem.quantity < 0) invItem.quantity = 0;
+
+      // Log ingredient usage
+      if (typeof logIngredientUsage === "function") {
+        logIngredientUsage(
+          invItem.id,
+          Number(cartItem.qty),
+          "order",
+          order.id,
+          `Order item: ${cartItem.name}`
+        );
+      }
+    }
+  });
+
+  // Add order to appState
   appState.orders = appState.orders || [];
   appState.orders.push(order);
 
-  // Save to database
-  saveState();
+  // Save to database immediately
+  try {
+    const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(appState),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to save order to database");
+    } else {
+      console.log("Order saved to database successfully");
+    }
+  } catch (error) {
+    console.error("Error saving order to database:", error);
+  }
 
   // Clear cart
   posCart = [];
@@ -532,11 +551,8 @@ function processOrder(customer, orderType) {
   renderCart();
   renderProductsGrid(); // Update stock display
 
-  showStyledAlert(
-    "Order Complete",
-    `Order ${order.id} created successfully for ${customer}!`,
-    "success"
-  );
+  // Show success modal with print option
+  showOrderSuccessModal(order);
 
   // Switch to history view to show the order
   const historyViewBtn = document.getElementById("history-view-btn");
@@ -546,6 +562,103 @@ function processOrder(customer, orderType) {
     setTimeout(() => {
       renderOrders();
     }, 100);
+  }
+}
+
+// Show order success modal with print option
+function showOrderSuccessModal(order) {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: #10b981; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);">
+          <span style="color: white; font-size: 2.5rem; font-weight: bold;">✓</span>
+        </div>
+        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">Order Complete</h3>
+        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">Order ${order.id} created successfully for ${order.customer}!</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="close-success-modal" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Close</button>
+        <button id="print-receipt-btn" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🖨️ Print Receipt</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document
+    .getElementById("close-success-modal")
+    .addEventListener("click", () => modal.remove());
+  document.getElementById("print-receipt-btn").addEventListener("click", () => {
+    modal.remove();
+    // Find and trigger the receipt modal for this order
+    showReceiptForOrder(order);
+  });
+}
+
+// Show receipt modal for a specific order
+function showReceiptForOrder(order) {
+  const receiptModal = document.getElementById("receipt-modal");
+  const receiptFields = {
+    ticket: document.getElementById("receipt-ticket"),
+    customer: document.getElementById("receipt-customer"),
+    itemCount: document.getElementById("receipt-item-count"),
+    itemsList: document.getElementById("receipt-items-list"),
+    total: document.getElementById("receipt-total"),
+    time: document.getElementById("receipt-time"),
+    note: document.getElementById("receipt-note"),
+    serviceTag: document.getElementById("receipt-service-tag"),
+  };
+
+  if (receiptFields.ticket) receiptFields.ticket.textContent = order.id;
+  if (receiptFields.customer)
+    receiptFields.customer.textContent = order.customer;
+  if (receiptFields.total)
+    receiptFields.total.textContent = formatCurrency(order.total);
+  if (receiptFields.time)
+    receiptFields.time.textContent = formatTime(order.timestamp);
+
+  let itemsArr = [];
+  try {
+    itemsArr = Array.isArray(order.itemsJson)
+      ? order.itemsJson
+      : JSON.parse(order.itemsJson || "[]");
+  } catch {
+    itemsArr = [];
+  }
+
+  if (receiptFields.itemCount) {
+    const totalQty = itemsArr.reduce((sum, it) => sum + (it.qty || 0), 0);
+    receiptFields.itemCount.textContent = `${totalQty} item${
+      totalQty !== 1 ? "s" : ""
+    }`;
+  }
+
+  if (receiptFields.itemsList) {
+    receiptFields.itemsList.innerHTML = "";
+    itemsArr.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = "receipt-item";
+      const itemTotal = item.qty * item.unitPrice;
+      li.innerHTML = `
+        <span class="receipt-item-qty">${item.qty}×</span>
+        <span class="receipt-item-name">${item.name}</span>
+        <span class="receipt-item-price">${formatCurrency(itemTotal)}</span>
+      `;
+      receiptFields.itemsList.appendChild(li);
+    });
+  }
+
+  const orderTypeKey = normalizeOrderType(order.type);
+  if (receiptFields.serviceTag) {
+    receiptFields.serviceTag.textContent = getOrderTypeLabel(orderTypeKey);
+  }
+
+  if (receiptModal) {
+    receiptModal.setAttribute("aria-hidden", "false");
   }
 }
 
