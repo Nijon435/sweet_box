@@ -75,7 +75,7 @@ function renderArchivedOrders() {
   if (archivedOrders.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-archive">
+        <td colspan="7" class="empty-archive">
           <div class="empty-archive-icon">📦</div>
           <div>No archived orders</div>
         </td>
@@ -85,6 +85,15 @@ function renderArchivedOrders() {
   }
 
   archivedOrders.forEach((order) => {
+    // Get archived by user name
+    let archivedByName = "--";
+    if (order.archivedBy) {
+      const archivedByUser = (appState.users || []).find(
+        (u) => u.id === order.archivedBy
+      );
+      archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><strong>${order.id}</strong></td>
@@ -92,6 +101,7 @@ function renderArchivedOrders() {
       <td>${formatCurrency(order.total)}</td>
       <td>${formatTime(order.timestamp)}</td>
       <td>${order.archivedAt ? formatTime(order.archivedAt) : "--"}</td>
+      <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn-restore" data-restore-order="${
           order.id
@@ -128,7 +138,7 @@ function renderArchivedInventory() {
   if (archivedItems.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-archive">
+        <td colspan="7" class="empty-archive">
           <div class="empty-archive-icon">📋</div>
           <div>No archived inventory items</div>
         </td>
@@ -138,6 +148,15 @@ function renderArchivedInventory() {
   }
 
   archivedItems.forEach((item) => {
+    // Get archived by user name
+    let archivedByName = "--";
+    if (item.archivedBy) {
+      const archivedByUser = (appState.users || []).find(
+        (u) => u.id === item.archivedBy
+      );
+      archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><strong>${item.name}</strong></td>
@@ -145,6 +164,7 @@ function renderArchivedInventory() {
       <td>${item.quantity || 0}</td>
       <td>${item.unit || "--"}</td>
       <td>${item.archivedAt ? formatTime(item.archivedAt) : "--"}</td>
+      <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn-restore" data-restore-inventory="${
           item.id

@@ -78,6 +78,22 @@ async def startup_migrations():
         except Exception as e:
             logger.warning(f"Could not drop served_at column: {e}")
         
+        # Remove archived_by from users table (users don't track who archived them)
+        try:
+            await conn.execute("ALTER TABLE users DROP COLUMN IF EXISTS archived_by")
+            logger.info("Dropped archived_by column from users table")
+        except Exception as e:
+            logger.warning(f"Could not drop archived_by column from users: {e}")
+        
+        # Add archive columns to attendance_logs table
+        try:
+            await conn.execute("ALTER TABLE attendance_logs ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE")
+            await conn.execute("ALTER TABLE attendance_logs ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP")
+            await conn.execute("ALTER TABLE attendance_logs ADD COLUMN IF NOT EXISTS archived_by VARCHAR(64)")
+            logger.info("Added archive columns to attendance_logs table")
+        except Exception as e:
+            logger.warning(f"Could not add archive columns to attendance_logs: {e}")
+        
         await conn.close()
         logger.info("Startup migrations completed successfully")
     except Exception as e:

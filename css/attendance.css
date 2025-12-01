@@ -1,5 +1,25 @@
 /* Attendance Page Specific Styles */
 
+/* Archive Button in Attendance Log */
+.btn-archive {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-archive:hover {
+  background: rgba(255, 193, 7, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-archive:active {
+  transform: scale(0.95);
+}
+
 /* Modal Content */
 .attendance-modal-content {
   padding: 1rem 0;

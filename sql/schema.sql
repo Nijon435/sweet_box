@@ -17,9 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   require_password_reset BOOLEAN DEFAULT FALSE,
   archived BOOLEAN DEFAULT FALSE,
   archived_at TIMESTAMP,
-  archived_by VARCHAR(64),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Attendance logs
@@ -30,7 +28,11 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
   timestamp TIMESTAMP NOT NULL,
   shift VARCHAR(64),
   note TEXT,
-  FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE
+  archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMP,
+  archived_by VARCHAR(64),
+  FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Requests table (combined leave and profile edit requests)

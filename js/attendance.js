@@ -397,9 +397,12 @@ function renderAttendance() {
   const logBody = document.querySelector("#attendance-log-table tbody");
   if (logBody) {
     logBody.innerHTML = "";
-    // Get ALL logs from appState, not just today's
+    // Get ALL logs from appState, not just today's, but exclude archived logs
     const allLogs = (appState.attendanceLogs || [])
       .filter((log) => {
+        // Filter out archived logs
+        if (log.archived) return false;
+
         if (logFilterValue === "all") return true;
         const shift = (log.shift || "").toLowerCase();
         if (!shift) return false;
@@ -427,6 +430,13 @@ function renderAttendance() {
       if (log.note) {
         detailsText += detailsText ? ` — ${log.note}` : log.note;
       }
+
+      // Check if current user is admin or manager
+      const currentUser = getCurrentUser();
+      const canArchive =
+        currentUser &&
+        (currentUser.role === "admin" || currentUser.role === "manager");
+
       row.innerHTML = `
         <td>${employee?.name || "Unknown"}</td>
         <td><span class="status ${actionMeta.badge}">${
@@ -434,6 +444,13 @@ function renderAttendance() {
       }</span></td>
         <td>${formatTime(log.timestamp)}</td>
         <td>${detailsText || ""}</td>
+        ${
+          canArchive
+            ? `<td style="text-align: center;">
+                <button class="btn-archive" data-archive-log="${log.id}" title="Archive this log">🗄️</button>
+              </td>`
+            : ""
+        }
       `;
       logBody.appendChild(row);
     });
@@ -442,6 +459,13 @@ function renderAttendance() {
       row.innerHTML = `<td colspan="4" class="empty-state">No logs recorded for today yet.</td>`;
       logBody.appendChild(row);
     }
+
+    // Attach archive button event listeners
+    document.querySelectorAll("[data-archive-log]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        archiveAttendanceLog(btn.dataset.archiveLog);
+      });
+    });
   }
 
   const alerts = document.getElementById("attendance-alerts");
@@ -648,6 +672,39 @@ function attendanceNextPage() {
     attendanceCurrentPage++;
     renderAttendance();
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+// Archive attendance log function
+async function archiveAttendanceLog(logId) {
+  const log = appState.attendanceLogs.find((l) => l.id === logId);
+  if (!log) return;
+
+  const confirmed = await showConfirm(
+    `Are you sure you want to archive this attendance log?\n\nEmployee: ${
+      getEmployee(log.employeeId)?.name || "Unknown"
+    }\nAction: ${log.action}\nTimestamp: ${formatTime(log.timestamp)}`
+  );
+
+  if (!confirmed) return;
+
+  showLoading("Archiving attendance log...");
+
+  try {
+    const currentUser = getCurrentUser();
+
+    // Mark the log as archived
+    log.archived = true;
+    log.archivedAt = new Date().toISOString();
+    log.archivedBy = currentUser?.id || null;
+
+    await saveState();
+    hideLoading();
+    renderAttendance();
+  } catch (error) {
+    hideLoading();
+    console.error("Error archiving attendance log:", error);
+    alert("Failed to archive attendance log. Please try again.");
   }
 }
 
