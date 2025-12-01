@@ -19,6 +19,14 @@ function renderInventory() {
   updateAlert();
 }
 
+// Check if user can manage inventory (admin, manager, or employee)
+const canManageInventory = () => {
+  const user = getCurrentUser();
+  if (!user) return false;
+  const permission = user.permission || '';
+  return ['admin', 'manager', 'kitchen_staff', 'front_staff'].includes(permission);
+};
+
 function renderMetrics() {
   const inventory = (appState.inventory || []).filter((item) => !item.archived);
 
@@ -194,10 +202,10 @@ function renderUnifiedTable() {
         }"><span class="status-text">${statusInfo.text}</span></span></td>
         <td class="table-actions">
           <button class="btn btn-outline" data-edit="${item.id}" ${
-        !canManageInventory ? "disabled" : ""
+        !canManageInventory() ? "disabled" : ""
       }>Edit</button>
           <button class="btn btn-warning" data-archive="${item.id}" ${
-        !canManageInventory ? "disabled" : ""
+        !canManageInventory() ? "disabled" : ""
       }>Archive</button>
         </td>
       </tr>

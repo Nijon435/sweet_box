@@ -89,9 +89,10 @@ function renderArchivedOrders() {
   archivedOrders.forEach((order) => {
     // Get archived by user name
     let archivedByName = "--";
-    if (order.archivedBy) {
+    const archivedById = order.archivedBy || order.archived_by;
+    if (archivedById) {
       const archivedByUser = (appState.users || []).find(
-        (u) => u.id === order.archivedBy
+        (u) => u.id === archivedById
       );
       archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
     }
@@ -102,7 +103,6 @@ function renderArchivedOrders() {
       <td>${order.customer}</td>
       <td>${formatCurrency(order.total)}</td>
       <td>${formatTime(order.timestamp)}</td>
-      <td>${order.archivedAt ? formatTime(order.archivedAt) : "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn-restore" data-restore-order="${
@@ -152,9 +152,10 @@ function renderArchivedInventory() {
   archivedItems.forEach((item) => {
     // Get archived by user name
     let archivedByName = "--";
-    if (item.archivedBy) {
+    const archivedById = item.archivedBy || item.archived_by;
+    if (archivedById) {
       const archivedByUser = (appState.users || []).find(
-        (u) => u.id === item.archivedBy
+        (u) => u.id === archivedById
       );
       archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
     }
@@ -165,7 +166,6 @@ function renderArchivedInventory() {
       <td>${item.category || "--"}</td>
       <td>${item.quantity || 0}</td>
       <td>${item.unit || "--"}</td>
-      <td>${item.archivedAt ? formatTime(item.archivedAt) : "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn-restore" data-restore-inventory="${
@@ -215,13 +215,23 @@ function renderArchivedUsers() {
   }
 
   archivedUsers.forEach((user) => {
+    // Get archived by user name
+    let archivedByName = "--";
+    const archivedById = user.archivedBy || user.archived_by;
+    if (archivedById) {
+      const archivedByUser = (appState.users || []).find(
+        (u) => u.id === archivedById
+      );
+      archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><strong>${user.name}</strong></td>
       <td>${user.email || "--"}</td>
       <td>${user.role || "--"}</td>
       <td>${user.permission || "--"}</td>
-      <td>${user.archivedAt ? formatTime(user.archivedAt) : "--"}</td>
+      <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn-restore" data-restore-user="${
           user.id
@@ -276,9 +286,10 @@ function renderArchivedAttendanceLogs() {
 
     // Get archived by user name
     let archivedByName = "--";
-    if (log.archivedBy) {
+    const archivedById = log.archivedBy || log.archived_by;
+    if (archivedById) {
       const archivedByUser = (appState.users || []).find(
-        (u) => u.id === log.archivedBy
+        (u) => u.id === archivedById
       );
       archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
     }
@@ -291,7 +302,6 @@ function renderArchivedAttendanceLogs() {
     }</span></td>
       <td>${formatTime(log.timestamp)}</td>
       <td>${log.shift || "--"}</td>
-      <td>${log.archivedAt ? formatTime(log.archivedAt) : "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn-restore" data-restore-log="${

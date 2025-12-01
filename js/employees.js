@@ -352,10 +352,10 @@ function renderEmployees() {
         <td>
           <button class="btn btn-outline btn-sm" onclick="openEditEmployeeModal('${
             employee.id
-          }')" data-role="admin" style="margin-right: 0.5rem;">Edit</button>
+          }')" data-role="admin,manager" style="margin-right: 0.5rem;">Edit</button>
           <button class="btn btn-outline btn-sm" onclick="confirmArchiveEmployee('${
             employee.id
-          }')" data-role="admin">Archive</button>
+          }')" data-role="admin,manager">Archive</button>
         </td>
       `;
         rosterBody.appendChild(row);
@@ -1528,6 +1528,11 @@ window.openEditEmployeeModal = function (userId) {
 
     if (user.permission === "admin") {
       user.shiftStart = null;
+    }
+
+    // Ensure createdAt exists for database
+    if (!user.createdAt) {
+      user.createdAt = new Date().toISOString();
     }
 
     // Save to database immediately using individual endpoint

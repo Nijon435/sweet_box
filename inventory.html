@@ -357,7 +357,7 @@
               <button
                 class="btn btn-primary"
                 id="add-item-btn"
-                data-role="admin"
+                data-role="admin,manager"
                 style="white-space: nowrap"
               >
                 + Add Item
@@ -489,7 +489,7 @@
             Close
           </button>
         </div>
-        <form id="inventory-form" data-role="admin">
+        <form id="inventory-form" data-role="admin,manager">
           <label for="item-category">Category</label>
           <select id="item-category" name="category" required>
             <option value="">Select category</option>
@@ -601,7 +601,10 @@
             Close
           </button>
         </div>
-        <form id="inventory-edit-form" data-role="admin">
+        <form
+          id="inventory-edit-form"
+          data-role="admin,manager,kitchen_staff,front_staff"
+        >
           <label for="edit-item-category">Category</label>
           <select id="edit-item-category" name="category" required>
             <option value="">Select category</option>
