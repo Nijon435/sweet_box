@@ -40,9 +40,24 @@ function renderAnalytics() {
   const kpiCutoff = new Date();
   kpiCutoff.setHours(0, 0, 0, 0);
   kpiCutoff.setDate(kpiCutoff.getDate() - (kpiRangeDays - 1));
-  const totalSalesKpi = (appState.salesHistory || [])
+
+  let totalSalesKpi = (appState.salesHistory || [])
     .filter((entry) => parseDateKey(entry.date) >= kpiCutoff)
-    .reduce((sum, entry) => sum + entry.total, 0);
+    .reduce((sum, entry) => sum + (entry.total || 0), 0);
+
+  // Calculate from orders if sales_history is empty
+  if (totalSalesKpi === 0 && appState.orders && appState.orders.length > 0) {
+    totalSalesKpi = appState.orders.reduce((sum, order) => {
+      if (order.timestamp) {
+        const orderDate = new Date(order.timestamp);
+        if (orderDate >= kpiCutoff) {
+          return sum + (order.total || 0);
+        }
+      }
+      return sum;
+    }, 0);
+  }
+
   const totalAttendanceKpi = (appState.attendanceLogs || []).filter(
     (log) => log.action === "in" && new Date(log.timestamp) >= kpiCutoff
   ).length;
@@ -63,6 +78,12 @@ function renderAnalytics() {
   const attendanceWindow = (appState.attendanceTrend || []).slice(
     -attendanceRange
   );
+
+  console.log("Attendance Trend Data:", {
+    total: appState.attendanceTrend?.length || 0,
+    window: attendanceWindow.length,
+    sample: attendanceWindow[0],
+  });
 
   const inventorySummary = inventoryStats();
   let totalSales = (appState.salesHistory || []).reduce(
@@ -139,6 +160,56 @@ function renderAnalytics() {
     .map(([name, revenue]) => ({ name, revenue }))
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
+
+  // Generate inventory recommendations
+  const recommendationsDiv = document.getElementById(
+    "inventory-recommendations"
+  );
+  if (recommendationsDiv && topProducts.length > 0) {
+    const recommendations = [];
+    topProducts.forEach((product) => {
+      // Find matching inventory item
+      const inventoryItem = appState.inventory?.find(
+        (item) =>
+          item.name?.toLowerCase().includes(product.name.toLowerCase()) ||
+          product.name.toLowerCase().includes(item.name?.toLowerCase())
+      );
+
+      if (inventoryItem) {
+        const threshold =
+          inventoryItem.category === "supplies" ||
+          inventoryItem.category === "beverages"
+            ? 10
+            : 5;
+        if (inventoryItem.quantity < threshold) {
+          recommendations.push(
+            `<strong>${inventoryItem.name}</strong> is low stock (${
+              inventoryItem.quantity
+            } ${inventoryItem.unit || "units"})`
+          );
+        }
+      }
+    });
+
+    if (recommendations.length > 0) {
+      recommendationsDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span style="font-size: 1.2rem;">⚠️</span>
+          <strong style="color: #92400e;">Restock Recommendations:</strong>
+        </div>
+        <ul style="margin: 0; padding-left: 1.5rem; color: #78350f;">
+          ${recommendations.map((rec) => `<li>${rec}</li>`).join("")}
+        </ul>
+      `;
+    } else {
+      recommendationsDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">✅</span>
+          <span style="color: #15803d;"><strong>All good!</strong> Inventory levels are sufficient for top selling items.</span>
+        </div>
+      `;
+    }
+  }
 
   ChartManager.plot("salesMixChart", {
     type: "bar",

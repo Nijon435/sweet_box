@@ -183,7 +183,19 @@
               <h2>Top Selling Products</h2>
               <span class="pill">By revenue</span>
             </div>
-            <canvas id="salesMixChart" height="280"></canvas>
+            <canvas id="salesMixChart" height="200"></canvas>
+            <div
+              id="inventory-recommendations"
+              style="
+                margin-top: 1rem;
+                padding: 0.75rem;
+                background: #fef3c7;
+                border-radius: 8px;
+                font-size: 0.9rem;
+              "
+            >
+              <!-- Recommendations will be inserted here -->
+            </div>
           </article>
           <article
             class="chart-card chart-card--compact"
@@ -193,7 +205,7 @@
               <h2>Revenue by Day of Week</h2>
               <span class="pill">Pattern analysis</span>
             </div>
-            <canvas id="inventoryUsageChart" height="280"></canvas>
+            <canvas id="inventoryUsageChart" height="200"></canvas>
           </article>
         </section>
 
@@ -207,14 +219,14 @@
                 <option value="30">Last 30 days</option>
               </select>
             </div>
-            <canvas id="attendanceTrendChart" height="280"></canvas>
+            <canvas id="attendanceTrendChart" height="220"></canvas>
           </article>
           <article class="chart-card" data-chart-category="sales">
             <div class="section-heading">
               <h2>Order Type Distribution</h2>
               <span class="pill">Dine-in vs Pickup vs Delivery</span>
             </div>
-            <canvas id="performanceChart" height="280"></canvas>
+            <canvas id="performanceChart" height="220"></canvas>
           </article>
         </section>
 
@@ -226,7 +238,7 @@
             <h2>Low Stock & Expiring Items</h2>
             <span class="pill">Needs attention</span>
           </div>
-          <canvas id="stockTrendsChart" height="320"></canvas>
+          <canvas id="stockTrendsChart" height="250"></canvas>
           <p class="meta section-mt-0-75">
             Monitor inventory items that need restocking or are approaching
             expiration dates.

@@ -294,10 +294,15 @@ const formatTime = (isoString) => {
   });
 };
 
-const parseDateKey = (dateString) => new Date(`${dateString}T00:00:00`);
+const parseDateKey = (dateString) => {
+  if (!dateString) return new Date(0);
+  return new Date(`${dateString}T00:00:00`);
+};
 
 const formatDateShort = (dateString) => {
+  if (!dateString) return "N/A";
   const date = new Date(`${dateString}T00:00:00`);
+  if (isNaN(date.getTime())) return "N/A";
   const month = date.getMonth() + 1;
   const day = date.getDate();
   return `${month}/${day}`;
