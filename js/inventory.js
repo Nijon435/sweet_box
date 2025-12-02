@@ -695,8 +695,6 @@ function setupRecordUsageButton() {
 
     const item = appState.inventory[idx];
 
-    const item = appState.inventory[idx];
-
     if (item.quantity < qty) {
       alert(
         `Insufficient quantity. Available: ${item.quantity} ${
