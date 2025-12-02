@@ -87,6 +87,13 @@ function renderAnalytics() {
     if (node) node.textContent = text;
   });
 
+  console.log("Analytics Data Check:", {
+    orders: appState.orders?.length || 0,
+    salesHistory: appState.salesHistory?.length || 0,
+    attendanceTrend: appState.attendanceTrend?.length || 0,
+    sampleOrder: appState.orders?.[0],
+  });
+
   // Calculate top selling products by revenue
   const productRevenue = {};
   (appState.orders || []).forEach((order) => {

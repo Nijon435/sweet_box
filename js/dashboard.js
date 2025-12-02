@@ -5,7 +5,30 @@ function renderDashboard() {
     salesRangeSelect.addEventListener("change", renderDashboard);
   }
   const salesRange = Number(salesRangeSelect?.value || 14);
-  const salesWindow = (appState.salesHistory || []).slice(-salesRange);
+
+  // Calculate sales from orders if sales_history is empty
+  let salesData = appState.salesHistory || [];
+  if (salesData.length === 0 && appState.orders && appState.orders.length > 0) {
+    // Group orders by date
+    const salesByDate = {};
+    appState.orders.forEach((order) => {
+      if (order.timestamp && order.total) {
+        const date = new Date(order.timestamp);
+        const dateKey = `${
+          date.getMonth() + 1
+        }/${date.getDate()}/${date.getFullYear()}`;
+        if (!salesByDate[dateKey]) {
+          salesByDate[dateKey] = { date: dateKey, total: 0 };
+        }
+        salesByDate[dateKey].total += order.total;
+      }
+    });
+    salesData = Object.values(salesByDate).sort(
+      (a, b) => parseDateKey(a.date) - parseDateKey(b.date)
+    );
+  }
+
+  const salesWindow = salesData.slice(-salesRange);
 
   console.log(
     "Sales History Data:",

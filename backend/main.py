@@ -347,6 +347,42 @@ async def get_state():
         for table in TABLES:
             logger.info(f"Fetching table: {table}")
             data[table] = await fetch_table(conn, table)
+        # Calculate attendance trend from logs (last 30 days)
+        from datetime import datetime, timedelta
+        attendance_trend = []
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        for i in range(29, -1, -1):  # Last 30 days
+            day = today - timedelta(days=i)
+            day_end = day + timedelta(days=1)
+            
+            # Count present and late for this day
+            day_logs = [log for log in data["attendance_logs"] 
+                       if log.get("action") == "in" 
+                       and not log.get("archived", False)]
+            
+            present_count = 0
+            late_count = 0
+            
+            for log in day_logs:
+                timestamp_str = log.get("timestamp")
+                if timestamp_str:
+                    try:
+                        log_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                        if day <= log_time < day_end:
+                            if log.get("status") == "late":
+                                late_count += 1
+                            else:
+                                present_count += 1
+                    except:
+                        pass
+            
+            attendance_trend.append({
+                "label": day.strftime("%m/%d"),
+                "present": present_count,
+                "late": late_count
+            })
+        
         await conn.close()
         logger.info("Returning data successfully")
         # Rename keys to match frontend expectations
@@ -359,7 +395,7 @@ async def get_state():
             "inventoryTrends": data["inventory_trends"],
             "inventoryUsageLogs": data["inventory_usage_logs"],
             "requests": data["requests"],
-            "attendanceTrend": []
+            "attendanceTrend": attendance_trend
         }
     except Exception as e:
         logger.error(f"Error in /api/state: {e}", exc_info=True)
