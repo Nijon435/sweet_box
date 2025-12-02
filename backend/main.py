@@ -678,7 +678,7 @@ async def get_usage_logs():
         )
         
         rows = await conn.fetch(
-            "SELECT * FROM inventory_usage_logs ORDER BY timestamp DESC LIMIT 500"
+            "SELECT * FROM inventory_usage_logs ORDER BY created_at DESC LIMIT 500"
         )
         
         logs = []
@@ -690,7 +690,7 @@ async def get_usage_logs():
                 "reason": row["reason"],
                 "orderId": row["order_id"],
                 "notes": row["notes"],
-                "timestamp": row["timestamp"].isoformat() if row["timestamp"] else None,
+                "timestamp": row["created_at"].isoformat() if row["created_at"] else None,
             })
         
         await conn.close()
@@ -721,7 +721,7 @@ async def create_usage_log(log: dict):
             logger.warning(f"Invalid timestamp, using current time: {timestamp}")
         
         await conn.execute(
-            """INSERT INTO inventory_usage_logs (id, inventory_item_id, quantity, reason, order_id, notes, timestamp)
+            """INSERT INTO inventory_usage_logs (id, inventory_item_id, quantity, reason, order_id, notes, created_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7)""",
             log.get("id"),
             log.get("inventoryItemId"),
