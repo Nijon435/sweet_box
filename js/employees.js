@@ -768,8 +768,7 @@ function filterEmployeeRoster() {
       role.includes(searchTerm);
 
     const matchesAccess =
-      !accessValue ||
-      access.includes(accessValue.toLowerCase().replace("_", " "));
+      !accessValue || access === accessValue.toLowerCase().replace("_", " ");
 
     const matchesStatus =
       !statusValue || status.includes(statusValue.toLowerCase());

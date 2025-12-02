@@ -8,7 +8,6 @@ function renderAttendance() {
   const clockOutBtn = document.getElementById("clock-out-btn");
   const currentUserName = document.getElementById("current-user-name");
   const lastActionDisplay = document.getElementById("last-action-display");
-  const logFilter = document.getElementById("attendance-log-filter");
   const statusFilter = document.getElementById("attendance-status-filter");
 
   // Display current user
@@ -80,10 +79,33 @@ function renderAttendance() {
         if (note === null) return; // User cancelled
       }
 
-      // Determine shift based on time
-      const currentHour = new Date().getHours();
-      const shift =
-        currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
+      // Calculate late duration if late
+      let lateInfo = "";
+      if (isLate && currentUser.shiftStart) {
+        const now = new Date();
+        const [hours, minutes] = currentUser.shiftStart.split(":");
+        const shiftTime = new Date();
+        shiftTime.setHours(parseInt(hours), parseInt(minutes), 0);
+
+        const lateMinutes = Math.floor((now - shiftTime) / 60000);
+        if (lateMinutes >= 60) {
+          const lateHours = Math.floor(lateMinutes / 60);
+          const remainingMinutes = lateMinutes % 60;
+          lateInfo =
+            remainingMinutes > 0
+              ? `Late by ${lateHours}h ${remainingMinutes}m`
+              : `Late by ${lateHours}h`;
+        } else {
+          lateInfo = `Late by ${lateMinutes}m`;
+        }
+
+        // Combine late info with user's note
+        if (note) {
+          note = `${lateInfo} - ${note}`;
+        } else {
+          note = lateInfo;
+        }
+      }
 
       // Create attendance log
       const newLog = {
@@ -91,7 +113,6 @@ function renderAttendance() {
         employeeId: currentUser.id,
         action: "in",
         timestamp: new Date().toISOString(),
-        shift: shift,
         note: note || null,
       };
 
@@ -132,17 +153,12 @@ function renderAttendance() {
         return;
       }
 
-      const currentHour = new Date().getHours();
-      const shift =
-        currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
-
       // Create attendance log
       const newLog = {
         id: `att-${Date.now()}`,
         employeeId: currentUser.id,
         action: "out",
         timestamp: new Date().toISOString(),
-        shift: shift,
         note: null,
       };
 
@@ -310,15 +326,6 @@ function renderAttendance() {
     });
   }
 
-  // Log filter handler
-  if (logFilter && !logFilter.dataset.bound) {
-    logFilter.dataset.bound = "true";
-    logFilter.addEventListener("change", () => {
-      attendanceCurrentPage = 1; // Reset to first page on filter change
-      renderAttendance();
-    });
-  }
-
   // Status filter handler
   if (statusFilter && !statusFilter.dataset.bound) {
     statusFilter.dataset.bound = "true";
@@ -328,7 +335,6 @@ function renderAttendance() {
     });
   }
 
-  const logFilterValue = logFilter?.value || "all";
   const statusFilterValue = statusFilter?.value || "all";
 
   const employeeSnapshots = appState.users
@@ -419,13 +425,7 @@ function renderAttendance() {
           return false;
         }
 
-        // Apply shift filter
-        if (logFilterValue === "all") return true;
-        const shift = (log.shift || "").toLowerCase();
-        if (!shift) return false;
-        return logFilterValue === "morning"
-          ? shift.includes("morning")
-          : shift.includes("afternoon");
+        return true;
       })
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -442,11 +442,8 @@ function renderAttendance() {
       const employee = getEmployee(log.employeeId);
       const actionMeta = getAttendanceActionMeta(log.action);
       const row = document.createElement("tr");
-      // Show both shift and note if available
-      let detailsText = log.shift || "";
-      if (log.note) {
-        detailsText += detailsText ? ` — ${log.note}` : log.note;
-      }
+      // Show note if available
+      const detailsText = log.note || "";
 
       // Check if current user is admin or manager
       const currentUser = getCurrentUser();
@@ -686,22 +683,20 @@ function attendancePreviousPage() {
 }
 
 function attendanceNextPage() {
-  const logFilterValue =
-    document.getElementById("attendance-log-filter")?.value || "all";
   const statusFilterValue =
     document.getElementById("attendance-status-filter")?.value || "all";
-  const filteredLogs = getTodaysLogs().filter((log) => {
+
+  // Use the same filter logic as renderAttendance
+  const filteredLogs = (appState.attendanceLogs || []).filter((log) => {
+    // Filter out archived logs
+    if (log.archived) return false;
+
     // Apply status filter
     if (statusFilterValue !== "all" && log.action !== statusFilterValue) {
       return false;
     }
-    // Apply shift filter
-    if (logFilterValue === "all") return true;
-    const shift = (log.shift || "").toLowerCase();
-    if (!shift) return false;
-    return logFilterValue === "morning"
-      ? shift.includes("morning")
-      : shift.includes("afternoon");
+
+    return true;
   });
 
   const totalPages = Math.ceil(filteredLogs.length / attendanceItemsPerPage);

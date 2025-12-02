@@ -306,7 +306,8 @@ async def get_state():
                     log_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
                     # Check if log is within this day
                     if day <= log_time < day_end:
-                        if log.get("status") == "late":
+                        # Check note field for 'late' status (status column doesn't exist in schema)
+                        if log.get("note") == "late":
                             late_count += 1
                         else:
                             present_count += 1
@@ -572,6 +573,7 @@ async def update_attendance_log(log_id: str, log: dict):
             parse_timestamp(log.get("timestamp")),
             log.get("action"),
             log.get("note"),
+            log.get("shift", None),  # Default to None if not provided
             log.get("shift"),
             log.get("archived", False),
             parse_timestamp(log.get("archivedAt")),
@@ -946,7 +948,7 @@ async def save_state(state: dict):
                        archived_by = EXCLUDED.archived_by""",
                     log.get("id"), log.get("employeeId"), 
                     parse_timestamp(log.get("timestamp")), log.get("action"),
-                    log.get("note"), log.get("shift"),
+                    log.get("note"), log.get("shift", None),  # Default to None if not provided
                     log.get("archived", False), parse_timestamp(log.get("archivedAt")),
                     log.get("archivedBy")
                 )
