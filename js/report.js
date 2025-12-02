@@ -1,16 +1,32 @@
+// ============================================
+// REPORTS & EXPORTS MODULE
+// Version: 2.0 - Fixed all scoping issues
+// ============================================
+
+console.log("🔄 Reports module loading...");
+
 function renderReports() {
   console.log("📊 Reports page initialized");
   console.log("Current appState:", appState);
+  console.log("Users available:", appState?.users?.length || 0);
 
+  // Attach click handlers to all export buttons
   const buttons = document.querySelectorAll("[data-report]");
+  console.log(`Found ${buttons.length} export buttons`);
+  
   buttons.forEach((button) => {
-    button.addEventListener("click", () => exportReport(button.dataset.report));
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      const reportType = button.dataset.report;
+      console.log(`Button clicked for report: ${reportType}`);
+      exportReport(reportType);
+    });
   });
 
   // Populate staff selector with retry mechanism
   setTimeout(() => {
     populateStaffSelector();
-  }, 500);
+  }, 1000);
 
   // Set default month to current month
   const monthInput = document.getElementById("attendance-month");
@@ -24,38 +40,46 @@ function renderReports() {
 
 function populateStaffSelector() {
   const staffSelect = document.getElementById("staff-select");
-  if (!staffSelect) return;
+  if (!staffSelect) {
+    console.warn("Staff select element not found");
+    return;
+  }
 
   // Ensure appState is loaded
-  if (!appState || !appState.users) {
+  if (!window.appState || !window.appState.users) {
     console.warn("Users not loaded yet, retrying...");
     setTimeout(populateStaffSelector, 500);
     return;
   }
 
-  const employees = (appState.users || []).filter((e) => !e.archived);
+  const users = window.appState.users || [];
+  const employees = users.filter((e) => !e.archived);
+
+  console.log(`Total users: ${users.length}, Active employees: ${employees.length}`);
 
   staffSelect.innerHTML = '<option value="">Choose staff member...</option>';
   employees.forEach((emp) => {
     const option = document.createElement("option");
     option.value = emp.id;
-    option.textContent = `${emp.name} - ${emp.permission || "staff"}`;
+    option.textContent = `${emp.name} - ${emp.permission || emp.role || "staff"}`;
     staffSelect.appendChild(option);
   });
 
-  console.log(`Loaded ${employees.length} employees into dropdown`);
+  console.log(`✅ Loaded ${employees.length} employees into dropdown`);
 }
 
 function exportReport(type) {
   console.log(`📤 Exporting report: ${type}`);
   console.log("Available data:", {
-    users: appState.users?.length || 0,
-    inventory: appState.inventory?.length || 0,
-    orders: appState.orders?.length || 0,
-    attendanceLogs: appState.attendanceLogs?.length || 0,
-    salesHistory: appState.salesHistory?.length || 0,
+    users: window.appState?.users?.length || 0,
+    inventory: window.appState?.inventory?.length || 0,
+    orders: window.appState?.orders?.length || 0,
+    attendanceLogs: window.appState?.attendanceLogs?.length || 0,
+    salesHistory: window.appState?.salesHistory?.length || 0,
+    inventoryUsageLogs: window.appState?.inventoryUsageLogs?.length || 0,
   });
 
+  // Handle staff attendance reports separately
   if (type === "staff-attendance-excel" || type === "staff-attendance-word") {
     const staffId = document.getElementById("staff-select")?.value;
     const monthValue = document.getElementById("attendance-month")?.value;
@@ -78,46 +102,57 @@ function exportReport(type) {
     return;
   }
 
+  // Check if XLSX library is loaded for Excel exports
   if (typeof XLSX === "undefined") {
-    alert("SheetJS is required for exports");
+    console.error("SheetJS library not loaded!");
+    alert("Excel export library (SheetJS) is not loaded. Please refresh the page.");
     return;
   }
 
+  console.log(`Routing to export function for: ${type}`);
+
   // Route to appropriate export function
-  switch (type) {
-    case "inventory":
-      exportInventoryReport();
-      break;
-    case "inventory-usage":
-      exportInventoryUsageReport();
-      break;
-    case "low-stock":
-      exportLowStockReport();
-      break;
-    case "sales":
-      exportSalesReport();
-      break;
-    case "orders":
-      exportOrdersReport();
-      break;
-    case "financial":
-      exportFinancialReport();
-      break;
-    case "employees":
-      exportEmployeesReport();
-      break;
-    case "attendance":
-      exportAttendanceReport();
-      break;
-    default:
-      alert(`Report type "${type}" not implemented yet`);
+  try {
+    switch (type) {
+      case "inventory":
+        exportInventoryReport();
+        break;
+      case "inventory-usage":
+        exportInventoryUsageReport();
+        break;
+      case "low-stock":
+        exportLowStockReport();
+        break;
+      case "sales":
+        exportSalesReport();
+        break;
+      case "orders":
+        exportOrdersReport();
+        break;
+      case "financial":
+        exportFinancialReport();
+        break;
+      case "employees":
+        exportEmployeesReport();
+        break;
+      case "attendance":
+        exportAttendanceReport();
+        break;
+      default:
+        console.error(`Unknown report type: ${type}`);
+        alert(`Report type "${type}" not implemented yet`);
+    }
+  } catch (error) {
+    console.error(`Error exporting ${type}:`, error);
+    alert(`Error exporting report: ${error.message}`);
   }
 }
 
-// ========== Export Functions ==========
+// ========== EXPORT FUNCTIONS ==========
 
 function exportInventoryReport() {
-  const inventory = (appState.inventory || []).filter((item) => !item.archived);
+  console.log("Exporting inventory report...");
+  const inventory = (window.appState.inventory || []).filter((item) => !item.archived);
 
   const sheetData = inventory.map((item) => ({
     Category: item.category || "N/A",
@@ -154,12 +189,13 @@ function exportInventoryReport() {
 }
 
 function exportInventoryUsageReport() {
-  const usageLogs = (appState.inventoryUsageLogs || []).filter(
+  console.log("Exporting inventory usage report...");
+  const usageLogs = (window.appState.inventoryUsageLogs || []).filter(
     (log) => !log.archived
   );
 
   const sheetData = usageLogs.map((log) => {
-    const item = (appState.inventory || []).find(
+    const item = (window.appState.inventory || []).find(
       (i) => i.id === log.inventoryItemId
     );
 
@@ -194,7 +230,8 @@ function exportInventoryUsageReport() {
 }
 
 function exportLowStockReport() {
-  const inventory = (appState.inventory || []).filter((item) => !item.archived);
+  console.log("Exporting low stock report...");
+  const inventory = (window.appState.inventory || []).filter((item) => !item.archived);
 
   const lowStockItems = inventory.filter((item) => {
     const reorderPoint = item.reorderPoint || 10;
@@ -236,7 +273,8 @@ function exportLowStockReport() {
 }
 
 function exportSalesReport() {
-  const salesHistory = appState.salesHistory || [];
+  console.log("Exporting sales report...");
+  const salesHistory = window.appState.salesHistory || [];
 
   const sheetData = salesHistory.map((entry) => ({
     Date: entry.date,
@@ -256,7 +294,8 @@ function exportSalesReport() {
 }
 
 function exportOrdersReport() {
-  const orders = appState.orders || [];
+  console.log("Exporting orders report...");
+  const orders = window.appState.orders || [];
 
   const sheetData = orders.map((order) => ({
     "Order ID": order.id,
@@ -295,19 +334,20 @@ function exportOrdersReport() {
 }
 
 function exportFinancialReport() {
-  const totalRevenue = (appState.salesHistory || []).reduce(
+  console.log("Exporting financial report...");
+  const totalRevenue = (window.appState.salesHistory || []).reduce(
     (sum, entry) => sum + entry.total,
     0
   );
 
-  const inventoryValue = (appState.inventory || [])
+  const inventoryValue = (window.appState.inventory || [])
     .filter((item) => !item.archived)
     .reduce((sum, item) => sum + item.quantity * (item.cost || 0), 0);
 
-  const totalOrders = (appState.orders || []).length;
+  const totalOrders = (window.appState.orders || []).length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  const last30Days = (appState.salesHistory || []).slice(-30);
+  const last30Days = (window.appState.salesHistory || []).slice(-30);
   const last30DaysRevenue = last30Days.reduce(
     (sum, entry) => sum + entry.total,
     0
@@ -326,7 +366,7 @@ function exportFinancialReport() {
     },
     {
       Metric: "Total Employees",
-      Value: (appState.users || []).filter((e) => !e.archived).length,
+      Value: (window.appState.users || []).filter((e) => !e.archived).length,
     },
   ];
 
@@ -340,7 +380,8 @@ function exportFinancialReport() {
 }
 
 function exportEmployeesReport() {
-  const employees = (appState.users || []).filter((e) => !e.archived);
+  console.log("Exporting employees report...");
+  const employees = (window.appState.users || []).filter((e) => !e.archived);
 
   const sheetData = employees.map((emp) => ({
     Name: emp.name,
@@ -370,12 +411,13 @@ function exportEmployeesReport() {
 }
 
 function exportAttendanceReport() {
-  const attendanceLogs = (appState.attendanceLogs || []).filter(
+  console.log("Exporting attendance report...");
+  const attendanceLogs = (window.appState.attendanceLogs || []).filter(
     (log) => !log.archived
   );
 
   const sheetData = attendanceLogs.map((log) => {
-    const employee = (appState.users || []).find(
+    const employee = (window.appState.users || []).find(
       (e) => e.id === log.employeeId
     );
 
@@ -412,7 +454,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
     return;
   }
 
-  const employee = (appState.users || []).find((e) => e.id === staffId);
+  const employee = (window.appState.users || []).find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -427,7 +469,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
   const daysInMonth = new Date(year, month, 0).getDate();
 
   // Get all attendance logs for this employee in this month
-  const monthLogs = (appState.attendanceLogs || []).filter((log) => {
+  const monthLogs = (window.appState.attendanceLogs || []).filter((log) => {
     if (log.employeeId !== staffId || log.archived) return false;
     const logDate = new Date(log.timestamp);
     return (
@@ -551,7 +593,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
 
 // Export Staff Attendance Report as Word (Daily Time Record format)
 function exportStaffAttendanceWord(staffId, monthValue) {
-  const employee = (appState.users || []).find((e) => e.id === staffId);
+  const employee = (window.appState.users || []).find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -566,7 +608,7 @@ function exportStaffAttendanceWord(staffId, monthValue) {
   const daysInMonth = new Date(year, month, 0).getDate();
 
   // Get all attendance logs for this employee in this month
-  const monthLogs = (appState.attendanceLogs || []).filter((log) => {
+  const monthLogs = (window.appState.attendanceLogs || []).filter((log) => {
     if (log.employeeId !== staffId || log.archived) return false;
     const logDate = new Date(log.timestamp);
     return (
