@@ -128,6 +128,8 @@ function renderAnalytics() {
     firstOrderFields: appState.orders?.[0]
       ? Object.keys(appState.orders[0])
       : [],
+    firstOrderItemsJson: appState.orders?.[0]?.items_json,
+    attendanceTrendSample: appState.attendanceTrend?.[0],
   });
 
   // Calculate top selling products by revenue
@@ -180,7 +182,8 @@ function renderAnalytics() {
   console.log("Top Selling Products:", {
     totalProducts: Object.keys(productRevenue).length,
     topProducts: topProducts,
-    sampleRevenue: productRevenue,
+    sampleRevenue: Object.entries(productRevenue).slice(0, 3),
+    processedOrders: (appState.orders || []).length,
   });
 
   // Generate inventory recommendations
