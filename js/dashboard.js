@@ -74,10 +74,23 @@ function renderDashboard() {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
   weekAgo.setHours(0, 0, 0, 0);
-  const weeklyRevenue = (appState.salesHistory || []).reduce((sum, entry) => {
+  let weeklyRevenue = (appState.salesHistory || []).reduce((sum, entry) => {
     const entryDate = parseDateKey(entry.date);
     return entryDate >= weekAgo ? sum + (entry.total || 0) : sum;
   }, 0);
+
+  // Calculate from orders if sales_history is empty
+  if (weeklyRevenue === 0 && appState.orders && appState.orders.length > 0) {
+    weeklyRevenue = appState.orders.reduce((sum, order) => {
+      if (order.timestamp) {
+        const orderDate = new Date(order.timestamp);
+        if (orderDate >= weekAgo) {
+          return sum + (order.total || 0);
+        }
+      }
+      return sum;
+    }, 0);
+  }
 
   const metricMap = {
     "metric-sales": formatCurrency(todaySales),
@@ -99,7 +112,7 @@ function renderDashboard() {
     data: {
       labels:
         salesWindow.length > 0
-          ? salesWindow.map((entry) => entry.date.slice(5))
+          ? salesWindow.map((entry) => formatDateShort(entry.date))
           : ["No Data"],
       datasets: [
         {

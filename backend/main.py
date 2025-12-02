@@ -356,7 +356,7 @@ async def get_state():
             day = today - timedelta(days=i)
             day_end = day + timedelta(days=1)
             
-            # Count present and late for this day
+            # Count present, late, and on-leave for this day
             day_logs = [log for log in data["attendance_logs"] 
                        if log.get("action") == "in" 
                        and not log.get("archived", False)]
@@ -377,10 +377,23 @@ async def get_state():
                     except:
                         pass
             
+            # Count on-leave users for this day
+            on_leave_count = 0
+            for user in data["users"]:
+                leave_until = user.get("leaveUntil")
+                if leave_until:
+                    try:
+                        leave_date = datetime.fromisoformat(leave_until.replace('Z', '+00:00'))
+                        if day <= leave_date < day_end:
+                            on_leave_count += 1
+                    except:
+                        pass
+            
             attendance_trend.append({
                 "label": day.strftime("%m/%d"),
                 "present": present_count,
-                "late": late_count
+                "late": late_count,
+                "onLeave": on_leave_count
             })
         
         await conn.close()

@@ -65,17 +65,28 @@ function renderAnalytics() {
   );
 
   const inventorySummary = inventoryStats();
-  const totalSales = (appState.salesHistory || []).reduce(
-    (acc, entry) => acc + entry.total,
+  let totalSales = (appState.salesHistory || []).reduce(
+    (acc, entry) => acc + (entry.total || 0),
     0
   );
+
+  // Calculate from orders if sales_history is empty
+  if (totalSales === 0 && appState.orders && appState.orders.length > 0) {
+    totalSales = appState.orders.reduce(
+      (sum, order) => sum + (order.total || 0),
+      0
+    );
+  }
+
   const turnover = inventorySummary.value
     ? (totalSales / inventorySummary.value).toFixed(1)
     : "0.0";
-  const latestSales =
-    (appState.salesHistory || [])[appState.salesHistory?.length - 1]?.total ||
-    0;
-  const avgTicket = latestSales / ((appState.orders || []).length || 1);
+
+  // Calculate average ticket from all orders
+  const avgTicket =
+    appState.orders && appState.orders.length > 0
+      ? totalSales / appState.orders.length
+      : 0;
   const totalOrders = (appState.orders || []).length;
   const analyticsMap = {
     "analytics-turnover": `${turnover}x inventory turnover`,
@@ -263,9 +274,17 @@ function renderAnalytics() {
         },
         {
           label: "Absent",
-          data: attendanceWindow.map((item) => item.absent),
+          data: attendanceWindow.map((item) => item.absent || 0),
           borderColor: "#ef4444",
           backgroundColor: "rgba(239, 68, 68, 0.1)",
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: "On Leave",
+          data: attendanceWindow.map((item) => item.onLeave || 0),
+          borderColor: "#8b5cf6",
+          backgroundColor: "rgba(139, 92, 246, 0.1)",
           tension: 0.4,
           fill: true,
         },

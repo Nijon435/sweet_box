@@ -583,9 +583,29 @@ const inventoryStats = () => {
 };
 
 const orderStats = () => {
-  const buckets = { pending: 0, preparing: 0, ready: 0, served: 0 };
-  appState.orders.forEach((order) => {
-    buckets[order.status] = (buckets[order.status] || 0) + 1;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const todayOrders = (appState.orders || []).filter((order) => {
+    if (order.timestamp) {
+      const orderDate = new Date(order.timestamp);
+      return orderDate >= today && orderDate < tomorrow;
+    }
+    return false;
+  });
+
+  const buckets = {
+    pending: 0,
+    preparing: 0,
+    ready: 0,
+    served: todayOrders.length,
+  };
+  todayOrders.forEach((order) => {
+    if (order.status) {
+      buckets[order.status] = (buckets[order.status] || 0) + 1;
+    }
   });
   return buckets;
 };
@@ -629,13 +649,50 @@ const recalculateSalesHistory = () => {
     .sort((a, b) => a.date.localeCompare(b.date));
 };
 
-const salesToday = () =>
-  appState.salesHistory.find((entry) => entry.date === todayKey())?.total || 0;
+const salesToday = () => {
+  const salesFromHistory =
+    appState.salesHistory?.find((entry) => entry.date === todayKey())?.total ||
+    0;
+  if (salesFromHistory > 0) return salesFromHistory;
+
+  // Calculate from orders if sales_history is empty
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  return (appState.orders || []).reduce((sum, order) => {
+    if (order.timestamp) {
+      const orderDate = new Date(order.timestamp);
+      if (orderDate >= today && orderDate < tomorrow) {
+        return sum + (order.total || 0);
+      }
+    }
+    return sum;
+  }, 0);
+};
 const salesYesterday = () => {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const key = yesterday.toISOString().split("T")[0];
-  return appState.salesHistory.find((entry) => entry.date === key)?.total || 0;
+  const salesFromHistory =
+    appState.salesHistory?.find((entry) => entry.date === key)?.total || 0;
+  if (salesFromHistory > 0) return salesFromHistory;
+
+  // Calculate from orders if sales_history is empty
+  yesterday.setHours(0, 0, 0, 0);
+  const today = new Date(yesterday);
+  today.setDate(today.getDate() + 1);
+
+  return (appState.orders || []).reduce((sum, order) => {
+    if (order.timestamp) {
+      const orderDate = new Date(order.timestamp);
+      if (orderDate >= yesterday && orderDate < today) {
+        return sum + (order.total || 0);
+      }
+    }
+    return sum;
+  }, 0);
 };
 
 const lowStockItems = () =>
