@@ -621,6 +621,102 @@ async def update_attendance_log(log_id: str, log: dict):
         logger.error(f"Error updating attendance log: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/attendance-logs/{log_id}")
+async def delete_attendance_log(log_id: str):
+    """Permanently delete an attendance log"""
+    try:
+        logger.info(f"Deleting attendance log {log_id}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        result = await conn.execute(
+            "DELETE FROM attendance_logs WHERE id = $1",
+            log_id
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully deleted attendance log {log_id}")
+        return {"success": True, "id": log_id}
+    except Exception as e:
+        logger.error(f"Error deleting attendance log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/inventory-usage-logs")
+async def get_usage_logs():
+    """Get all inventory usage logs"""
+    try:
+        logger.info("Fetching inventory usage logs")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        rows = await conn.fetch(
+            "SELECT * FROM inventory_usage_logs ORDER BY timestamp DESC LIMIT 500"
+        )
+        
+        logs = []
+        for row in rows:
+            logs.append({
+                "id": row["id"],
+                "inventoryItemId": row["inventory_item_id"],
+                "quantity": float(row["quantity"]),
+                "reason": row["reason"],
+                "orderId": row["order_id"],
+                "notes": row["notes"],
+                "timestamp": row["timestamp"].isoformat() if row["timestamp"] else None,
+            })
+        
+        await conn.close()
+        logger.info(f"Fetched {len(logs)} usage logs")
+        return logs
+    except Exception as e:
+        logger.error(f"Error fetching usage logs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/inventory-usage-logs")
+async def create_usage_log(log: dict):
+    """Create a new inventory usage log"""
+    try:
+        logger.info(f"Creating usage log: {log}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        await conn.execute(
+            """INSERT INTO inventory_usage_logs (id, inventory_item_id, quantity, reason, order_id, notes, timestamp)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+            log.get("id"),
+            log.get("inventoryItemId"),
+            float(log.get("quantity", 0)),
+            log.get("reason"),
+            log.get("orderId"),
+            log.get("notes"),
+            parse_timestamp(log.get("timestamp"))
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully created usage log {log.get('id')}")
+        return {"success": True, "id": log.get("id")}
+    except Exception as e:
+        logger.error(f"Error creating usage log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.put("/api/inventory-usage-logs/{log_id}")
 async def update_usage_log(log_id: str, log: dict):
     """Update a single inventory usage log (for archiving, etc.)"""

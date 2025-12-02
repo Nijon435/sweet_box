@@ -1677,7 +1677,7 @@ function openEditProfileModal() {
  * @param {string} notes - Optional notes/description
  * @returns {object} The created usage log entry
  */
-function logIngredientUsage(
+async function logIngredientUsage(
   inventoryItemId,
   quantity,
   reason,
@@ -1698,10 +1698,31 @@ function logIngredientUsage(
     timestamp: getLocalTimestamp(),
   };
 
+  // Add to local state
   appState.ingredientUsageLogs.push(usageLog);
-  console.log(
-    `Logged ingredient usage: ${quantity} of ${inventoryItemId} for ${reason}`
-  );
+
+  // Save to database
+  try {
+    const apiBase = window.API_BASE_URL || "";
+    const response = await fetch(`${apiBase}/api/inventory-usage-logs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(usageLog),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to save usage log to database");
+    } else {
+      console.log(
+        `Logged ingredient usage: ${quantity} of ${inventoryItemId} for ${reason}`
+      );
+    }
+  } catch (error) {
+    console.error("Error saving usage log:", error);
+  }
 
   return usageLog;
 }

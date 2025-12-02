@@ -651,11 +651,24 @@ function deleteAttendanceLog(logId) {
     )}). This action cannot be undone.`,
     async () => {
       try {
+        const apiBase = window.API_BASE_URL || "";
+        const response = await fetch(
+          `${apiBase}/api/attendance-logs/${logId}`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete attendance log");
+        }
+
+        // Remove from local state
         appState.attendanceLogs = appState.attendanceLogs.filter(
           (l) => l.id !== logId
         );
 
-        await saveToDatabase();
         renderArchive();
         showToast("Attendance log permanently deleted", "warning");
       } catch (error) {
