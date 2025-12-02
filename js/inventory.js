@@ -685,11 +685,27 @@ function setupRecordUsageButton() {
     const usageReason = data.get("reason");
     const notes = data.get("notes") || "";
 
-    const idx = appState.inventory.findIndex(
-      (i) => i.id === ingredientId && !i.archived
-    );
+    // Debug: Check what we're looking for
+    console.log("Looking for item ID:", ingredientId);
+    console.log("Total inventory items:", appState.inventory?.length);
+
+    // Find the item
+    const item = appState.inventory?.find((i) => i.id === ingredientId);
+    console.log("Found item:", item);
+
+    if (!item) {
+      alert("Item not found in inventory");
+      return;
+    }
+
+    if (item.archived) {
+      alert("This item has been archived and cannot be used");
+      return;
+    }
+
+    const idx = appState.inventory.findIndex((i) => i.id === ingredientId);
     if (idx < 0) {
-      alert("Item not found or archived");
+      alert("Item index not found");
       return;
     }
 

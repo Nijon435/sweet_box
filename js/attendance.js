@@ -430,7 +430,8 @@ function renderAttendance() {
         .filter(
           (log) =>
             log.employeeId === employee.id &&
-            log.timestamp.startsWith(todayKey())
+            log.timestamp.startsWith(todayKey()) &&
+            !log.archived // Exclude archived logs
         )
         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       const latestLog = todaysLogs[todaysLogs.length - 1];
