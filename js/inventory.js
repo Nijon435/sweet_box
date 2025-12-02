@@ -607,22 +607,27 @@ function setupRecordUsageButton() {
   const closeBtn = document.getElementById("log-usage-close");
   const cancelBtn = document.getElementById("log-usage-cancel");
   const form = document.getElementById("log-usage-form");
-  const container = document.getElementById("usage-items-container");
-  const addItemBtn = document.getElementById("add-usage-item-btn");
+  const itemSelect = document.getElementById("usage-ingredient-select");
+  const quantityInput = document.getElementById("usage-quantity-input");
+  const addToListBtn = document.getElementById("add-to-list-btn");
+  const itemsListContainer = document.getElementById("usage-items-list");
 
-  if (!recordUsageBtn || !modal || !form || !container || !addItemBtn) return;
+  if (
+    !recordUsageBtn ||
+    !modal ||
+    !form ||
+    !itemSelect ||
+    !quantityInput ||
+    !addToListBtn ||
+    !itemsListContainer
+  )
+    return;
 
-  let itemRowCounter = 0;
+  // Array to hold items to be recorded
+  let usageItems = [];
 
-  // Create a single usage item row
-  function createUsageItemRow() {
-    const rowId = `usage-row-${itemRowCounter++}`;
-    const row = document.createElement("div");
-    row.className = "usage-item-row";
-    row.id = rowId;
-    row.style.cssText =
-      "display: grid; grid-template-columns: 1fr 120px auto; gap: 0.75rem; margin-bottom: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; align-items: end;";
-
+  // Populate the dropdown with inventory items
+  function populateItemDropdown() {
     const allItems = (appState.inventory || []).filter((i) => !i.archived);
     const categories = [...new Set(allItems.map((i) => i.category))].sort();
 
@@ -635,51 +640,109 @@ function setupRecordUsageButton() {
       itemsInCategory.forEach((item) => {
         optionsHTML += `<option value="${item.id}" data-unit="${
           item.unit || "units"
-        }">${item.name} (${item.quantity} ${item.unit || "units"})</option>`;
+        }" data-available="${item.quantity}">${item.name} (${item.quantity} ${
+          item.unit || "units"
+        })</option>`;
       });
       optionsHTML += "</optgroup>";
     });
 
-    row.innerHTML = `
-      <div>
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Item</label>
-        <select class="usage-item-select" required style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;">
-          ${optionsHTML}
-        </select>
-      </div>
-      <div>
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Quantity</label>
-        <input type="number" class="usage-quantity" min="0.01" step="0.01" placeholder="0.00" required 
-          style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;" />
-      </div>
-      <button type="button" class="btn btn-sm btn-danger remove-usage-row" style="margin-bottom: 0;">Remove</button>
-    `;
-
-    // Remove button handler
-    const removeBtn = row.querySelector(".remove-usage-row");
-    removeBtn.addEventListener("click", () => {
-      row.remove();
-      // Ensure at least one row exists
-      if (container.children.length === 0) {
-        container.appendChild(createUsageItemRow());
-      }
-    });
-
-    return row;
+    itemSelect.innerHTML = optionsHTML;
   }
 
-  // Add item button handler
-  addItemBtn.addEventListener("click", () => {
-    container.appendChild(createUsageItemRow());
+  // Render the list of items to record
+  function renderItemsList() {
+    if (usageItems.length === 0) {
+      itemsListContainer.innerHTML =
+        '<p style="color: #9ca3af; text-align: center; margin: 2rem 0;">No items added yet</p>';
+      return;
+    }
+
+    let html =
+      '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+    usageItems.forEach((usageItem, index) => {
+      const inventoryItem = appState.inventory.find(
+        (i) => i.id === usageItem.ingredientId
+      );
+      if (!inventoryItem) return;
+
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 6px;">
+          <div>
+            <strong>${inventoryItem.name}</strong> - 
+            <span style="color: #6b7280;">${usageItem.qty} ${
+        inventoryItem.unit || "units"
+      }</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeUsageItem(${index})">Remove</button>
+        </div>
+      `;
+    });
+    html += "</div>";
+
+    itemsListContainer.innerHTML = html;
+  }
+
+  // Global function to remove item from list
+  window.removeUsageItem = function (index) {
+    usageItems.splice(index, 1);
+    renderItemsList();
+  };
+
+  // Add to list button handler
+  addToListBtn.addEventListener("click", () => {
+    const ingredientId = itemSelect.value;
+    const qty = Number(quantityInput.value);
+
+    if (!ingredientId) {
+      alert("Please select an item");
+      return;
+    }
+
+    if (!qty || qty <= 0) {
+      alert("Please enter a valid quantity");
+      return;
+    }
+
+    // Check available quantity
+    const item = appState.inventory.find(
+      (i) => i.id === ingredientId && !i.archived
+    );
+    if (!item) {
+      alert("Item not found or archived");
+      return;
+    }
+
+    // Calculate total quantity already in the list for this item
+    const existingQty = usageItems
+      .filter((u) => u.ingredientId === ingredientId)
+      .reduce((sum, u) => sum + u.qty, 0);
+
+    if (existingQty + qty > item.quantity) {
+      alert(
+        `Insufficient quantity for ${item.name}. Available: ${item.quantity} ${
+          item.unit || "units"
+        }, already added: ${existingQty}`
+      );
+      return;
+    }
+
+    // Add to list
+    usageItems.push({ ingredientId, qty });
+    renderItemsList();
+
+    // Clear inputs
+    itemSelect.value = "";
+    quantityInput.value = "";
   });
 
   // Open modal
   recordUsageBtn.addEventListener("click", () => {
     modal.classList.add("active");
     form.reset();
-    container.innerHTML = "";
-    itemRowCounter = 0;
-    container.appendChild(createUsageItemRow()); // Start with one row
+    usageItems = [];
+    populateItemDropdown();
+    renderItemsList();
   });
 
   // Close modal
@@ -711,30 +774,14 @@ function setupRecordUsageButton() {
     const usageReason = document.getElementById("usage-reason").value;
     const notes = document.getElementById("usage-notes-field").value || "";
 
-    // Collect all usage items
-    const rows = container.querySelectorAll(".usage-item-row");
-    const usageItems = [];
-
-    for (const row of rows) {
-      const select = row.querySelector(".usage-item-select");
-      const qtyInput = row.querySelector(".usage-quantity");
-      const ingredientId = select.value;
-      const qty = Number(qtyInput.value);
-
-      if (!ingredientId || !qty || qty <= 0) {
-        alert("Please fill in all item fields with valid quantities");
-        return;
-      }
-
-      usageItems.push({ ingredientId, qty });
-    }
-
     if (usageItems.length === 0) {
-      alert("Please add at least one item");
+      alert("Please add at least one item to the list");
       return;
     }
 
     console.log("Processing usage for items:", usageItems);
+
+    let successCount = 0;
 
     // Process each item
     for (const { ingredientId, qty } of usageItems) {
@@ -789,32 +836,37 @@ function setupRecordUsageButton() {
         if (!response.ok) {
           throw new Error("Failed to update inventory");
         }
+
+        successCount++;
       } catch (error) {
         console.error("Error updating inventory:", error);
-        alert("Failed to update inventory. Please try again.");
-        return;
+        alert(`Failed to update ${item.name}. Please try again.`);
       }
     }
 
     // Success
-    saveState();
-    renderInventory();
-    modal.classList.remove("active");
-    form.reset();
+    if (successCount > 0) {
+      saveState();
+      renderInventory();
+      modal.classList.remove("active");
+      form.reset();
+      usageItems = [];
 
-    const reasonLabels = {
-      waste: "Waste",
-      spoilage: "Spoilage",
-      testing: "Testing",
-      staff_consumption: "Staff Consumption",
-      other: "Other",
-    };
+      const reasonLabels = {
+        waste: "Waste",
+        spoilage: "Spoilage",
+        testing: "Testing",
+        staff_consumption: "Staff Consumption",
+        production: "Production",
+        other: "Other",
+      };
 
-    alert(
-      `Logged: ${qty} ${item.unit || "units"} of ${item.name} used for ${
-        reasonLabels[usageReason] || usageReason
-      }`
-    );
+      alert(
+        `Successfully recorded ${successCount} item(s) for ${
+          reasonLabels[usageReason] || usageReason
+        }`
+      );
+    }
   });
 }
 

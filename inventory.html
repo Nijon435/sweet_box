@@ -706,7 +706,7 @@
 
     <!-- Log Usage Modal -->
     <div class="modal-overlay" id="log-usage-modal">
-      <div class="modal-card" style="max-width: 800px">
+      <div class="modal-card" style="max-width: 700px">
         <div class="modal-card__header">
           <h2>Record Ingredient Usage</h2>
           <button class="btn btn-outline" type="button" id="log-usage-close">
@@ -715,22 +715,62 @@
         </div>
         <form id="log-usage-form">
           <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem">
-            Record ingredient usage for waste, testing, staff consumption, and
-            other non-order purposes. Add multiple items if needed.
+            Select items and add them to your usage list.
           </p>
 
-          <div id="usage-items-container">
-            <!-- Dynamic usage items will be added here -->
+          <!-- Add Item Section -->
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 120px auto;
+              gap: 0.75rem;
+              margin-bottom: 1rem;
+              align-items: end;
+            "
+          >
+            <div>
+              <label for="usage-ingredient-select">Select Item</label>
+              <select id="usage-ingredient-select" style="width: 100%">
+                <option value="">Choose item...</option>
+              </select>
+            </div>
+            <div>
+              <label for="usage-quantity-input">Quantity</label>
+              <input
+                id="usage-quantity-input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                style="width: 100%"
+              />
+            </div>
+            <button type="button" class="btn btn-primary" id="add-to-list-btn">
+              Add to List
+            </button>
           </div>
 
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="add-usage-item-btn"
-            style="margin-bottom: 1rem"
-          >
-            + Add Another Item
-          </button>
+          <!-- Items List -->
+          <div style="margin-bottom: 1rem">
+            <label
+              style="display: block; margin-bottom: 0.5rem; font-weight: 500"
+              >Items to Record:</label
+            >
+            <div
+              id="usage-items-list"
+              style="
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                min-height: 100px;
+                padding: 0.75rem;
+                background: #f9fafb;
+              "
+            >
+              <p style="color: #9ca3af; text-align: center; margin: 2rem 0">
+                No items added yet
+              </p>
+            </div>
+          </div>
 
           <label for="usage-reason">Usage Reason</label>
           <select id="usage-reason" name="usageReason" required>

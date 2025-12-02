@@ -413,29 +413,46 @@ function renderAnalytics() {
     },
   });
 
-  // Attendance Trend - Simple daily clock-ins bar chart
+  // Attendance Trend - Multi-line chart with smooth curves for each status
   const attendanceDays = attendanceRange;
   const attendanceLabels = [];
-  const attendanceData = [];
+  const presentData = [];
+  const lateData = [];
+  const absentData = [];
+  const leaveData = [];
 
   for (let i = attendanceDays - 1; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const dateKey = date.toISOString().split("T")[0];
 
-    // Count clock-ins for this day
-    const clockIns = (appState.attendanceLogs || []).filter(
-      (log) =>
-        log.timestamp.startsWith(dateKey) &&
-        log.action === "in" &&
-        !log.archived
-    ).length;
+    // Count each status for this day
+    const dayLogs = (appState.attendanceLogs || []).filter(
+      (log) => log.timestamp.startsWith(dateKey) && !log.archived
+    );
+
+    const statusCounts = {
+      present: 0,
+      late: 0,
+      absent: 0,
+      leave: 0,
+    };
+
+    dayLogs.forEach((log) => {
+      if (log.status && statusCounts.hasOwnProperty(log.status)) {
+        statusCounts[log.status]++;
+      }
+    });
 
     // Format date as MM/DD
     const month = date.getMonth() + 1;
     const day = date.getDate();
     attendanceLabels.push(`${month}/${day}`);
-    attendanceData.push(clockIns);
+
+    presentData.push(statusCounts.present);
+    lateData.push(statusCounts.late);
+    absentData.push(statusCounts.absent);
+    leaveData.push(statusCounts.leave);
   }
 
   ChartManager.plot("attendanceTrendChart", {
@@ -444,24 +461,66 @@ function renderAnalytics() {
       labels: attendanceLabels,
       datasets: [
         {
-          label: "Clock-ins",
-          data: attendanceData,
+          label: "Present",
+          data: presentData,
           borderColor: "#10b981",
           backgroundColor: "rgba(16, 185, 129, 0.1)",
           tension: 0.4,
-          fill: true,
-          pointRadius: 4,
+          fill: false,
+          pointRadius: 3,
           pointBackgroundColor: "#10b981",
+          borderWidth: 2,
+        },
+        {
+          label: "Late",
+          data: lateData,
+          borderColor: "#f59e0b",
+          backgroundColor: "rgba(245, 158, 11, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 3,
+          pointBackgroundColor: "#f59e0b",
+          borderWidth: 2,
+        },
+        {
+          label: "Absent",
+          data: absentData,
+          borderColor: "#ef4444",
+          backgroundColor: "rgba(239, 68, 68, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 3,
+          pointBackgroundColor: "#ef4444",
+          borderWidth: 2,
+        },
+        {
+          label: "Leave",
+          data: leaveData,
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(99, 102, 241, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 3,
+          pointBackgroundColor: "#6366f1",
+          borderWidth: 2,
         },
       ],
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          position: "top",
+          labels: {
+            usePointStyle: true,
+            padding: 15,
+          },
+        },
         tooltip: {
           callbacks: {
-            label: (context) => `${context.parsed.y} employees clocked in`,
+            label: (context) =>
+              `${context.dataset.label}: ${context.parsed.y} employees`,
           },
         },
       },
