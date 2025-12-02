@@ -300,10 +300,14 @@ function renderArchivedAttendanceLogs() {
     row.innerHTML = `
       <td><strong>${employeeName}</strong></td>
       <td><span class="status ${log.action === "in" ? "in" : "out"}">${
-      log.action === "in" ? "Clock In" : "Clock Out"
+      log.action === "in"
+        ? "Clock In"
+        : log.action === "out"
+        ? "Clock Out"
+        : "On Leave"
     }</span></td>
       <td>${formatTime(log.timestamp)}</td>
-      <td>${log.shift || "--"}</td>
+      <td>${log.note || "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn btn-outline btn-sm btn-restore" data-restore-log="${

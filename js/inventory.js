@@ -680,9 +680,9 @@ function setupRecordUsageButton() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = new FormData(form);
-    const ingredientId = data.get("itemId");
+    const ingredientId = data.get("ingredientId");
     const qty = Number(data.get("quantity"));
-    const usageReason = data.get("reason");
+    const usageReason = data.get("usageReason");
     const notes = data.get("notes") || "";
 
     console.log("Form submitted with:", { ingredientId, qty, usageReason });
