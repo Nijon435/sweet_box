@@ -721,9 +721,8 @@ async def create_usage_log(log: dict):
             logger.warning(f"Invalid timestamp, using current time: {timestamp}")
         
         await conn.execute(
-            """INSERT INTO inventory_usage_logs (id, inventory_item_id, quantity, reason, order_id, notes, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)""",
-            log.get("id"),
+            """INSERT INTO inventory_usage_logs (inventory_item_id, quantity, reason, order_id, notes, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6)""",
             log.get("inventoryItemId"),
             float(log.get("quantity", 0)),
             log.get("reason"),
@@ -733,8 +732,8 @@ async def create_usage_log(log: dict):
         )
         
         await conn.close()
-        logger.info(f"Successfully created usage log {log.get('id')}")
-        return {"success": True, "id": log.get("id")}
+        logger.info(f"Successfully created usage log for item {log.get('inventoryItemId')}")
+        return {"success": True}
     except Exception as e:
         logger.error(f"Error creating usage log: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
