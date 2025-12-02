@@ -441,9 +441,22 @@ function initLoginPage() {
         submitBtn.textContent = "Updating...";
       }
 
-      // Save to database
+      // Save to database using individual API endpoint
       try {
-        await syncStateToDatabase();
+        const apiBase = window.API_BASE_URL || "";
+        const response = await fetch(`${apiBase}/api/users/${currentUser.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(appState.users[userIndex]),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update password: ${response.statusText}`);
+        }
+
         console.log("Password change saved to database");
 
         // Log in the user after password reset

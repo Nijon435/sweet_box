@@ -352,30 +352,35 @@ async def get_state():
         attendance_trend = []
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
+        logger.info(f"Calculating attendance trend with {len(data['attendance_logs'])} total logs")
+        
         for i in range(29, -1, -1):  # Last 30 days
             day = today - timedelta(days=i)
             day_end = day + timedelta(days=1)
             
-            # Count present, late, and on-leave for this day
-            day_logs = [log for log in data["attendance_logs"] 
-                       if log.get("action") == "in" 
-                       and not log.get("archived", False)]
-            
             present_count = 0
             late_count = 0
             
-            for log in day_logs:
+            # Count clock-in logs for this specific day
+            for log in data["attendance_logs"]:
+                if log.get("action") != "in" or log.get("archived", False):
+                    continue
+                    
                 timestamp_str = log.get("timestamp")
-                if timestamp_str:
-                    try:
-                        log_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                        if day <= log_time < day_end:
-                            if log.get("status") == "late":
-                                late_count += 1
-                            else:
-                                present_count += 1
-                    except:
-                        pass
+                if not timestamp_str:
+                    continue
+                    
+                try:
+                    log_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                    # Check if log is within this day
+                    if day <= log_time < day_end:
+                        if log.get("status") == "late":
+                            late_count += 1
+                        else:
+                            present_count += 1
+                except Exception as e:
+                    logger.warning(f"Error parsing timestamp {timestamp_str}: {e}")
+                    pass
             
             # Count on-leave users for this day
             on_leave_count = 0
@@ -384,9 +389,11 @@ async def get_state():
                 if leave_until:
                     try:
                         leave_date = datetime.fromisoformat(leave_until.replace('Z', '+00:00'))
-                        if day <= leave_date < day_end:
+                        # Check if this day is within the leave period (user is on leave until this date)
+                        if day <= leave_date:
                             on_leave_count += 1
-                    except:
+                    except Exception as e:
+                        logger.warning(f"Error parsing leave date {leave_until}: {e}")
                         pass
             
             attendance_trend.append({
@@ -395,6 +402,10 @@ async def get_state():
                 "late": late_count,
                 "onLeave": on_leave_count
             })
+        
+        logger.info(f"Generated {len(attendance_trend)} days of attendance trend data")
+        if attendance_trend:
+            logger.info(f"Sample attendance entry: {attendance_trend[-1]}")
         
         await conn.close()
         logger.info("Returning data successfully")

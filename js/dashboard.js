@@ -14,9 +14,11 @@ function renderDashboard() {
     appState.orders.forEach((order) => {
       if (order.timestamp && order.total) {
         const date = new Date(order.timestamp);
-        const dateKey = `${
-          date.getMonth() + 1
-        }/${date.getDate()}/${date.getFullYear()}`;
+        // Use YYYY-MM-DD format to match formatDateShort expectations
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const dateKey = `${year}-${month}-${day}`;
         if (!salesByDate[dateKey]) {
           salesByDate[dateKey] = { date: dateKey, total: 0 };
         }

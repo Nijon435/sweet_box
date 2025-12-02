@@ -83,6 +83,7 @@ function renderAnalytics() {
     total: appState.attendanceTrend?.length || 0,
     window: attendanceWindow.length,
     sample: attendanceWindow[0],
+    lastEntry: attendanceWindow[attendanceWindow.length - 1],
   });
 
   const inventorySummary = inventoryStats();
@@ -160,6 +161,12 @@ function renderAnalytics() {
     .map(([name, revenue]) => ({ name, revenue }))
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
+
+  console.log("Top Selling Products:", {
+    totalProducts: Object.keys(productRevenue).length,
+    topProducts: topProducts,
+    sampleRevenue: productRevenue,
+  });
 
   // Generate inventory recommendations
   const recommendationsDiv = document.getElementById(
