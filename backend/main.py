@@ -714,6 +714,12 @@ async def create_usage_log(log: dict):
             ssl='require'
         )
         
+        # Parse and validate timestamp
+        timestamp = parse_timestamp(log.get("timestamp"))
+        if not timestamp:
+            timestamp = datetime.now()
+            logger.warning(f"Invalid timestamp, using current time: {timestamp}")
+        
         await conn.execute(
             """INSERT INTO inventory_usage_logs (id, inventory_item_id, quantity, reason, order_id, notes, timestamp)
                VALUES ($1, $2, $3, $4, $5, $6, $7)""",
@@ -723,11 +729,15 @@ async def create_usage_log(log: dict):
             log.get("reason"),
             log.get("orderId"),
             log.get("notes"),
-            parse_timestamp(log.get("timestamp"))
+            timestamp
         )
         
         await conn.close()
         logger.info(f"Successfully created usage log {log.get('id')}")
+        return {"success": True, "id": log.get("id")}
+    except Exception as e:
+        logger.error(f"Error creating usage log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
         return {"success": True, "id": log.get("id")}
     except Exception as e:
         logger.error(f"Error creating usage log: {e}", exc_info=True)

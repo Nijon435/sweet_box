@@ -1723,7 +1723,8 @@ async function logIngredientUsage(
     });
 
     if (!response.ok) {
-      console.error("Failed to save usage log to database");
+      const errorText = await response.text();
+      console.error("Failed to save usage log to database:", response.status, errorText);
     } else {
       console.log(
         `Logged ingredient usage: ${quantity} of ${inventoryItemId} for ${reason}`
