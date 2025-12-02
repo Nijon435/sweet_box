@@ -677,7 +677,7 @@ function setupRecordUsageButton() {
   if (form.dataset.bound) return;
   form.dataset.bound = "true";
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = new FormData(form);
     const ingredientId = data.get("itemId");
@@ -709,7 +709,7 @@ function setupRecordUsageButton() {
 
     // Log ingredient usage with the new system
     if (typeof logIngredientUsage === "function") {
-      logIngredientUsage(
+      await logIngredientUsage(
         ingredientId,
         qty,
         usageReason,
@@ -721,6 +721,25 @@ function setupRecordUsageButton() {
     // Also update totalUsed for backward compatibility
     const currentTotalUsed = item.totalUsed || item.total_used || 0;
     item.totalUsed = currentTotalUsed + qty;
+
+    // Update inventory item in database
+    try {
+      const apiBase = window.API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/inventory/${item.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(item),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update inventory");
+      }
+    } catch (error) {
+      console.error("Error updating inventory:", error);
+      alert("Failed to update inventory. Please try again.");
+      return;
+    }
 
     saveState();
     renderInventory();

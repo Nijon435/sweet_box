@@ -622,6 +622,28 @@ async function restoreAttendanceLog(logId) {
   const log = appState.attendanceLogs.find((l) => l.id === logId);
   if (!log) return;
 
+  // Check if there's already a non-archived log for this employee on the same day
+  const logDate = log.timestamp.split("T")[0];
+  const existingLog = appState.attendanceLogs.find(
+    (l) =>
+      l.id !== logId &&
+      l.employeeId === log.employeeId &&
+      l.timestamp.startsWith(logDate) &&
+      !l.archived
+  );
+
+  if (existingLog) {
+    const employee = (appState.users || []).find(
+      (u) => u.id === log.employeeId
+    );
+    const employeeName = employee ? employee.name : "Unknown";
+    showToast(
+      `Cannot restore: ${employeeName} already has a log for this day`,
+      "error"
+    );
+    return;
+  }
+
   log.archived = false;
   log.archivedAt = null;
   log.archivedBy = null;
