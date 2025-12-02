@@ -785,6 +785,18 @@ function renderArchivedUsageLogs() {
         item.id === log.inventory_item_id || item.id === log.inventoryItemId
     );
     const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
+    const unit = inventoryItem?.unit || "";
+    const itemAndQty = `${itemName} - ${log.quantity} ${unit}`;
+
+    // Get recorded by user name
+    let recordedByName = "--";
+    const createdById = log.createdBy || log.created_by;
+    if (createdById) {
+      const createdByUser = (appState.users || []).find(
+        (u) => u.id === createdById
+      );
+      recordedByName = createdByUser ? createdByUser.name : createdById;
+    }
 
     // Get archived by user name
     let archivedByName = "--";
@@ -798,13 +810,13 @@ function renderArchivedUsageLogs() {
 
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td><strong>${itemName}</strong></td>
-      <td>${log.quantity}</td>
+      <td><strong>${itemAndQty}</strong></td>
       <td><span class="pill" style="background: #e3f2fd; color: #1565c0; font-size: 0.75rem">${
         log.reason || "--"
       }</span></td>
       <td>${log.notes || "--"}</td>
       <td>${formatTime(log.created_at || log.timestamp)}</td>
+      <td>${recordedByName}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
         <button class="btn btn-outline btn-sm btn-restore" data-restore-usage-log="${

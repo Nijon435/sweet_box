@@ -603,8 +603,6 @@ function closeEditModal() {
 
 function setupRecordUsageButton() {
   const recordUsageBtn = document.getElementById("log-usage-btn");
-  const modal = document.getElementById("log-usage-modal");
-  const closeBtn = document.getElementById("log-usage-close");
   const cancelBtn = document.getElementById("log-usage-cancel");
   const form = document.getElementById("log-usage-form");
   const itemSelect = document.getElementById("usage-ingredient-select");
@@ -613,8 +611,6 @@ function setupRecordUsageButton() {
   const itemsListContainer = document.getElementById("usage-items-list");
 
   if (
-    !recordUsageBtn ||
-    !modal ||
     !form ||
     !itemSelect ||
     !quantityInput ||
@@ -627,7 +623,7 @@ function setupRecordUsageButton() {
   let usageItems = [];
 
   // Populate the dropdown with inventory items
-  function populateItemDropdown() {
+  window.populateUsageItemDropdown = function () {
     const allItems = (appState.inventory || []).filter((i) => !i.archived);
     const categories = [...new Set(allItems.map((i) => i.category))].sort();
 
@@ -648,7 +644,7 @@ function setupRecordUsageButton() {
     });
 
     itemSelect.innerHTML = optionsHTML;
-  }
+  };
 
   // Render the list of items to record
   function renderItemsList() {
@@ -736,33 +732,28 @@ function setupRecordUsageButton() {
     quantityInput.value = "";
   });
 
-  // Open modal
-  recordUsageBtn.addEventListener("click", () => {
-    modal.classList.add("active");
-    form.reset();
-    usageItems = [];
-    populateItemDropdown();
-    renderItemsList();
-  });
-
-  // Close modal
-  closeBtn.addEventListener("click", () => {
-    modal.classList.remove("active");
-  });
-
-  // Cancel button
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", () => {
-      modal.classList.remove("active");
+  // Record usage button - switch to record usage tab
+  if (recordUsageBtn) {
+    recordUsageBtn.addEventListener("click", () => {
+      const recordTab = document.querySelector('[data-tab="record-usage"]');
+      if (recordTab) {
+        recordTab.click(); // Switch to record usage tab
+      }
     });
   }
 
-  // Close on backdrop click
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      modal.classList.remove("active");
-    }
-  });
+  // Cancel button - switch back to all items tab
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      const allItemsTab = document.querySelector('[data-tab="all-items"]');
+      if (allItemsTab) {
+        allItemsTab.click();
+      }
+      form.reset();
+      usageItems = [];
+      renderItemsList();
+    });
+  }
 
   // Handle form submission
   if (form.dataset.bound) return;
@@ -848,9 +839,9 @@ function setupRecordUsageButton() {
     if (successCount > 0) {
       saveState();
       renderInventory();
-      modal.classList.remove("active");
       form.reset();
       usageItems = [];
+      renderItemsList();
 
       const reasonLabels = {
         waste: "Waste",
@@ -866,6 +857,12 @@ function setupRecordUsageButton() {
           reasonLabels[usageReason] || usageReason
         }`
       );
+
+      // Switch back to all items tab
+      const allItemsTab = document.querySelector('[data-tab="all-items"]');
+      if (allItemsTab) {
+        allItemsTab.click();
+      }
     }
   });
 }
@@ -1014,6 +1011,7 @@ function setupInventoryTabs() {
   const tabs = document.querySelectorAll(".inventory-tab");
   const allItemsSection = document.getElementById("all-items-section");
   const usageLogsSection = document.getElementById("usage-logs-section");
+  const recordUsageSection = document.getElementById("record-usage-section");
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -1027,10 +1025,22 @@ function setupInventoryTabs() {
       if (targetTab === "all-items") {
         allItemsSection.style.display = "block";
         usageLogsSection.style.display = "none";
+        if (recordUsageSection) recordUsageSection.style.display = "none";
       } else if (targetTab === "usage-logs") {
         allItemsSection.style.display = "none";
         usageLogsSection.style.display = "block";
+        if (recordUsageSection) recordUsageSection.style.display = "none";
         loadUsageLogs();
+      } else if (targetTab === "record-usage") {
+        allItemsSection.style.display = "none";
+        usageLogsSection.style.display = "none";
+        if (recordUsageSection) {
+          recordUsageSection.style.display = "block";
+          // Populate dropdown when tab is opened
+          if (typeof populateUsageItemDropdown === "function") {
+            populateUsageItemDropdown();
+          }
+        }
       }
     });
   });
@@ -1064,7 +1074,7 @@ function renderUsageLogs(logs) {
   if (!logs || logs.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+        <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
           No usage logs recorded yet
         </td>
       </tr>
@@ -1083,15 +1093,17 @@ function renderUsageLogs(logs) {
       const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
       const quantity = log.quantity || 0;
       const unit = item?.unit || "";
+      const itemAndQty = `${itemName} - ${quantity} ${unit}`;
       const reason = log.reason || "N/A";
       const notes = log.notes || "-";
-      const recordedBy = log.createdBy || "System";
+      const recordedBy = log.createdBy || log.userName || "System";
+
+      console.log("Log createdBy:", log.createdBy, "userName:", log.userName); // Debug
 
       return `
       <tr>
         <td>${formattedDate} ${formattedTime}</td>
-        <td>${itemName}</td>
-        <td>${quantity} ${unit}</td>
+        <td>${itemAndQty}</td>
         <td>${formatReason(reason)}</td>
         <td>${notes}</td>
         <td>${recordedBy}</td>
