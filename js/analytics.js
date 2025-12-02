@@ -11,28 +11,33 @@ function renderAnalytics() {
   }
   const categoryTabs = document.querySelectorAll(".chart-category-tab");
   const chartSections = document.querySelectorAll("[data-chart-category]");
-  const applyCategoryFilter = (filter) => {
-    categoryTabs.forEach((tab) => {
-      tab.classList.toggle("active", tab.dataset.chartFilter === filter);
-    });
+
+  // Initialize: show all chart sections that have active toggles
+  const updateChartVisibility = () => {
+    const activeFilters = Array.from(categoryTabs)
+      .filter((tab) => tab.classList.contains("active"))
+      .map((tab) => tab.dataset.chartFilter);
+
     chartSections.forEach((section) => {
       const categories = (section.dataset.chartCategory || "")
         .split(",")
         .map((cat) => cat.trim());
-      const matches = filter === "all" || categories.includes(filter);
-      section.classList.toggle("hidden-category", !matches);
+      const shouldShow = activeFilters.some((filter) =>
+        categories.includes(filter)
+      );
+      section.classList.toggle("hidden-category", !shouldShow);
     });
   };
-  const initialFilter =
-    Array.from(categoryTabs).find((tab) => tab.classList.contains("active"))
-      ?.dataset.chartFilter || "all";
-  applyCategoryFilter(initialFilter);
+
+  updateChartVisibility();
+
   categoryTabs.forEach((tab) => {
     if (tab.dataset.bound) return;
     tab.dataset.bound = "true";
     tab.addEventListener("click", () => {
-      const targetFilter = tab.dataset.chartFilter || "all";
-      applyCategoryFilter(targetFilter);
+      // Toggle the active state
+      tab.classList.toggle("active");
+      updateChartVisibility();
     });
   });
   const attendanceRange = Number(attendanceRangeSelect?.value || 7);
@@ -84,7 +89,7 @@ function renderAnalytics() {
   // Calculate metrics for moved cards
   const inventoryItems = appState.inventory || [];
   const inventoryValue = inventoryItems.reduce((sum, item) => {
-    return sum + (item.quantity || 0) * (item.costPerUnit || 0);
+    return sum + (item.quantity || 0) * (item.cost || 0);
   }, 0);
   const inventoryTurnover =
     inventoryValue > 0 ? (totalSalesKpi / inventoryValue).toFixed(1) : "0.0";
@@ -236,13 +241,6 @@ function renderAnalytics() {
       (o) => o.itemsJson && Array.isArray(o.itemsJson) && o.itemsJson.length > 0
     ).length,
   });
-
-  // Show message if no order items data exists
-  if (topProducts.length === 0 && (appState.orders || []).length > 0) {
-    console.warn(
-      "⚠️ Orders exist but contain no item data. The 'items_json' column in the database may be NULL. New orders should populate this field."
-    );
-  }
 
   // Generate inventory recommendations
   const recommendationsDiv = document.getElementById(

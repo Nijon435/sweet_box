@@ -136,37 +136,30 @@
 
         <section class="card card-compact analytics-filter-panel">
           <div class="section-heading">
-            <h2>Chart Categories</h2>
-            <span class="pill">Focus view</span>
+            <h2>Toggle Charts</h2>
+            <span class="pill">Show/Hide</span>
           </div>
-          <div class="chart-category-tabs" role="tablist">
+          <div class="chart-category-tabs" role="group">
             <button
               class="chart-category-tab active"
-              data-chart-filter="all"
-              type="button"
-            >
-              All charts
-            </button>
-            <button
-              class="chart-category-tab"
               data-chart-filter="sales"
               type="button"
             >
-              Sales & Revenue
+              Peak Hour & Revenue
             </button>
             <button
-              class="chart-category-tab"
-              data-chart-filter="inventory"
-              type="button"
-            >
-              Inventory & Ops
-            </button>
-            <button
-              class="chart-category-tab"
+              class="chart-category-tab active"
               data-chart-filter="people"
               type="button"
             >
-              People & Performance
+              Attendance Trend & Order Types
+            </button>
+            <button
+              class="chart-category-tab active"
+              data-chart-filter="inventory"
+              type="button"
+            >
+              Low Stock & Expiring
             </button>
           </div>
         </section>
@@ -235,7 +228,7 @@
             <h2>Low Stock & Expiring Items</h2>
             <span class="pill">Needs attention</span>
           </div>
-          <canvas id="stockTrendsChart" height="250"></canvas>
+          <canvas id="stockTrendsChart" height="180"></canvas>
           <p class="meta section-mt-0-75">
             Monitor inventory items that need restocking or are approaching
             expiration dates.
