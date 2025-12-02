@@ -513,7 +513,7 @@ async function processOrder(customer, orderType) {
     itemsJson: posCart,
     total: total,
     type: orderType,
-    timestamp: new Date().toISOString(),
+    timestamp: getLocalTimestamp(),
   };
 
   // Deduct from inventory
@@ -937,7 +937,7 @@ function renderOrders() {
         itemsJson: itemsArr,
         total: Number(data.get("total")) || 0,
         type: orderType,
-        timestamp: new Date().toISOString(),
+        timestamp: getLocalTimestamp(),
       };
 
       // Update usage logs with correct order ID
@@ -1062,7 +1062,7 @@ function renderOrders() {
           // Mark as archived
           const currentUser = getCurrentUser();
           order.archived = true;
-          order.archivedAt = new Date().toISOString();
+          order.archivedAt = getLocalTimestamp();
           order.archivedBy = currentUser?.id || null;
 
           // Save to database using individual endpoint

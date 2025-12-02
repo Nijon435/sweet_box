@@ -881,7 +881,7 @@ function openAddEmployeeModal() {
       shiftStart: formData.get("shiftStart") || null,
       hireDate: new Date().toISOString().split("T")[0], // Auto-set to today
       status: formData.get("status"),
-      createdAt: new Date().toISOString(),
+      createdAt: getLocalTimestamp(),
       requirePasswordReset: true,
     };
 
@@ -1584,7 +1584,7 @@ window.openEditEmployeeModal = function (userId) {
 
     // Ensure createdAt exists for database
     if (!user.createdAt) {
-      user.createdAt = new Date().toISOString();
+      user.createdAt = getLocalTimestamp();
     }
 
     // Save to database immediately using individual endpoint
@@ -1652,7 +1652,7 @@ window.archiveEmployee = async function (userId) {
 
   const currentUser = getCurrentUser();
   user.archived = true;
-  user.archivedAt = new Date().toISOString();
+  user.archivedAt = getLocalTimestamp();
   user.archivedBy = currentUser?.id || null;
 
   // Save to database using individual endpoint
@@ -1775,7 +1775,7 @@ document.addEventListener("DOMContentLoaded", () => {
         name: accessName,
         description: description,
         pages: selectedPages,
-        createdAt: new Date().toISOString(),
+        createdAt: getLocalTimestamp(),
       };
 
       appState.accessLevels.push(newAccessLevel);

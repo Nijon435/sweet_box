@@ -284,6 +284,15 @@ const formatCurrency = (value) =>
     value || 0
   );
 
+// Get current timestamp in local time (not UTC)
+const getLocalTimestamp = () => {
+  const now = new Date();
+  // Adjust for timezone offset to get local time
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, -1);
+};
+
 const formatTime = (isoString) => {
   const date = new Date(isoString);
   return date.toLocaleString("en-PH", {
@@ -1168,7 +1177,7 @@ function showClockInPromptModal(user, page) {
       id: `att-${Date.now()}`,
       employeeId: user.id,
       action: "in",
-      timestamp: new Date().toISOString(),
+      timestamp: getLocalTimestamp(),
       shift: shift,
       note: isLate && lateNote ? `Late: ${lateNote}` : null,
     };
@@ -1310,6 +1319,7 @@ if (typeof window !== "undefined") {
   window.getLandingPageForRole = getLandingPageForRole;
   window.saveState = saveState;
   window.syncStateToDatabase = syncStateToDatabase;
+  window.getLocalTimestamp = getLocalTimestamp;
   window.pageRenderers = window.pageRenderers || {};
 }
 
@@ -1606,7 +1616,7 @@ function logIngredientUsage(
     reason: reason, // 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'other'
     orderId: orderId,
     notes: notes,
-    timestamp: new Date().toISOString(),
+    timestamp: getLocalTimestamp(),
   };
 
   appState.ingredientUsageLogs.push(usageLog);
@@ -1770,7 +1780,7 @@ function migrateExistingUsageData() {
 
   let migrated = 0;
   let skipped = 0;
-  const migrationTimestamp = new Date().toISOString();
+  const migrationTimestamp = getLocalTimestamp();
 
   appState.inventory.forEach((item) => {
     const totalUsed = item.totalUsed || item.total_used || 0;

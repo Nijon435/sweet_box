@@ -232,7 +232,7 @@ function renderUnifiedTable() {
       if (confirm(`Archive ${item.name}? This will move it to the archive.`)) {
         const currentUser = getCurrentUser();
         item.archived = true;
-        item.archivedAt = new Date().toISOString();
+        item.archivedAt = getLocalTimestamp();
         item.archivedBy = currentUser?.id || null;
 
         // Save to database using individual endpoint

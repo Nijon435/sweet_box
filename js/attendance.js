@@ -150,12 +150,12 @@ function renderAttendance() {
         }
       }
 
-      // Create attendance log
+      // Create attendance log with local timestamp
       const newLog = {
         id: `att-${Date.now()}`,
         employeeId: currentUser.id,
         action: "in",
-        timestamp: new Date().toISOString(),
+        timestamp: getLocalTimestamp(),
         note: note || null,
       };
 
@@ -217,12 +217,12 @@ function renderAttendance() {
         return;
       }
 
-      // Create attendance log
+      // Create attendance log with local timestamp
       const newLog = {
         id: `att-${Date.now()}`,
         employeeId: currentUser.id,
         action: "out",
-        timestamp: new Date().toISOString(),
+        timestamp: getLocalTimestamp(),
         note: null,
       };
 
@@ -822,7 +822,7 @@ function archiveAttendanceLog(logId) {
 
         // Mark the log as archived
         log.archived = true;
-        log.archivedAt = new Date().toISOString();
+        log.archivedAt = getLocalTimestamp();
         log.archivedBy = currentUser?.id || null;
 
         // Save to database using dedicated API endpoint
