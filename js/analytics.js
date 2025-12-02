@@ -344,11 +344,17 @@ function renderAnalytics() {
   ChartManager.plot("attendanceTrendChart", {
     type: "line",
     data: {
-      labels: attendanceWindow.length > 0 ? attendanceWindow.map((item) => item.label) : ["No Data"],
+      labels:
+        attendanceWindow.length > 0
+          ? attendanceWindow.map((item) => item.label)
+          : ["No Data"],
       datasets: [
         {
           label: "Present",
-          data: attendanceWindow.length > 0 ? attendanceWindow.map((item) => item.present) : [0],
+          data:
+            attendanceWindow.length > 0
+              ? attendanceWindow.map((item) => item.present)
+              : [0],
           borderColor: "#22c55e",
           backgroundColor: "rgba(34, 197, 94, 0.1)",
           tension: 0.4,
@@ -356,7 +362,10 @@ function renderAnalytics() {
         },
         {
           label: "Late",
-          data: attendanceWindow.length > 0 ? attendanceWindow.map((item) => item.late) : [0],
+          data:
+            attendanceWindow.length > 0
+              ? attendanceWindow.map((item) => item.late)
+              : [0],
           borderColor: "#f97316",
           backgroundColor: "rgba(249, 115, 22, 0.1)",
           tension: 0.4,
@@ -364,7 +373,10 @@ function renderAnalytics() {
         },
         {
           label: "On Leave",
-          data: attendanceWindow.length > 0 ? attendanceWindow.map((item) => item.onLeave || 0) : [0],
+          data:
+            attendanceWindow.length > 0
+              ? attendanceWindow.map((item) => item.onLeave || 0)
+              : [0],
           borderColor: "#ef4444",
           backgroundColor: "rgba(239, 68, 68, 0.1)",
           tension: 0.4,
