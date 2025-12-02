@@ -28,7 +28,7 @@
 
 .archive-tab.active {
   background: white;
-  color: var(--primary-color, #e57373);
+  color: #f6c343;
   font-weight: 600;
 }
 
@@ -39,7 +39,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--primary-color, #e57373);
+  background: #f6c343;
 }
 
 .archive-section {

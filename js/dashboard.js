@@ -5,7 +5,7 @@ function renderDashboard() {
     salesRangeSelect.addEventListener("change", renderDashboard);
   }
   const salesRange = Number(salesRangeSelect?.value || 14);
-  const salesWindow = appState.salesHistory.slice(-salesRange);
+  const salesWindow = (appState.salesHistory || []).slice(-salesRange);
 
   const todaySales = salesToday();
   const yesterdaySales = salesYesterday();
@@ -40,9 +40,10 @@ function renderDashboard() {
   // Calculate weekly revenue (last 7 days)
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
+  weekAgo.setHours(0, 0, 0, 0);
   const weeklyRevenue = (appState.salesHistory || []).reduce((sum, entry) => {
-    const entryDate = new Date(entry.date);
-    return entryDate >= weekAgo ? sum + entry.total : sum;
+    const entryDate = parseDateKey(entry.date);
+    return entryDate >= weekAgo ? sum + (entry.total || 0) : sum;
   }, 0);
 
   const metricMap = {
@@ -63,11 +64,11 @@ function renderDashboard() {
   ChartManager.plot("salesTrendChart", {
     type: "line",
     data: {
-      labels: salesWindow.map((entry) => entry.date.slice(5)),
+      labels: salesWindow.length > 0 ? salesWindow.map((entry) => entry.date.slice(5)) : ["No Data"],
       datasets: [
         {
           label: "Daily Sales",
-          data: salesWindow.map((entry) => entry.total),
+          data: salesWindow.length > 0 ? salesWindow.map((entry) => entry.total || 0) : [0],
           borderColor: "#f6c343",
           backgroundColor: "rgba(246,195,67,0.15)",
           tension: 0.4,
@@ -109,8 +110,9 @@ function renderDashboard() {
       scales: {
         y: {
           beginAtZero: true,
-          suggestedMax:
-            Math.max(...salesWindow.map((entry) => entry.total), 100) * 1.2,
+          suggestedMax: salesWindow.length > 0
+            ? Math.max(...salesWindow.map((entry) => entry.total || 0), 100) * 1.2
+            : 100,
           ticks: {
             callback: function (value) {
               return "₱" + value.toLocaleString();

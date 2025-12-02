@@ -174,6 +174,20 @@
           </div>
         </section>
 
+        <!-- Sales Trend Over Time -->
+        <section class="chart-card section-mt-2" data-chart-category="sales">
+          <div class="section-heading">
+            <h2>Sales Trend Over Time</h2>
+            <select id="sales-trend-range" class="filter-select">
+              <option value="7" selected>Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
+          <canvas id="salesTrendChart" height="280"></canvas>
+        </section>
+
         <section class="chart-flex analytics-compact-row section-mt-2">
           <article
             class="chart-card chart-card--compact"

@@ -296,6 +296,13 @@ const formatTime = (isoString) => {
 
 const parseDateKey = (dateString) => new Date(`${dateString}T00:00:00`);
 
+const formatDateShort = (dateString) => {
+  const date = new Date(`${dateString}T00:00:00`);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}/${day}`;
+};
+
 const ORDER_TYPE_META = {
   "dine-in": { label: "Dine-in", service: "Dine-in service" },
   takeout: { label: "Takeout", service: "Counter pickup" },
