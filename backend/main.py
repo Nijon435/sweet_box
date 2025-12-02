@@ -112,6 +112,10 @@ async def fetch_table(conn, table):
                     item["itemsJson"] = items_json
                 if "served_at" in item:
                     item["servedAt"] = item.pop("served_at")
+                if "archived_at" in item:
+                    item["archivedAt"] = item.pop("archived_at")
+                if "archived_by" in item:
+                    item["archivedBy"] = item.pop("archived_by")
             if table == "users":
                 if "hire_date" in item:
                     item["hireDate"] = item.pop("hire_date")
@@ -121,9 +125,17 @@ async def fetch_table(conn, table):
                     item["createdAt"] = item.pop("created_at")
                 if "require_password_reset" in item:
                     item["requirePasswordReset"] = item.pop("require_password_reset")
+                if "archived_at" in item:
+                    item["archivedAt"] = item.pop("archived_at")
+                if "archived_by" in item:
+                    item["archivedBy"] = item.pop("archived_by")
             if table == "attendance_logs":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
+                if "archived_at" in item:
+                    item["archivedAt"] = item.pop("archived_at")
+                if "archived_by" in item:
+                    item["archivedBy"] = item.pop("archived_by")
             if table == "requests":
                 if "employee_id" in item:
                     item["employeeId"] = item.pop("employee_id")
@@ -158,6 +170,10 @@ async def fetch_table(conn, table):
                     item["totalUsed"] = item.pop("total_used")
                 if "created_at" in item:
                     item["createdAt"] = item.pop("created_at")
+                if "archived_at" in item:
+                    item["archivedAt"] = item.pop("archived_at")
+                if "archived_by" in item:
+                    item["archivedBy"] = item.pop("archived_by")
             if table == "inventory_usage_logs":
                 if "inventory_item_id" in item:
                     item["inventoryItemId"] = item.pop("inventory_item_id")

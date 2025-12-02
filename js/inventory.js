@@ -611,9 +611,9 @@ function setupRecordUsageButton() {
 
   if (!recordUsageBtn || !modal || !form || !select) return;
 
-  // Populate ingredient dropdown with ALL inventory items
+  // Populate ingredient dropdown with non-archived inventory items
   function populateItemSelect() {
-    const allItems = appState.inventory || [];
+    const allItems = (appState.inventory || []).filter((i) => !i.archived);
     select.innerHTML = '<option value="">Choose item...</option>';
 
     // Group by category for better UX
@@ -685,9 +685,11 @@ function setupRecordUsageButton() {
     const usageReason = data.get("reason");
     const notes = data.get("notes") || "";
 
-    const idx = appState.inventory.findIndex((i) => i.id === ingredientId);
+    const idx = appState.inventory.findIndex(
+      (i) => i.id === ingredientId && !i.archived
+    );
     if (idx < 0) {
-      alert("Item not found");
+      alert("Item not found or archived");
       return;
     }
 
