@@ -273,7 +273,9 @@ function initLoginPage() {
           const today = new Date().toISOString().split("T")[0];
           const todaysLogs = (appState.attendanceLogs || []).filter(
             (log) =>
-              log.employeeId === user.id && log.timestamp.startsWith(today)
+              log.employeeId === user.id && 
+              log.timestamp.startsWith(today) &&
+              !log.archived
           );
           const hasClockedIn = todaysLogs.some((log) => log.action === "in");
 

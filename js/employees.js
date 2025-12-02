@@ -1176,7 +1176,7 @@ function renderLeaveApprovals() {
   });
 }
 
-window.approveLeave = function (leaveId) {
+window.approveLeave = async function (leaveId) {
   if (!isAdminOrManager()) {
     alert("Only administrators and managers can approve requests.");
     return;
@@ -1188,40 +1188,65 @@ window.approveLeave = function (leaveId) {
   const currentUser = getCurrentUser();
   leave.status = "approved";
   leave.reviewedBy = currentUser.id;
-  leave.reviewedAt = new Date().toISOString();
+  leave.reviewedAt = getLocalTimestamp();
 
-  // Save to database
-  const endpoint =
-    window.APP_STATE_ENDPOINT || "http://localhost:5000/api/state";
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(appState),
-  })
-    .then(() => {
-      console.log("✅ Leave request approved and saved to database");
-    })
-    .catch((err) => {
-      console.error("❌ Error saving to database:", err);
+  try {
+    // Save leave request to database
+    const endpoint = `${window.API_BASE_URL || ""}/api/requests/${leaveId}`;
+    const response = await fetch(endpoint, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(leave),
     });
+
+    if (!response.ok) {
+      throw new Error(`Failed to approve leave: ${response.statusText}`);
+    }
+
+    // Create attendance logs for each day of the leave period
+    const startDate = new Date(leave.startDate || leave.start_date);
+    const endDate = new Date(leave.endDate || leave.end_date);
+    const employeeId = leave.employeeId || leave.employee_id;
+    
+    // Create logs for each day in the range
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const leaveLog = {
+        id: `leave-${employeeId}-${dateStr}-${Date.now()}`,
+        employeeId: employeeId,
+        action: "leave",
+        timestamp: `${dateStr}T09:00:00`,
+        note: "On approved leave",
+        archived: false,
+      };
+      
+      // Add to local state
+      appState.attendanceLogs.push(leaveLog);
+      
+      // Save to database
+      await saveAttendanceLog(leaveLog);
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    console.log("✅ Leave request approved and attendance logs created");
+  } catch (err) {
+    console.error("❌ Error approving leave:", err);
+    alert("Failed to approve leave. Please try again.");
+    return;
+  }
 
   renderEmployees();
 
-  // Show custom success popup
-  const popup = document.createElement("div");
-  popup.style.cssText =
-    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
-  popup.innerHTML = `
-    <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
-    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Request Approved!</h3>
-    <p style="margin: 0; color: #666;">The request has been approved successfully.</p>
-    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
-  `;
-  document.body.appendChild(popup);
-  popup
-    .querySelector(".popup-close-btn")
-    .addEventListener("click", () => popup.remove());
-  setTimeout(() => popup.remove(), 3000);
+  // Show toast notification
+  const toast = document.createElement("div");
+  toast.style.cssText =
+    "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+  toast.textContent = "✓ Leave request approved successfully!";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 };
 
 window.rejectLeave = function (leaveId) {

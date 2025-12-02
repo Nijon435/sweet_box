@@ -293,6 +293,47 @@ const getLocalTimestamp = () => {
     .slice(0, -1);
 };
 
+// Save attendance log directly to database
+async function saveAttendanceLog(log) {
+  try {
+    // Get the base API URL from window.APP_STATE_ENDPOINT or use default
+    let baseUrl = "";
+    if (typeof window !== "undefined" && window.APP_STATE_ENDPOINT) {
+      // Extract base URL (e.g., "https://sweetbox-backend.onrender.com" from full endpoint)
+      const urlObj = new URL(window.APP_STATE_ENDPOINT);
+      baseUrl = urlObj.origin;
+    }
+    
+    const url = baseUrl + "/api/attendance-logs";
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(log),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "Failed to save attendance log:",
+        response.status,
+        response.statusText,
+        errorText
+      );
+      throw new Error(`Failed to save attendance log: ${errorText}`);
+    }
+
+    console.log("Attendance log saved successfully");
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving attendance log:", error);
+    throw error;
+  }
+}
+
 const formatTime = (isoString) => {
   const date = new Date(isoString);
   return date.toLocaleString("en-PH", {
@@ -385,7 +426,9 @@ const todayKey = () => new Date().toISOString().split("T")[0];
 
 const getEmployee = (id) => appState.users.find((emp) => emp.id === id);
 const getTodaysLogs = () =>
-  appState.attendanceLogs.filter((log) => log.timestamp.startsWith(todayKey()));
+  appState.attendanceLogs.filter(
+    (log) => log.timestamp.startsWith(todayKey()) && !log.archived
+  );
 
 const computeEmployeeStatus = (employee) => {
   // Check if employee is on approved leave today
@@ -485,12 +528,24 @@ const computeEmployeeStatus = (employee) => {
     };
   }
 
+  // Get today's logs (excluding archived ones)
   const todayLogs = appState.attendanceLogs
     .filter(
       (log) =>
-        log.employeeId === employee.id && log.timestamp.startsWith(todayKey())
+        log.employeeId === employee.id && 
+        log.timestamp.startsWith(todayKey()) &&
+        !log.archived  // Exclude archived logs
     )
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+  // Check if there's a leave action log for today
+  const hasLeaveLog = todayLogs.some((log) => log.action === "leave");
+  if (hasLeaveLog) {
+    return {
+      status: "on-leave",
+      timestamp: "On Leave",
+    };
+  }
 
   // Check if has shift time and past shift time
   const now = new Date();
@@ -1182,21 +1237,44 @@ function showClockInPromptModal(user, page) {
       note: isLate && lateNote ? `Late: ${lateNote}` : null,
     };
 
+    // Save to local state first
     appState.attendanceLogs = appState.attendanceLogs || [];
     appState.attendanceLogs.push(newLog);
-    await saveState();
 
-    modal.remove();
+    // Save directly to database
+    try {
+      await saveAttendanceLog(newLog);
 
-    // Show success toast
-    const toast = document.createElement("div");
-    toast.style.cssText =
-      "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-    toast.textContent = isLate
-      ? "✓ Clocked in (Late)"
-      : "✓ Successfully clocked in!";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+      modal.remove();
+
+      // Show success toast
+      const toast = document.createElement("div");
+      toast.style.cssText =
+        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+      toast.textContent = isLate
+        ? "✓ Clocked in (Late)"
+        : "✓ Successfully clocked in!";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    } catch (error) {
+      // Remove from local state if save failed
+      const index = appState.attendanceLogs.findIndex(
+        (log) => log.id === newLog.id
+      );
+      if (index > -1) {
+        appState.attendanceLogs.splice(index, 1);
+      }
+
+      modal.remove();
+
+      // Show error toast
+      const toast = document.createElement("div");
+      toast.style.cssText =
+        "position: fixed; top: 20px; right: 20px; background: #f44336; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+      toast.textContent = "✗ Failed to clock in. Please try again.";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
 
     // Refresh page to update attendance display
     if (
@@ -1320,6 +1398,7 @@ if (typeof window !== "undefined") {
   window.saveState = saveState;
   window.syncStateToDatabase = syncStateToDatabase;
   window.getLocalTimestamp = getLocalTimestamp;
+  window.saveAttendanceLog = saveAttendanceLog;
   window.pageRenderers = window.pageRenderers || {};
 }
 
