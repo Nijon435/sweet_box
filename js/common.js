@@ -305,7 +305,7 @@ const formatDateShort = (dateString) => {
 
 const ORDER_TYPE_META = {
   "dine-in": { label: "Dine-in", service: "Dine-in service" },
-  takeout: { label: "Takeout", service: "Counter pickup" },
+  pickup: { label: "Pickup", service: "Counter pickup" },
   delivery: { label: "Delivery", service: "Delivery dispatch" },
 };
 
@@ -314,7 +314,7 @@ const ORDER_TYPE_FORM_COPY = {
     label: "Customer / Table",
     placeholder: "Table 7 or walk-in guest",
   },
-  takeout: {
+  pickup: {
     label: "Customer name",
     placeholder: "Walk-in guest or pickup name",
   },

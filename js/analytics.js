@@ -9,11 +9,6 @@ function renderAnalytics() {
     kpiRangeSelect.dataset.bound = "true";
     kpiRangeSelect.addEventListener("change", renderAnalytics);
   }
-  const salesTrendRangeSelect = document.getElementById("sales-trend-range");
-  if (salesTrendRangeSelect && !salesTrendRangeSelect.dataset.bound) {
-    salesTrendRangeSelect.dataset.bound = "true";
-    salesTrendRangeSelect.addEventListener("change", renderAnalytics);
-  }
   const categoryTabs = document.querySelectorAll(".chart-category-tab");
   const chartSections = document.querySelectorAll("[data-chart-category]");
   const applyCategoryFilter = (filter) => {
@@ -162,12 +157,12 @@ function renderAnalytics() {
   // Calculate top selling products by revenue
   const productRevenue = {};
   (appState.orders || []).forEach((order) => {
-    if (order.status === "served" && order.items) {
+    if (order.items || order.items_json || order.itemsJson) {
       try {
         const items =
           typeof order.items === "string"
             ? JSON.parse(order.items)
-            : order.items;
+            : order.items || order.items_json || order.itemsJson;
         items.forEach((item) => {
           const key = item.name || "Unknown";
           const revenue = (item.unitPrice || 0) * (item.qty || 0);
@@ -247,8 +242,8 @@ function renderAnalytics() {
   ];
   const revenueByDay = [0, 0, 0, 0, 0, 0, 0];
   (appState.orders || []).forEach((order) => {
-    if (order.status === "served" && order.servedAt) {
-      const dayIndex = new Date(order.servedAt).getDay();
+    if (order.timestamp) {
+      const dayIndex = new Date(order.timestamp).getDay();
       revenueByDay[dayIndex] += order.total || 0;
     }
   });
@@ -339,8 +334,8 @@ function renderAnalytics() {
     },
   });
 
-  // Order Type Distribution (Dine-in vs Takeout vs Delivery)
-  const orderTypes = { "dine-in": 0, takeout: 0, delivery: 0 };
+  // Order Type Distribution (Dine-in vs Pickup vs Delivery)
+  const orderTypes = { "dine-in": 0, pickup: 0, delivery: 0 };
   (appState.orders || []).forEach((order) => {
     const type = (order.orderType || order.type || "dine-in").toLowerCase();
     if (orderTypes.hasOwnProperty(type)) {
@@ -351,12 +346,12 @@ function renderAnalytics() {
   ChartManager.plot("performanceChart", {
     type: "doughnut",
     data: {
-      labels: ["Dine-in", "Takeout", "Delivery"],
+      labels: ["Dine-in", "Pickup", "Delivery"],
       datasets: [
         {
           data: [
             orderTypes["dine-in"],
-            orderTypes["takeout"],
+            orderTypes["pickup"],
             orderTypes["delivery"],
           ],
           backgroundColor: ["#f6c343", "#f97316", "#5c2c06"],
