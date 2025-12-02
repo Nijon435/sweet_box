@@ -4,8 +4,10 @@ function renderReports() {
     button.addEventListener("click", () => exportReport(button.dataset.report));
   });
 
-  // Populate staff selector
-  populateStaffSelector();
+  // Populate staff selector with retry mechanism
+  setTimeout(() => {
+    populateStaffSelector();
+  }, 500);
 
   // Set default month to current month
   const monthInput = document.getElementById("attendance-month");
@@ -21,15 +23,24 @@ function populateStaffSelector() {
   const staffSelect = document.getElementById("staff-select");
   if (!staffSelect) return;
 
+  // Ensure appState is loaded
+  if (!appState || !appState.employees) {
+    console.warn("Employees not loaded yet, retrying...");
+    setTimeout(populateStaffSelector, 500);
+    return;
+  }
+
   const employees = (appState.employees || []).filter((e) => !e.archived);
 
-  staffSelect.innerHTML = '<option value="">Select Staff...</option>';
+  staffSelect.innerHTML = '<option value="">Choose staff member...</option>';
   employees.forEach((emp) => {
     const option = document.createElement("option");
     option.value = emp.id;
     option.textContent = `${emp.name} - ${emp.permission || "staff"}`;
     staffSelect.appendChild(option);
   });
+
+  console.log(`Loaded ${employees.length} employees into dropdown`);
 }
 
 function exportReport(type) {
@@ -59,46 +70,260 @@ function exportReport(type) {
     alert("SheetJS is required for exports");
     return;
   }
-  let sheetData = [];
-  const today = todayKey();
+
+  // Route to appropriate export function
   switch (type) {
     case "inventory":
-      sheetData = appState.inventory.map((item) => ({
-        Category: item.category,
-        Item: item.name,
-        Quantity: `${item.quantity}`,
-        "Reorder Point": item.reorderPoint,
-        Cost: item.cost,
-      }));
+      exportInventoryReport();
+      break;
+    case "inventory-usage":
+      exportInventoryUsageReport();
+      break;
+    case "low-stock":
+      exportLowStockReport();
       break;
     case "sales":
-      sheetData = appState.salesHistory.map((entry) => ({
-        Date: entry.date,
-        Total: entry.total,
-      }));
+      exportSalesReport();
       break;
-    case "attendance":
-      sheetData = getTodaysLogs().map((log) => ({
-        Employee: getEmployee(log.employeeId)?.name || log.employeeId,
-        Action: log.action,
-        Timestamp: formatTime(log.timestamp),
-        Shift: log.shift || log.note || "",
-      }));
+    case "orders":
+      exportOrdersReport();
       break;
     case "financial":
-      sheetData = [
-        { Metric: "Revenue", Value: salesToday() },
-        { Metric: "Average Daily", Value: salesYesterday() },
-        { Metric: "Inventory Value", Value: inventoryStats().value },
-      ];
+      exportFinancialReport();
+      break;
+    case "employees":
+      exportEmployeesReport();
+      break;
+    case "attendance":
+      exportAttendanceReport();
       break;
     default:
-      sheetData = [];
+      alert(`Report type "${type}" not implemented yet`);
   }
-  const sheet = XLSX.utils.json_to_sheet(sheetData);
+}
+
+// ========== Export Functions ==========
+
+function exportInventoryReport() {
+  const inventory = (appState.inventory || []).filter((item) => !item.archived);
+
+  const sheetData = inventory.map((item) => ({
+    Category: item.category || "N/A",
+    "Item Name": item.name,
+    Quantity: item.quantity,
+    Unit: item.unit || "units",
+    "Unit Cost (₱)": item.cost || 0,
+    "Total Value (₱)": (item.quantity * (item.cost || 0)).toFixed(2),
+    "Reorder Point": item.reorderPoint || 10,
+    Status: item.quantity < (item.reorderPoint || 10) ? "Low Stock" : "In Stock",
+    "Date Purchased": item.datePurchased || "N/A",
+    "Use By Date": item.useByDate || "N/A",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, sheet, `${type}-report`);
-  XLSX.writeFile(wb, `${type}-report-${today}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+
+  ws["!cols"] = [
+    { wch: 15 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
+    { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
+  ];
+
+  XLSX.writeFile(wb, `Inventory_Ledger_${todayKey()}.xlsx`);
+}
+
+function exportInventoryUsageReport() {
+  const usageLogs = (appState.inventoryUsageLogs || []).filter((log) => !log.archived);
+
+  const sheetData = usageLogs.map((log) => {
+    const item = (appState.inventory || []).find((i) => i.id === log.inventoryItemId);
+
+    return {
+      Date: new Date(log.timestamp || log.created_at).toLocaleDateString(),
+      Time: new Date(log.timestamp || log.created_at).toLocaleTimeString(),
+      "Item Name": item ? item.name : "Unknown",
+      Quantity: log.quantity,
+      Unit: item?.unit || "units",
+      Reason: log.reason || "N/A",
+      Notes: log.notes || "",
+      "Recorded By": log.createdBy || "System",
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Usage Logs");
+
+  ws["!cols"] = [
+    { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 10 },
+    { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 20 },
+  ];
+
+  XLSX.writeFile(wb, `Inventory_Usage_${todayKey()}.xlsx`);
+}
+
+function exportLowStockReport() {
+  const inventory = (appState.inventory || []).filter((item) => !item.archived);
+
+  const lowStockItems = inventory.filter((item) => {
+    const reorderPoint = item.reorderPoint || 10;
+    return item.quantity < reorderPoint;
+  });
+
+  const sheetData = lowStockItems.map((item) => ({
+    Category: item.category || "N/A",
+    "Item Name": item.name,
+    "Current Quantity": item.quantity,
+    Unit: item.unit || "units",
+    "Reorder Point": item.reorderPoint || 10,
+    Deficit: (item.reorderPoint || 10) - item.quantity,
+    "Unit Cost (₱)": item.cost || 0,
+    "Restock Cost (₱)": (((item.reorderPoint || 10) - item.quantity) * (item.cost || 0)).toFixed(2),
+    Urgency: item.quantity === 0 ? "CRITICAL" : "Low",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Low Stock");
+
+  ws["!cols"] = [
+    { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 12 },
+    { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 10 },
+  ];
+
+  XLSX.writeFile(wb, `Low_Stock_Alert_${todayKey()}.xlsx`);
+}
+
+function exportSalesReport() {
+  const salesHistory = appState.salesHistory || [];
+
+  const sheetData = salesHistory.map((entry) => ({
+    Date: entry.date,
+    "Total Sales (₱)": entry.total.toFixed(2),
+    "Number of Orders": entry.orderCount || 0,
+    "Average Order Value (₱)": entry.orderCount > 0 ? (entry.total / entry.orderCount).toFixed(2) : 0,
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sales");
+
+  ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+
+  XLSX.writeFile(wb, `Sales_Summary_${todayKey()}.xlsx`);
+}
+
+function exportOrdersReport() {
+  const orders = appState.orders || [];
+
+  const sheetData = orders.map((order) => ({
+    "Order ID": order.id,
+    Date: new Date(order.timestamp).toLocaleDateString(),
+    Time: new Date(order.timestamp).toLocaleTimeString(),
+    Customer: order.customerName || "Walk-in",
+    Type: order.orderType || order.type || "dine-in",
+    Items: order.items?.map((i) => `${i.name} (${i.quantity})`).join(", ") || "",
+    Subtotal: order.subtotal?.toFixed(2) || 0,
+    Tax: order.tax?.toFixed(2) || 0,
+    Total: order.total?.toFixed(2) || 0,
+    "Payment Method": order.paymentMethod || "cash",
+    Status: order.status || "completed",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Orders");
+
+  ws["!cols"] = [
+    { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 12 },
+    { wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 },
+  ];
+
+  XLSX.writeFile(wb, `Order_History_${todayKey()}.xlsx`);
+}
+
+function exportFinancialReport() {
+  const totalRevenue = (appState.salesHistory || []).reduce((sum, entry) => sum + entry.total, 0);
+
+  const inventoryValue = (appState.inventory || [])
+    .filter((item) => !item.archived)
+    .reduce((sum, item) => sum + item.quantity * (item.cost || 0), 0);
+
+  const totalOrders = (appState.orders || []).length;
+  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  const last30Days = (appState.salesHistory || []).slice(-30);
+  const last30DaysRevenue = last30Days.reduce((sum, entry) => sum + entry.total, 0);
+  const avgDailyRevenue = last30Days.length > 0 ? last30DaysRevenue / last30Days.length : 0;
+
+  const sheetData = [
+    { Metric: "Total Revenue", Value: `₱${totalRevenue.toFixed(2)}` },
+    { Metric: "Total Orders", Value: totalOrders },
+    { Metric: "Average Order Value", Value: `₱${avgOrderValue.toFixed(2)}` },
+    { Metric: "Inventory Value", Value: `₱${inventoryValue.toFixed(2)}` },
+    { Metric: "Average Daily Revenue (Last 30 Days)", Value: `₱${avgDailyRevenue.toFixed(2)}` },
+    { Metric: "Total Employees", Value: (appState.employees || []).filter((e) => !e.archived).length },
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Financial");
+
+  ws["!cols"] = [{ wch: 35 }, { wch: 20 }];
+
+  XLSX.writeFile(wb, `Financial_Snapshot_${todayKey()}.xlsx`);
+}
+
+function exportEmployeesReport() {
+  const employees = (appState.employees || []).filter((e) => !e.archived);
+
+  const sheetData = employees.map((emp) => ({
+    Name: emp.name,
+    Email: emp.email || "N/A",
+    Role: emp.permission || "staff",
+    "Shift Start": emp.shiftStart || "N/A",
+    "Shift End": emp.shiftEnd || "N/A",
+    "Date Hired": emp.dateHired || "N/A",
+    Status: emp.archived ? "Archived" : "Active",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Employees");
+
+  ws["!cols"] = [
+    { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 12 },
+    { wch: 12 }, { wch: 15 }, { wch: 10 },
+  ];
+
+  XLSX.writeFile(wb, `Employee_Directory_${todayKey()}.xlsx`);
+}
+
+function exportAttendanceReport() {
+  const attendanceLogs = (appState.attendanceLogs || []).filter((log) => !log.archived);
+
+  const sheetData = attendanceLogs.map((log) => {
+    const employee = (appState.employees || []).find((e) => e.id === log.employeeId);
+
+    return {
+      Date: new Date(log.timestamp).toLocaleDateString(),
+      Time: new Date(log.timestamp).toLocaleTimeString(),
+      Employee: employee ? employee.name : log.employeeId,
+      Action: log.action === "in" ? "Clock In" : "Clock Out",
+      Shift: log.shift || "N/A",
+      Notes: log.note || "",
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+
+  ws["!cols"] = [
+    { wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 30 },
+  ];
+
+  XLSX.writeFile(wb, `Attendance_Log_${todayKey()}.xlsx`);
 }
 
 // Export Staff Attendance Report as Excel (Daily Time Record format)
@@ -414,6 +639,16 @@ function exportStaffAttendanceWord(staffId, monthValue) {
   )}_${monthName}_${year}.doc`;
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+// ========== Utility Functions ==========
+
+function todayKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 window.pageRenderers = window.pageRenderers || {};
