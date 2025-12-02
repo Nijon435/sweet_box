@@ -97,21 +97,6 @@
           </div>
         </header>
 
-        <section class="grid grid-3">
-          <article class="card">
-            <h3>Inventory Turnover</h3>
-            <strong id="analytics-turnover">0x</strong>
-          </article>
-          <article class="card">
-            <h3>Average Ticket</h3>
-            <strong id="analytics-ticket">₱0.00</strong>
-          </article>
-          <article class="card">
-            <h3>Productivity</h3>
-            <strong id="analytics-productivity">0 tasks / staff</strong>
-          </article>
-        </section>
-
         <section class="card kpi-panel">
           <div class="section-heading">
             <h2>Operations KPIs</h2>
@@ -133,6 +118,18 @@
             <article>
               <p>Stock usage patterns</p>
               <strong id="kpi-stock">0 units</strong>
+            </article>
+            <article>
+              <p>Inventory Turnover</p>
+              <strong id="analytics-turnover">0x</strong>
+            </article>
+            <article>
+              <p>Average Ticket</p>
+              <strong id="analytics-ticket">₱0.00</strong>
+            </article>
+            <article>
+              <p>Productivity</p>
+              <strong id="analytics-productivity">0 orders</strong>
             </article>
           </div>
         </section>
@@ -180,21 +177,21 @@
             data-chart-category="sales"
           >
             <div class="section-heading">
-              <h2>Top Selling Products</h2>
-              <span class="pill">By revenue</span>
+              <h2>Peak Hour Efficiency</h2>
+              <span class="pill">Orders per hour</span>
             </div>
-            <canvas id="salesMixChart" height="200"></canvas>
+            <canvas id="peakHourChart" height="200"></canvas>
             <div
-              id="inventory-recommendations"
+              id="peak-hour-insights"
               style="
                 margin-top: 1rem;
                 padding: 0.75rem;
-                background: #fef3c7;
+                background: #dbeafe;
                 border-radius: 8px;
                 font-size: 0.9rem;
               "
             >
-              <!-- Recommendations will be inserted here -->
+              <!-- Peak hour insights will be inserted here -->
             </div>
           </article>
           <article

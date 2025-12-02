@@ -69,49 +69,83 @@ function renderAnalytics() {
     0
   );
   const usageEstimate = Math.round(weeklyUsage * (kpiRangeDays / 7));
+
+  // Calculate additional KPIs
+  const ordersInPeriod = (appState.orders || []).filter((order) => {
+    if (order.timestamp) {
+      const orderDate = new Date(order.timestamp);
+      return orderDate >= kpiCutoff;
+    }
+    return false;
+  });
+
+  const totalOrders = ordersInPeriod.length;
+
+  // Calculate metrics for moved cards
+  const inventoryItems = appState.inventory || [];
+  const inventoryValue = inventoryItems.reduce((sum, item) => {
+    return sum + (item.quantity || 0) * (item.costPerUnit || 0);
+  }, 0);
+  const inventoryTurnover =
+    inventoryValue > 0 ? (totalSalesKpi / inventoryValue).toFixed(1) : "0.0";
+  const avgTicket = totalOrders > 0 ? totalSalesKpi / totalOrders : 0;
+  const productivity =
+    totalAttendanceKpi > 0
+      ? (totalOrders / totalAttendanceKpi).toFixed(1)
+      : "0.0";
+
   const kpiMap = {
     "kpi-sales": formatCurrency(totalSalesKpi),
     "kpi-attendance": `${totalAttendanceKpi} logs`,
     "kpi-stock": `${usageEstimate} units`,
+    "analytics-turnover": `${inventoryTurnover}x`,
+    "analytics-ticket": formatCurrency(avgTicket),
+    "analytics-productivity": `${productivity} orders`,
   };
   Object.entries(kpiMap).forEach(([id, value]) => {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
   });
-  
+
+  // Render Peak Hour Efficiency Chart
+  renderPeakHourChart(ordersInPeriod);
+
   // Calculate attendance trend from actual attendance logs
   const computeAttendanceTrend = () => {
     const trend = [];
     const daysToShow = 30; // Show last 30 days
     const today = new Date();
-    
+
     for (let i = daysToShow - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateKey = date.toISOString().split('T')[0];
-      
+      const dateKey = date.toISOString().split("T")[0];
+
       // Count logs for this day
-      const dayLogs = (appState.attendanceLogs || []).filter(log => 
-        log.timestamp.startsWith(dateKey) && !log.archived
+      const dayLogs = (appState.attendanceLogs || []).filter(
+        (log) => log.timestamp.startsWith(dateKey) && !log.archived
       );
-      
-      const present = dayLogs.filter(log => log.action === 'in').length;
-      const late = dayLogs.filter(log => 
-        log.action === 'in' && log.note && log.note.toLowerCase().includes('late')
+
+      const present = dayLogs.filter((log) => log.action === "in").length;
+      const late = dayLogs.filter(
+        (log) =>
+          log.action === "in" &&
+          log.note &&
+          log.note.toLowerCase().includes("late")
       ).length;
-      const onLeave = dayLogs.filter(log => log.action === 'leave').length;
-      
+      const onLeave = dayLogs.filter((log) => log.action === "leave").length;
+
       trend.push({
         date: dateKey,
         present: present,
         late: late,
-        onLeave: onLeave
+        onLeave: onLeave,
       });
     }
-    
+
     return trend;
   };
-  
+
   const attendanceTrendData = computeAttendanceTrend();
   const attendanceWindow = attendanceTrendData.slice(-attendanceRange);
 
@@ -584,6 +618,98 @@ function renderAnalytics() {
       scales: {
         x: {
           beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+// Render Peak Hour Efficiency Chart
+function renderPeakHourChart(ordersInPeriod) {
+  // Group orders by hour
+  const hourlyOrders = {};
+  for (let hour = 0; hour < 24; hour++) {
+    hourlyOrders[hour] = 0;
+  }
+
+  ordersInPeriod.forEach((order) => {
+    if (!order.timestamp) return;
+    const hour = new Date(order.timestamp).getHours();
+    hourlyOrders[hour]++;
+  });
+
+  // Find peak hours
+  const peakHour = Object.entries(hourlyOrders).reduce(
+    (max, [hour, count]) =>
+      count > max.count ? { hour: parseInt(hour), count } : max,
+    { hour: 0, count: 0 }
+  );
+
+  const formatHour = (h) => {
+    const period = h >= 12 ? "PM" : "AM";
+    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${displayHour}${period}`;
+  };
+
+  // Update insights
+  const insightsDiv = document.getElementById("peak-hour-insights");
+  if (insightsDiv) {
+    const avgOrdersPerHour =
+      ordersInPeriod.length > 0
+        ? (ordersInPeriod.length / 24).toFixed(1)
+        : "0.0";
+    insightsDiv.innerHTML = `
+      <strong>📊 Peak Hour:</strong> ${formatHour(peakHour.hour)} with ${
+      peakHour.count
+    } orders<br>
+      <strong>📈 Average:</strong> ${avgOrdersPerHour} orders per hour
+    `;
+  }
+
+  // Destroy existing chart
+  const existingChart = Chart.getChart("peakHourChart");
+  if (existingChart) existingChart.destroy();
+
+  // Create chart
+  const ctx = document.getElementById("peakHourChart");
+  if (!ctx) return;
+
+  const labels = Object.keys(hourlyOrders).map((h) => formatHour(parseInt(h)));
+  const data = Object.values(hourlyOrders);
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Orders",
+          data,
+          backgroundColor: "rgba(59, 130, 246, 0.5)",
+          borderColor: "rgba(59, 130, 246, 1)",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.parsed.y} orders`,
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+          },
         },
       },
     },
