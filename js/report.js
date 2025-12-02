@@ -13,7 +13,7 @@ function renderReports() {
   // Attach click handlers to all export buttons
   const buttons = document.querySelectorAll("[data-report]");
   console.log(`Found ${buttons.length} export buttons`);
-  
+
   buttons.forEach((button) => {
     button.addEventListener("click", (e) => {
       e.preventDefault();
@@ -55,13 +55,17 @@ function populateStaffSelector() {
   const users = window.appState.users || [];
   const employees = users.filter((e) => !e.archived);
 
-  console.log(`Total users: ${users.length}, Active employees: ${employees.length}`);
+  console.log(
+    `Total users: ${users.length}, Active employees: ${employees.length}`
+  );
 
   staffSelect.innerHTML = '<option value="">Choose staff member...</option>';
   employees.forEach((emp) => {
     const option = document.createElement("option");
     option.value = emp.id;
-    option.textContent = `${emp.name} - ${emp.permission || emp.role || "staff"}`;
+    option.textContent = `${emp.name} - ${
+      emp.permission || emp.role || "staff"
+    }`;
     staffSelect.appendChild(option);
   });
 
@@ -105,7 +109,9 @@ function exportReport(type) {
   // Check if XLSX library is loaded for Excel exports
   if (typeof XLSX === "undefined") {
     console.error("SheetJS library not loaded!");
-    alert("Excel export library (SheetJS) is not loaded. Please refresh the page.");
+    alert(
+      "Excel export library (SheetJS) is not loaded. Please refresh the page."
+    );
     return;
   }
 
@@ -152,7 +158,9 @@ function exportReport(type) {
 
 function exportInventoryReport() {
   console.log("Exporting inventory report...");
-  const inventory = (window.appState.inventory || []).filter((item) => !item.archived);
+  const inventory = (window.appState.inventory || []).filter(
+    (item) => !item.archived
+  );
 
   const sheetData = inventory.map((item) => ({
     Category: item.category || "N/A",
@@ -231,7 +239,9 @@ function exportInventoryUsageReport() {
 
 function exportLowStockReport() {
   console.log("Exporting low stock report...");
-  const inventory = (window.appState.inventory || []).filter((item) => !item.archived);
+  const inventory = (window.appState.inventory || []).filter(
+    (item) => !item.archived
+  );
 
   const lowStockItems = inventory.filter((item) => {
     const reorderPoint = item.reorderPoint || 10;
