@@ -972,7 +972,7 @@ function renderUsageLogs(logs) {
   if (!logs || logs.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
+        <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
           No usage logs recorded yet
         </td>
       </tr>
@@ -986,14 +986,14 @@ function renderUsageLogs(logs) {
       const formattedDate = timestamp.toLocaleDateString();
       const formattedTime = timestamp.toLocaleTimeString();
       const item = appState.inventory?.find(
-        (i) => i.id === log.inventory_item_id
+        (i) => i.id === log.inventoryItemId
       );
-      const itemName = item ? item.name : `Item #${log.inventory_item_id}`;
+      const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
       const quantity = log.quantity || 0;
       const unit = item?.unit || "";
       const reason = log.reason || "N/A";
       const notes = log.notes || "-";
-      const recordedBy = log.user_name || "System";
+      const recordedBy = log.createdBy || "System";
 
       return `
       <tr>
@@ -1003,6 +1003,13 @@ function renderUsageLogs(logs) {
         <td>${formatReason(reason)}</td>
         <td>${notes}</td>
         <td>${recordedBy}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="archiveUsageLog(${
+            log.id
+          })" title="Archive this log">
+            Archive
+          </button>
+        </td>
       </tr>
     `;
     })
@@ -1021,6 +1028,46 @@ function formatReason(reason) {
   };
   return reasonMap[reason] || reason;
 }
+
+// Archive a usage log
+async function archiveUsageLog(logId) {
+  if (
+    !confirm("Archive this usage log? It will be moved to the Archive page.")
+  ) {
+    return;
+  }
+
+  try {
+    const apiBase = window.API_BASE_URL || "";
+    const response = await fetch(
+      `${apiBase}/api/inventory-usage-logs/${logId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          archived: true,
+          archivedAt: new Date().toISOString(),
+          archivedBy: appState.currentUser?.id,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to archive usage log");
+    }
+
+    showToast("Usage log archived successfully", "success");
+    loadUsageLogs(); // Reload the table
+  } catch (error) {
+    console.error("Error archiving usage log:", error);
+    showToast("Failed to archive usage log", "error");
+  }
+}
+
+window.archiveUsageLog = archiveUsageLog;
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["inventory"] = function () {

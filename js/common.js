@@ -1705,6 +1705,7 @@ async function logIngredientUsage(
     orderId: orderId,
     notes: notes,
     timestamp: getLocalTimestamp(),
+    userId: appState.currentUser?.id,
   };
 
   // Add to local state

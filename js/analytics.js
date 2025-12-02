@@ -413,59 +413,51 @@ function renderAnalytics() {
     },
   });
 
+  // Attendance Trend - Simple daily clock-ins bar chart
+  const attendanceDays = attendanceRange;
+  const attendanceLabels = [];
+  const attendanceData = [];
+
+  for (let i = attendanceDays - 1; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split("T")[0];
+
+    // Count clock-ins for this day
+    const clockIns = (appState.attendanceLogs || []).filter(
+      (log) =>
+        log.timestamp.startsWith(dateKey) &&
+        log.action === "in" &&
+        !log.archived
+    ).length;
+
+    attendanceLabels.push(formatDateKeyShort(dateKey));
+    attendanceData.push(clockIns);
+  }
+
   ChartManager.plot("attendanceTrendChart", {
-    type: "line",
+    type: "bar",
     data: {
-      labels:
-        attendanceWindow.length > 0
-          ? attendanceWindow.map((item) => item.label)
-          : ["No Data"],
+      labels: attendanceLabels,
       datasets: [
         {
-          label: "Present",
-          data:
-            attendanceWindow.length > 0
-              ? attendanceWindow.map((item) => item.present)
-              : [0],
-          borderColor: "#22c55e",
-          backgroundColor: "rgba(34, 197, 94, 0.1)",
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: "Late",
-          data:
-            attendanceWindow.length > 0
-              ? attendanceWindow.map((item) => item.late)
-              : [0],
-          borderColor: "#f97316",
-          backgroundColor: "rgba(249, 115, 22, 0.1)",
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: "On Leave",
-          data:
-            attendanceWindow.length > 0
-              ? attendanceWindow.map((item) => item.onLeave || 0)
-              : [0],
-          borderColor: "#ef4444",
-          backgroundColor: "rgba(239, 68, 68, 0.1)",
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: "On Leave",
-          data: attendanceWindow.map((item) => item.onLeave || 0),
-          borderColor: "#8b5cf6",
-          backgroundColor: "rgba(139, 92, 246, 0.1)",
-          tension: 0.4,
-          fill: true,
+          label: "Clock-ins",
+          data: attendanceData,
+          backgroundColor: "#10b981",
+          borderRadius: 6,
         },
       ],
     },
     options: {
       responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.parsed.y} employees clocked in`,
+          },
+        },
+      },
       scales: {
         y: {
           beginAtZero: true,

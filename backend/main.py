@@ -678,7 +678,11 @@ async def get_usage_logs():
         )
         
         rows = await conn.fetch(
-            "SELECT * FROM inventory_usage_logs ORDER BY created_at DESC LIMIT 500"
+            """SELECT iul.*, u.name as user_name 
+               FROM inventory_usage_logs iul
+               LEFT JOIN users u ON iul.created_by = u.id
+               WHERE iul.archived = FALSE
+               ORDER BY iul.created_at DESC LIMIT 500"""
         )
         
         logs = []
@@ -691,6 +695,8 @@ async def get_usage_logs():
                 "orderId": row["order_id"],
                 "notes": row["notes"],
                 "timestamp": row["created_at"].isoformat() if row["created_at"] else None,
+                "createdBy": row["user_name"] if row["user_name"] else "System",
+                "archived": row.get("archived", False),
             })
         
         await conn.close()
@@ -720,15 +726,19 @@ async def create_usage_log(log: dict):
             timestamp = datetime.now()
             logger.warning(f"Invalid timestamp, using current time: {timestamp}")
         
+        # Get user_id from session if available
+        user_id = log.get("userId") or log.get("createdBy")
+        
         await conn.execute(
-            """INSERT INTO inventory_usage_logs (inventory_item_id, quantity, reason, order_id, notes, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6)""",
+            """INSERT INTO inventory_usage_logs (inventory_item_id, quantity, reason, order_id, notes, created_at, created_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)""",
             log.get("inventoryItemId"),
             float(log.get("quantity", 0)),
             log.get("reason"),
             log.get("orderId"),
             log.get("notes"),
-            timestamp
+            timestamp,
+            user_id
         )
         
         await conn.close()
