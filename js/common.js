@@ -163,12 +163,14 @@ const isManager = () => getCurrentUser()?.permission === "manager";
 
 const isAdminOrManager = () => isAdmin() || isManager();
 
-const getLandingPageForRole = (role) => {
-  if (role === "admin") return "index.html";
-  if (role === "manager") return "employees.html";
-  if (role === "kitchen_staff") return "orders.html";
-  if (role === "front_staff") return "orders.html";
-  if (role === "delivery_staff") return "orders.html";
+const getLandingPageForRole = (permission) => {
+  // Takes permission field (admin, manager, kitchen_staff, staff, etc.)
+  if (permission === "admin") return "index.html";
+  if (permission === "manager") return "employees.html";
+  if (permission === "kitchen_staff") return "orders.html";
+  if (permission === "front_staff" || permission === "staff")
+    return "orders.html";
+  if (permission === "delivery_staff") return "orders.html";
   return "attendance.html";
 };
 
@@ -228,7 +230,7 @@ async function syncStateToDatabase() {
   }
 }
 
-function saveState() {
+async function saveState() {
   try {
     // Only store essential data (users) in localStorage to avoid quota issues
     const essentialData = {
@@ -237,11 +239,8 @@ function saveState() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(essentialData));
 
-    // Debounce database sync (wait 500ms after last change)
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-      syncStateToDatabase();
-    }, 500);
+    // Sync to database immediately
+    await syncStateToDatabase();
   } catch (error) {
     console.warn("Unable to save data", error);
     // Try to clear and save again if quota exceeded
@@ -252,6 +251,7 @@ function saveState() {
         lastSync: Date.now(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(essentialData));
+      await syncStateToDatabase();
     } catch (retryError) {
       console.error(
         "Failed to save even after clearing localStorage",
@@ -880,7 +880,8 @@ function updateSessionDisplay(user) {
   }
   nameNode.textContent =
     displayNameFromAccount(user, { titleCase: true }) || "";
-  roleNode.textContent = formatRole(user.role) || "";
+  // Use permission instead of role for display
+  roleNode.textContent = formatRole(user.permission || user.role) || "";
   if (logoutButton) logoutButton.disabled = false;
 }
 

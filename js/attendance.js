@@ -12,7 +12,9 @@ function renderAttendance() {
 
   // Display current user
   if (currentUserName && currentUser) {
-    currentUserName.textContent = `${currentUser.name} (${currentUser.role})`;
+    currentUserName.textContent = `${currentUser.name} (${formatRole(
+      currentUser.permission || currentUser.role
+    )})`;
   }
 
   // Get today's logs for current user
@@ -449,7 +451,8 @@ function renderAttendance() {
       const currentUser = getCurrentUser();
       const canArchive =
         currentUser &&
-        (currentUser.role === "admin" || currentUser.role === "manager");
+        (currentUser.permission === "admin" ||
+          currentUser.permission === "manager");
 
       row.innerHTML = `
         <td>${employee?.name || "Unknown"}</td>
@@ -678,7 +681,13 @@ function attendancePreviousPage() {
   if (attendanceCurrentPage > 1) {
     attendanceCurrentPage--;
     renderAttendance();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll to the Timestamp Log section
+    const logSection = document
+      .querySelector("#attendance-log-table")
+      ?.closest(".table-wrapper");
+    if (logSection) {
+      logSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 }
 
@@ -703,7 +712,13 @@ function attendanceNextPage() {
   if (attendanceCurrentPage < totalPages) {
     attendanceCurrentPage++;
     renderAttendance();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll to the Timestamp Log section
+    const logSection = document
+      .querySelector("#attendance-log-table")
+      ?.closest(".table-wrapper");
+    if (logSection) {
+      logSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 }
 

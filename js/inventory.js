@@ -831,7 +831,11 @@ function inventoryPreviousPage() {
   if (currentPage > 1) {
     currentPage--;
     renderUnifiedTable();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll to the inventory table section
+    const tableSection = document.querySelector("#all-items-section");
+    if (tableSection) {
+      tableSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 }
 
@@ -868,7 +872,11 @@ function inventoryNextPage() {
   if (currentPage < totalPages) {
     currentPage++;
     renderUnifiedTable();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll to the inventory table section
+    const tableSection = document.querySelector("#all-items-section");
+    if (tableSection) {
+      tableSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 }
 

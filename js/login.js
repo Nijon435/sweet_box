@@ -464,7 +464,9 @@ function initLoginPage() {
           setSession(currentUser.id);
           const landing =
             typeof getLandingPageForRole === "function"
-              ? getLandingPageForRole(currentUser.role)
+              ? getLandingPageForRole(
+                  currentUser.permission || currentUser.role
+                )
               : "index.html";
           console.log("Redirecting to:", landing);
           window.location.href = landing;
