@@ -7,6 +7,16 @@ function renderDashboard() {
   const salesRange = Number(salesRangeSelect?.value || 14);
   const salesWindow = (appState.salesHistory || []).slice(-salesRange);
 
+  console.log(
+    "Sales History Data:",
+    appState.salesHistory?.length || 0,
+    "entries"
+  );
+  console.log("Sales Window:", salesWindow.length, "entries");
+  if (salesWindow.length > 0) {
+    console.log("Sample entry:", salesWindow[0]);
+  }
+
   const todaySales = salesToday();
   const yesterdaySales = salesYesterday();
   const delta = yesterdaySales

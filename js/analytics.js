@@ -163,9 +163,19 @@ function renderAnalytics() {
           typeof order.items === "string"
             ? JSON.parse(order.items)
             : order.items || order.items_json || order.itemsJson;
+
+        // Calculate revenue per item based on order total
+        const totalQty = items.reduce((sum, item) => sum + (item.qty || 0), 0);
+        const orderTotal = order.total || 0;
+
         items.forEach((item) => {
           const key = item.name || "Unknown";
-          const revenue = (item.unitPrice || 0) * (item.qty || 0);
+          // If unitPrice exists, use it; otherwise distribute order total proportionally
+          const revenue = item.unitPrice
+            ? (item.unitPrice || 0) * (item.qty || 0)
+            : totalQty > 0
+            ? (orderTotal * (item.qty || 0)) / totalQty
+            : 0;
           productRevenue[key] = (productRevenue[key] || 0) + revenue;
         });
       } catch (e) {
