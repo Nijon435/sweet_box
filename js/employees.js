@@ -1047,7 +1047,7 @@ function renderLeaveApprovals() {
           }
         }
 
-        return `<div style="font-size: 0.7rem; margin: 0.15rem 0; line-height: 1.3;"><strong style="font-size: 0.65rem;">${label}:</strong> ${currentValue} → ${value}</div>`;
+        return `<div style="font-size: 0.7rem; margin: 0.15rem 0; line-height: 1.3;"><strong style="font-size: 0.75rem;">${label}:</strong> ${currentValue} → ${value}</div>`;
       })
       .join("");
 

@@ -86,6 +86,16 @@ function renderAnalytics() {
     lastEntry: attendanceWindow[attendanceWindow.length - 1],
   });
 
+  // Check if attendance trend has any actual data
+  const hasAttendanceData = attendanceWindow.some(
+    (day) => day.present > 0 || day.late > 0 || day.onLeave > 0
+  );
+  if (!hasAttendanceData && attendanceWindow.length > 0) {
+    console.warn(
+      "⚠️ Attendance trend contains 30 days but all counts are zero. The 'attendance_logs' table may be empty or contain no 'action=in' records. Use the Attendance page to clock in employees."
+    );
+  }
+
   const inventorySummary = inventoryStats();
   let totalSales = (appState.salesHistory || []).reduce(
     (acc, entry) => acc + (entry.total || 0),
@@ -128,7 +138,9 @@ function renderAnalytics() {
     firstOrderFields: appState.orders?.[0]
       ? Object.keys(appState.orders[0])
       : [],
-    firstOrderItemsJson: appState.orders?.[0]?.items_json,
+    firstOrderItemsJson_camelCase: appState.orders?.[0]?.itemsJson,
+    firstOrderItemsJson_snakeCase: appState.orders?.[0]?.items_json,
+    itemsJsonType: typeof appState.orders?.[0]?.itemsJson,
     attendanceTrendSample: appState.attendanceTrend?.[0],
   });
 
@@ -184,40 +196,59 @@ function renderAnalytics() {
     topProducts: topProducts,
     sampleRevenue: Object.entries(productRevenue).slice(0, 3),
     processedOrders: (appState.orders || []).length,
+    ordersWithItems: (appState.orders || []).filter(
+      (o) => o.itemsJson && Array.isArray(o.itemsJson) && o.itemsJson.length > 0
+    ).length,
   });
+
+  // Show message if no order items data exists
+  if (topProducts.length === 0 && (appState.orders || []).length > 0) {
+    console.warn(
+      "⚠️ Orders exist but contain no item data. The 'items_json' column in the database may be NULL. New orders should populate this field."
+    );
+  }
 
   // Generate inventory recommendations
   const recommendationsDiv = document.getElementById(
     "inventory-recommendations"
   );
-  if (recommendationsDiv && topProducts.length > 0) {
-    const recommendations = [];
-    topProducts.forEach((product) => {
-      // Find matching inventory item
-      const inventoryItem = appState.inventory?.find(
-        (item) =>
-          item.name?.toLowerCase().includes(product.name.toLowerCase()) ||
-          product.name.toLowerCase().includes(item.name?.toLowerCase())
-      );
-
-      if (inventoryItem) {
-        const threshold =
-          inventoryItem.category === "supplies" ||
-          inventoryItem.category === "beverages"
-            ? 10
-            : 5;
-        if (inventoryItem.quantity < threshold) {
-          recommendations.push(
-            `<strong>${inventoryItem.name}</strong> is low stock (${
-              inventoryItem.quantity
-            } ${inventoryItem.unit || "units"})`
-          );
-        }
-      }
-    });
-
-    if (recommendations.length > 0) {
+  if (recommendationsDiv) {
+    if (topProducts.length === 0) {
+      // Show message when no product data exists
       recommendationsDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">ℹ️</span>
+          <span style="color: #1e40af;"><strong>No product data yet.</strong> Create new orders to see top selling products and recommendations.</span>
+        </div>
+      `;
+    } else {
+      const recommendations = [];
+      topProducts.forEach((product) => {
+        // Find matching inventory item
+        const inventoryItem = appState.inventory?.find(
+          (item) =>
+            item.name?.toLowerCase().includes(product.name.toLowerCase()) ||
+            product.name.toLowerCase().includes(item.name?.toLowerCase())
+        );
+
+        if (inventoryItem) {
+          const threshold =
+            inventoryItem.category === "supplies" ||
+            inventoryItem.category === "beverages"
+              ? 10
+              : 5;
+          if (inventoryItem.quantity < threshold) {
+            recommendations.push(
+              `<strong>${inventoryItem.name}</strong> is low stock (${
+                inventoryItem.quantity
+              } ${inventoryItem.unit || "units"})`
+            );
+          }
+        }
+      });
+
+      if (recommendations.length > 0) {
+        recommendationsDiv.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
           <span style="font-size: 1.2rem;">⚠️</span>
           <strong style="color: #92400e;">Restock Recommendations:</strong>
@@ -226,13 +257,14 @@ function renderAnalytics() {
           ${recommendations.map((rec) => `<li>${rec}</li>`).join("")}
         </ul>
       `;
-    } else {
-      recommendationsDiv.innerHTML = `
+      } else {
+        recommendationsDiv.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.2rem;">✅</span>
           <span style="color: #15803d;"><strong>All good!</strong> Inventory levels are sufficient for top selling items.</span>
         </div>
       `;
+      }
     }
   }
 
