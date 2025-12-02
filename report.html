@@ -123,6 +123,54 @@
             </button>
           </article>
           <article class="report-card">
+            <h3>Staff Attendance Report</h3>
+            <p>Daily time record for each staff member (monthly format).</p>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+              <select
+                id="staff-select"
+                style="
+                  flex: 1;
+                  padding: 0.5rem;
+                  border: 1px solid #d1d5db;
+                  border-radius: 6px;
+                "
+              >
+                <option value="">Select Staff...</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+              <input
+                type="month"
+                id="attendance-month"
+                style="
+                  flex: 1;
+                  padding: 0.5rem;
+                  border: 1px solid #d1d5db;
+                  border-radius: 6px;
+                "
+              />
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+              <button
+                class="btn btn-primary"
+                data-report="staff-attendance-excel"
+                style="flex: 1"
+              >
+                Export Excel
+              </button>
+              <button
+                class="btn btn-secondary"
+                data-report="staff-attendance-word"
+                style="flex: 1"
+              >
+                Export Word
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="grid grid-2" style="margin-top: 1.5rem">
+          <article class="report-card">
             <h3>Financial Snapshot</h3>
             <p>High-level figures for owner briefings.</p>
             <button class="btn btn-primary" data-report="financial">

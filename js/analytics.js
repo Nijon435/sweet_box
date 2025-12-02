@@ -413,29 +413,26 @@ function renderAnalytics() {
     },
   });
 
-  // Attendance Trend - Multi-line chart showing daily clock-ins per employee
+  // Attendance Trend - Multi-line chart showing daily frequency of each status
   const attendanceDays = attendanceRange;
   const attendanceLabels = [];
+  const presentData = [];
+  const lateData = [];
+  const absentData = [];
+  const leaveData = [];
 
-  // Build date labels
-  for (let i = attendanceDays - 1; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    attendanceLabels.push(`${month}/${day}`);
-  }
-
-  // Get unique employees who have clocked in during the period
-  const employeeMap = new Map();
   const allEmployees = appState.employees || [];
 
-  // Track clock-ins by employee and date
+  // Build date labels and calculate status counts
   for (let i = attendanceDays - 1; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const dateKey = date.toISOString().split("T")[0];
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    attendanceLabels.push(`${month}/${day}`);
 
+    // Get all clock-in logs for this day
     const dayLogs = (appState.attendanceLogs || []).filter(
       (log) =>
         log.timestamp.startsWith(dateKey) &&
@@ -443,48 +440,113 @@ function renderAnalytics() {
         !log.archived
     );
 
+    // Get leave requests for this day
+    const dayLeaveRequests = (appState.requests || []).filter(
+      (req) =>
+        req.type === "leave" &&
+        req.status === "approved" &&
+        req.leaveDate &&
+        req.leaveDate.startsWith(dateKey)
+    );
+
+    let presentCount = 0;
+    let lateCount = 0;
+    let leaveCount = dayLeaveRequests.length;
+
+    // Check each employee who clocked in
     dayLogs.forEach((log) => {
-      if (!employeeMap.has(log.employeeId)) {
-        const emp = allEmployees.find((e) => e.id === log.employeeId);
-        employeeMap.set(log.employeeId, {
-          name: emp ? emp.name : `Employee ${log.employeeId}`,
-          data: new Array(attendanceDays).fill(0),
-        });
+      const employee = allEmployees.find((e) => e.id === log.employeeId);
+      if (!employee || !employee.shiftStart) {
+        // No shift start time, count as present
+        presentCount++;
+        return;
       }
-      const dayIndex = attendanceDays - 1 - i;
-      employeeMap.get(log.employeeId).data[dayIndex] = 1; // Mark present (1) for that day
+
+      // Parse shift start time
+      const [hours, minutes] = employee.shiftStart.split(":");
+      const shiftTime = new Date(date);
+      shiftTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      // Parse clock-in time
+      const clockInTime = new Date(log.timestamp);
+
+      // Late threshold: 15 minutes after shift start
+      const lateThreshold = new Date(shiftTime.getTime() + 15 * 60000);
+
+      if (clockInTime > lateThreshold) {
+        lateCount++;
+      } else {
+        presentCount++;
+      }
     });
+
+    // Calculate absent count (employees who didn't clock in and aren't on leave)
+    const employeesWhoLoggedIn = new Set(dayLogs.map((log) => log.employeeId));
+    const employeesOnLeave = new Set(
+      dayLeaveRequests.map((req) => req.userId || req.user_id)
+    );
+
+    const absentCount = allEmployees.filter(
+      (emp) =>
+        !employeesWhoLoggedIn.has(emp.id) && !employeesOnLeave.has(emp.id)
+    ).length;
+
+    presentData.push(presentCount);
+    lateData.push(lateCount);
+    absentData.push(absentCount);
+    leaveData.push(leaveCount);
   }
-
-  // Create datasets for each employee
-  const colors = [
-    "#10b981",
-    "#3b82f6",
-    "#f59e0b",
-    "#ef4444",
-    "#8b5cf6",
-    "#ec4899",
-    "#14b8a6",
-    "#f97316",
-  ];
-
-  const datasets = Array.from(employeeMap.values()).map((emp, index) => ({
-    label: emp.name,
-    data: emp.data,
-    borderColor: colors[index % colors.length],
-    backgroundColor: colors[index % colors.length] + "20",
-    tension: 0.4,
-    fill: false,
-    pointRadius: 4,
-    pointBackgroundColor: colors[index % colors.length],
-    borderWidth: 2,
-  }));
 
   ChartManager.plot("attendanceTrendChart", {
     type: "line",
     data: {
       labels: attendanceLabels,
-      datasets: datasets,
+      datasets: [
+        {
+          label: "Present",
+          data: presentData,
+          borderColor: "#10b981",
+          backgroundColor: "rgba(16, 185, 129, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 4,
+          pointBackgroundColor: "#10b981",
+          borderWidth: 2,
+        },
+        {
+          label: "Late",
+          data: lateData,
+          borderColor: "#f59e0b",
+          backgroundColor: "rgba(245, 158, 11, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 4,
+          pointBackgroundColor: "#f59e0b",
+          borderWidth: 2,
+        },
+        {
+          label: "Absent",
+          data: absentData,
+          borderColor: "#ef4444",
+          backgroundColor: "rgba(239, 68, 68, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 4,
+          pointBackgroundColor: "#ef4444",
+          borderWidth: 2,
+        },
+        {
+          label: "Leave",
+          data: leaveData,
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(99, 102, 241, 0.1)",
+          tension: 0.4,
+          fill: false,
+          pointRadius: 4,
+          pointBackgroundColor: "#6366f1",
+          borderWidth: 2,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -494,30 +556,21 @@ function renderAnalytics() {
           position: "top",
           labels: {
             usePointStyle: true,
-            padding: 10,
-            font: {
-              size: 11,
-            },
+            padding: 15,
           },
         },
         tooltip: {
           callbacks: {
-            label: (context) => {
-              const status = context.parsed.y === 1 ? "Present" : "Absent";
-              return `${context.dataset.label}: ${status}`;
-            },
+            label: (context) =>
+              `${context.dataset.label}: ${context.parsed.y} employees`,
           },
         },
       },
       scales: {
         y: {
           beginAtZero: true,
-          max: 1,
           ticks: {
             stepSize: 1,
-            callback: function (value) {
-              return value === 1 ? "Present" : "Absent";
-            },
           },
         },
       },
