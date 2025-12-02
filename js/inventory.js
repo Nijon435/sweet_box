@@ -1059,11 +1059,11 @@ async function archiveUsageLog(logId) {
       throw new Error("Failed to archive usage log");
     }
 
-    showToast("Usage log archived successfully", "success");
+    alert("Usage log archived successfully");
     loadUsageLogs(); // Reload the table
   } catch (error) {
     console.error("Error archiving usage log:", error);
-    showToast("Failed to archive usage log", "error");
+    alert("Failed to archive usage log");
   }
 }
 

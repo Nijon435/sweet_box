@@ -747,13 +747,9 @@ async def create_usage_log(log: dict):
     except Exception as e:
         logger.error(f"Error creating usage log: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-        return {"success": True, "id": log.get("id")}
-    except Exception as e:
-        logger.error(f"Error creating usage log: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/inventory-usage-logs/{log_id}")
-async def update_usage_log(log_id: str, log: dict):
+async def update_usage_log(log_id: int, log: dict):
     """Update a single inventory usage log (for archiving, etc.)"""
     try:
         logger.info(f"Updating usage log {log_id}: {log}")

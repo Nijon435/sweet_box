@@ -431,7 +431,10 @@ function renderAnalytics() {
         !log.archived
     ).length;
 
-    attendanceLabels.push(formatDateKeyShort(dateKey));
+    // Format date as MM/DD
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    attendanceLabels.push(`${month}/${day}`);
     attendanceData.push(clockIns);
   }
 
