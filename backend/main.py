@@ -725,7 +725,7 @@ async def update_user(user_id: str, user: dict):
         
         await conn.execute(
             """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, require_password_reset, archived, archived_at, archived_by, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, COALESCE($15, CURRENT_TIMESTAMP))
                ON CONFLICT (id) DO UPDATE SET
                name = EXCLUDED.name,
                email = EXCLUDED.email,
@@ -754,7 +754,7 @@ async def update_user(user_id: str, user: dict):
             user.get("archived", False),
             parse_timestamp(user.get("archivedAt")),
             user.get("archivedBy"),
-            parse_timestamp(user.get("createdAt"))
+            parse_timestamp(user.get("createdAt")) if user.get("createdAt") else None
         )
         
         await conn.close()
