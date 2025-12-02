@@ -434,101 +434,7 @@ const computeEmployeeStatus = (employee) => {
   // Check if employee is on approved leave today
   const today = todayKey();
 
-  // Find active leave for this employee
-  let activeLeave = null;
-  const expiredLeaves = [];
-
-  (appState.requests || []).forEach((leave) => {
-    // Support both camelCase (frontend) and snake_case (database)
-    const empId = leave.employeeId || leave.employee_id;
-    const leaveType = leave.requestType || leave.request_type;
-
-    if (empId !== employee.id || leaveType !== "leave") {
-      return;
-    }
-
-    const start = leave.startDate || leave.start_date;
-    const end = leave.endDate || leave.end_date;
-    const currentStatus = leave.status;
-
-    // Auto-expire approved leaves that have passed their end date
-    if (currentStatus === "approved" && today > end) {
-      console.log(
-        `⏰ Expiring leave for ${employee.name}: ${start} to ${end} (today: ${today})`
-      );
-      leave.status = "completed";
-      expiredLeaves.push(leave);
-      return;
-    }
-
-    // Skip if already completed/rejected/pending
-    if (currentStatus !== "approved") {
-      return;
-    }
-
-    // Check if on leave today
-    if (today >= start && today <= end) {
-      activeLeave = leave;
-    }
-  });
-
-  // Save expired leaves to database
-  if (expiredLeaves.length > 0) {
-    console.log(
-      `📤 Saving ${expiredLeaves.length} expired leave(s) to database...`
-    );
-    expiredLeaves.forEach((leave) => {
-      // Use async IIFE to handle the API call
-      (async () => {
-        try {
-          const endpoint = `${window.API_BASE_URL || ""}/api/requests/${
-            leave.id
-          }`;
-          console.log(
-            `Updating leave ${leave.id} status to completed via ${endpoint}`
-          );
-          const response = await fetch(endpoint, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify(leave),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(
-              `Failed to update leave ${leave.id}: ${response.status} - ${errorText}`
-            );
-          } else {
-            console.log(`✅ Marked leave ${leave.id} as completed in database`);
-          }
-        } catch (error) {
-          console.error(`Failed to update expired leave ${leave.id}:`, error);
-        }
-      })();
-    });
-  }
-
-  if (activeLeave) {
-    const start = activeLeave.startDate || activeLeave.start_date;
-    const end = activeLeave.endDate || activeLeave.end_date;
-    const startDate = new Date(start).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-    const endDate = new Date(end).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-    return {
-      status: "on-leave",
-      timestamp: `On Leave (${startDate} - ${endDate})`,
-    };
-  }
-
-  // Get today's logs (excluding archived ones)
+  // Get today's logs (excluding archived ones) - Check this FIRST
   const todayLogs = appState.attendanceLogs
     .filter(
       (log) =>
@@ -538,13 +444,116 @@ const computeEmployeeStatus = (employee) => {
     )
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-  // Check if there's a leave action log for today
+  // Check if there's a leave action log for today - this takes precedence
   const hasLeaveLog = todayLogs.some((log) => log.action === "leave");
   if (hasLeaveLog) {
     return {
       status: "on-leave",
       timestamp: "On Leave",
     };
+  }
+
+  // If there are clock in/out logs today, prioritize those over leave requests
+  const hasClockLogs = todayLogs.some(
+    (log) => log.action === "in" || log.action === "out"
+  );
+
+  // Find active leave for this employee (only use if no attendance logs exist)
+  let activeLeave = null;
+  const expiredLeaves = [];
+
+  if (!hasClockLogs) {
+    (appState.requests || []).forEach((leave) => {
+      // Support both camelCase (frontend) and snake_case (database)
+      const empId = leave.employeeId || leave.employee_id;
+      const leaveType = leave.requestType || leave.request_type;
+
+      if (empId !== employee.id || leaveType !== "leave") {
+        return;
+      }
+
+      const start = leave.startDate || leave.start_date;
+      const end = leave.endDate || leave.end_date;
+      const currentStatus = leave.status;
+
+      // Auto-expire approved leaves that have passed their end date
+      if (currentStatus === "approved" && today > end) {
+        console.log(
+          `⏰ Expiring leave for ${employee.name}: ${start} to ${end} (today: ${today})`
+        );
+        leave.status = "completed";
+        expiredLeaves.push(leave);
+        return;
+      }
+
+      // Skip if already completed/rejected/pending
+      if (currentStatus !== "approved") {
+        return;
+      }
+
+      // Check if on leave today
+      if (today >= start && today <= end) {
+        activeLeave = leave;
+      }
+    });
+
+    // Save expired leaves to database
+    if (expiredLeaves.length > 0) {
+      console.log(
+        `📤 Saving ${expiredLeaves.length} expired leave(s) to database...`
+      );
+      expiredLeaves.forEach((leave) => {
+        // Use async IIFE to handle the API call
+        (async () => {
+          try {
+            const endpoint = `${window.API_BASE_URL || ""}/api/requests/${
+              leave.id
+            }`;
+            console.log(
+              `Updating leave ${leave.id} status to completed via ${endpoint}`
+            );
+            const response = await fetch(endpoint, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify(leave),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(
+                `Failed to update leave ${leave.id}: ${response.status} - ${errorText}`
+              );
+            } else {
+              console.log(
+                `✅ Marked leave ${leave.id} as completed in database`
+              );
+            }
+          } catch (error) {
+            console.error(`Failed to update expired leave ${leave.id}:`, error);
+          }
+        })();
+      });
+    }
+
+    if (activeLeave) {
+      const start = activeLeave.startDate || activeLeave.start_date;
+      const end = activeLeave.endDate || activeLeave.end_date;
+      const startDate = new Date(start).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      const endDate = new Date(end).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      return {
+        status: "on-leave",
+        timestamp: `On Leave (${startDate} - ${endDate})`,
+      };
+    }
   }
 
   // Check if has shift time and past shift time

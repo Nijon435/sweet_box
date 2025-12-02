@@ -685,10 +685,26 @@ function setupRecordUsageButton() {
     const usageReason = data.get("reason");
     const notes = data.get("notes") || "";
 
+    console.log("Form submitted with:", { ingredientId, qty, usageReason });
+    console.log("appState.inventory:", appState.inventory);
+    console.log("Total items in inventory:", appState.inventory?.length || 0);
+
+    if (!appState.inventory || appState.inventory.length === 0) {
+      alert("Inventory data not loaded. Please refresh the page.");
+      return;
+    }
+
     const idx = appState.inventory.findIndex(
       (i) => i.id === ingredientId && !i.archived
     );
+
+    console.log("Found index:", idx);
+
     if (idx < 0) {
+      console.log(
+        "Available item IDs:",
+        appState.inventory.map((i) => i.id)
+      );
       alert("Item not found or archived");
       return;
     }
