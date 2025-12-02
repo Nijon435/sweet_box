@@ -607,51 +607,79 @@ function setupRecordUsageButton() {
   const closeBtn = document.getElementById("log-usage-close");
   const cancelBtn = document.getElementById("log-usage-cancel");
   const form = document.getElementById("log-usage-form");
-  const select = document.getElementById("usage-ingredient-select");
+  const container = document.getElementById("usage-items-container");
+  const addItemBtn = document.getElementById("add-usage-item-btn");
 
-  if (!recordUsageBtn || !modal || !form || !select) return;
+  if (!recordUsageBtn || !modal || !form || !container || !addItemBtn) return;
 
-  // Populate ingredient dropdown with non-archived inventory items
-  function populateItemSelect() {
+  let itemRowCounter = 0;
+
+  // Create a single usage item row
+  function createUsageItemRow() {
+    const rowId = `usage-row-${itemRowCounter++}`;
+    const row = document.createElement("div");
+    row.className = "usage-item-row";
+    row.id = rowId;
+    row.style.cssText =
+      "display: grid; grid-template-columns: 1fr 120px auto; gap: 0.75rem; margin-bottom: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; align-items: end;";
+
     const allItems = (appState.inventory || []).filter((i) => !i.archived);
-    select.innerHTML = '<option value="">Choose item...</option>';
-
-    // Group by category for better UX
     const categories = [...new Set(allItems.map((i) => i.category))].sort();
-    categories.forEach((category) => {
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = category.charAt(0).toUpperCase() + category.slice(1);
 
+    let optionsHTML = '<option value="">Choose item...</option>';
+    categories.forEach((category) => {
+      optionsHTML += `<optgroup label="${
+        category.charAt(0).toUpperCase() + category.slice(1)
+      }">`;
       const itemsInCategory = allItems.filter((i) => i.category === category);
       itemsInCategory.forEach((item) => {
-        const opt = document.createElement("option");
-        opt.value = item.id;
-        opt.dataset.unit = item.unit || "units";
-        opt.textContent = `${item.name} (${item.quantity} ${
+        optionsHTML += `<option value="${item.id}" data-unit="${
           item.unit || "units"
-        })`;
-        optgroup.appendChild(opt);
+        }">${item.name} (${item.quantity} ${item.unit || "units"})</option>`;
       });
-
-      select.appendChild(optgroup);
+      optionsHTML += "</optgroup>";
     });
+
+    row.innerHTML = `
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Item</label>
+        <select class="usage-item-select" required style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;">
+          ${optionsHTML}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Quantity</label>
+        <input type="number" class="usage-quantity" min="0.01" step="0.01" placeholder="0.00" required 
+          style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;" />
+      </div>
+      <button type="button" class="btn btn-sm btn-danger remove-usage-row" style="margin-bottom: 0;">Remove</button>
+    `;
+
+    // Remove button handler
+    const removeBtn = row.querySelector(".remove-usage-row");
+    removeBtn.addEventListener("click", () => {
+      row.remove();
+      // Ensure at least one row exists
+      if (container.children.length === 0) {
+        container.appendChild(createUsageItemRow());
+      }
+    });
+
+    return row;
   }
 
-  // Update unit label when item is selected
-  select.addEventListener("change", function () {
-    const selectedOption = this.options[this.selectedIndex];
-    const unit = selectedOption.dataset.unit || "units";
-    const qtyInput = document.getElementById("usage-quantity");
-    if (qtyInput) {
-      qtyInput.placeholder = `Enter quantity in ${unit}`;
-    }
+  // Add item button handler
+  addItemBtn.addEventListener("click", () => {
+    container.appendChild(createUsageItemRow());
   });
 
   // Open modal
   recordUsageBtn.addEventListener("click", () => {
-    populateItemSelect();
     modal.classList.add("active");
     form.reset();
+    container.innerHTML = "";
+    itemRowCounter = 0;
+    container.appendChild(createUsageItemRow()); // Start with one row
   });
 
   // Close modal
@@ -679,84 +707,96 @@ function setupRecordUsageButton() {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const data = new FormData(form);
-    const ingredientId = data.get("ingredientId");
-    const qty = Number(data.get("quantity"));
-    const usageReason = data.get("usageReason");
-    const notes = data.get("notes") || "";
 
-    console.log("Form submitted with:", { ingredientId, qty, usageReason });
-    console.log("appState.inventory:", appState.inventory);
-    console.log("Total items in inventory:", appState.inventory?.length || 0);
+    const usageReason = document.getElementById("usage-reason").value;
+    const notes = document.getElementById("usage-notes-field").value || "";
 
-    if (!appState.inventory || appState.inventory.length === 0) {
-      alert("Inventory data not loaded. Please refresh the page.");
-      return;
-    }
+    // Collect all usage items
+    const rows = container.querySelectorAll(".usage-item-row");
+    const usageItems = [];
 
-    const idx = appState.inventory.findIndex(
-      (i) => i.id === ingredientId && !i.archived
-    );
+    for (const row of rows) {
+      const select = row.querySelector(".usage-item-select");
+      const qtyInput = row.querySelector(".usage-quantity");
+      const ingredientId = select.value;
+      const qty = Number(qtyInput.value);
 
-    console.log("Found index:", idx);
-
-    if (idx < 0) {
-      console.log(
-        "Available item IDs:",
-        appState.inventory.map((i) => i.id)
-      );
-      alert("Item not found or archived");
-      return;
-    }
-
-    const item = appState.inventory[idx];
-
-    if (item.quantity < qty) {
-      alert(
-        `Insufficient quantity. Available: ${item.quantity} ${
-          item.unit || "units"
-        }`
-      );
-      return;
-    }
-
-    // Deduct from inventory
-    item.quantity -= qty;
-
-    // Log ingredient usage with the new system
-    if (typeof logIngredientUsage === "function") {
-      await logIngredientUsage(
-        ingredientId,
-        qty,
-        usageReason,
-        null, // No order ID for manual logging
-        notes || `${usageReason}: ${item.name}`
-      );
-    }
-
-    // Also update totalUsed for backward compatibility
-    const currentTotalUsed = item.totalUsed || item.total_used || 0;
-    item.totalUsed = currentTotalUsed + qty;
-
-    // Update inventory item in database
-    try {
-      const apiBase = window.API_BASE_URL || "";
-      const response = await fetch(`${apiBase}/api/inventory/${item.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(item),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update inventory");
+      if (!ingredientId || !qty || qty <= 0) {
+        alert("Please fill in all item fields with valid quantities");
+        return;
       }
-    } catch (error) {
-      console.error("Error updating inventory:", error);
-      alert("Failed to update inventory. Please try again.");
+
+      usageItems.push({ ingredientId, qty });
+    }
+
+    if (usageItems.length === 0) {
+      alert("Please add at least one item");
       return;
     }
 
+    console.log("Processing usage for items:", usageItems);
+
+    // Process each item
+    for (const { ingredientId, qty } of usageItems) {
+      const idx = appState.inventory.findIndex(
+        (i) => i.id === ingredientId && !i.archived
+      );
+
+      if (idx < 0) {
+        alert(`Item ${ingredientId} not found or archived`);
+        continue;
+      }
+
+      const item = appState.inventory[idx];
+
+      if (item.quantity < qty) {
+        alert(
+          `Insufficient quantity for ${item.name}. Available: ${
+            item.quantity
+          } ${item.unit || "units"}`
+        );
+        continue;
+      }
+
+      // Deduct from inventory
+      item.quantity -= qty;
+
+      // Log ingredient usage
+      if (typeof logIngredientUsage === "function") {
+        await logIngredientUsage(
+          ingredientId,
+          qty,
+          usageReason,
+          null,
+          notes || `${usageReason}: ${item.name}`
+        );
+      }
+
+      // Update totalUsed
+      const currentTotalUsed = item.totalUsed || item.total_used || 0;
+      item.totalUsed = currentTotalUsed + qty;
+
+      // Update inventory item in database
+      try {
+        const apiBase = window.API_BASE_URL || "";
+        const response = await fetch(`${apiBase}/api/inventory/${item.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(item),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update inventory");
+        }
+      } catch (error) {
+        console.error("Error updating inventory:", error);
+        alert("Failed to update inventory. Please try again.");
+        return;
+      }
+    }
+
+    // Success
     saveState();
     renderInventory();
     modal.classList.remove("active");

@@ -1706,6 +1706,7 @@ async function logIngredientUsage(
     notes: notes,
     timestamp: getLocalTimestamp(),
     userId: appState.currentUser?.id,
+    createdBy: appState.currentUser?.id, // Explicitly add createdBy
   };
 
   // Add to local state

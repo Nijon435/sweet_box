@@ -439,15 +439,19 @@ function renderAnalytics() {
   }
 
   ChartManager.plot("attendanceTrendChart", {
-    type: "bar",
+    type: "line",
     data: {
       labels: attendanceLabels,
       datasets: [
         {
           label: "Clock-ins",
           data: attendanceData,
-          backgroundColor: "#10b981",
-          borderRadius: 6,
+          borderColor: "#10b981",
+          backgroundColor: "rgba(16, 185, 129, 0.1)",
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointBackgroundColor: "#10b981",
         },
       ],
     },
