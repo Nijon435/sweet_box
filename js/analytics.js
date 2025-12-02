@@ -78,12 +78,45 @@ function renderAnalytics() {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
   });
-  const attendanceWindow = (appState.attendanceTrend || []).slice(
-    -attendanceRange
-  );
+  
+  // Calculate attendance trend from actual attendance logs
+  const computeAttendanceTrend = () => {
+    const trend = [];
+    const daysToShow = 30; // Show last 30 days
+    const today = new Date();
+    
+    for (let i = daysToShow - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      // Count logs for this day
+      const dayLogs = (appState.attendanceLogs || []).filter(log => 
+        log.timestamp.startsWith(dateKey) && !log.archived
+      );
+      
+      const present = dayLogs.filter(log => log.action === 'in').length;
+      const late = dayLogs.filter(log => 
+        log.action === 'in' && log.note && log.note.toLowerCase().includes('late')
+      ).length;
+      const onLeave = dayLogs.filter(log => log.action === 'leave').length;
+      
+      trend.push({
+        date: dateKey,
+        present: present,
+        late: late,
+        onLeave: onLeave
+      });
+    }
+    
+    return trend;
+  };
+  
+  const attendanceTrendData = computeAttendanceTrend();
+  const attendanceWindow = attendanceTrendData.slice(-attendanceRange);
 
   console.log("Attendance Trend Data:", {
-    total: appState.attendanceTrend?.length || 0,
+    total: attendanceTrendData.length,
     window: attendanceWindow.length,
     sample: attendanceWindow[0],
     lastEntry: attendanceWindow[attendanceWindow.length - 1],
