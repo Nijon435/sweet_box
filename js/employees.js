@@ -1208,11 +1208,11 @@ window.approveLeave = async function (leaveId) {
     const startDate = new Date(leave.startDate || leave.start_date);
     const endDate = new Date(leave.endDate || leave.end_date);
     const employeeId = leave.employeeId || leave.employee_id;
-    
+
     // Create logs for each day in the range
     const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = currentDate.toISOString().split("T")[0];
       const leaveLog = {
         id: `leave-${employeeId}-${dateStr}-${Date.now()}`,
         employeeId: employeeId,
@@ -1221,13 +1221,13 @@ window.approveLeave = async function (leaveId) {
         note: "On approved leave",
         archived: false,
       };
-      
+
       // Add to local state
       appState.attendanceLogs.push(leaveLog);
-      
+
       // Save to database
       await saveAttendanceLog(leaveLog);
-      
+
       currentDate.setDate(currentDate.getDate() + 1);
     }
 

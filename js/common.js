@@ -303,7 +303,7 @@ async function saveAttendanceLog(log) {
       const urlObj = new URL(window.APP_STATE_ENDPOINT);
       baseUrl = urlObj.origin;
     }
-    
+
     const url = baseUrl + "/api/attendance-logs";
 
     const response = await fetch(url, {
@@ -532,9 +532,9 @@ const computeEmployeeStatus = (employee) => {
   const todayLogs = appState.attendanceLogs
     .filter(
       (log) =>
-        log.employeeId === employee.id && 
+        log.employeeId === employee.id &&
         log.timestamp.startsWith(todayKey()) &&
-        !log.archived  // Exclude archived logs
+        !log.archived // Exclude archived logs
     )
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 

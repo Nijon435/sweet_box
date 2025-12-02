@@ -727,12 +727,13 @@ function openRequestLeaveModal(user) {
       .then(() => {
         saveState();
         modal.remove();
-        
+
         // Show success toast
         const toast = document.createElement("div");
         toast.style.cssText =
           "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-        toast.textContent = "✓ Leave request submitted successfully! Awaiting admin approval.";
+        toast.textContent =
+          "✓ Leave request submitted successfully! Awaiting admin approval.";
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
       })
