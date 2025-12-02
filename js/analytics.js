@@ -130,30 +130,42 @@ function renderAnalytics() {
   // Calculate top selling products by revenue
   const productRevenue = {};
   (appState.orders || []).forEach((order) => {
-    if (order.items || order.items_json || order.itemsJson) {
-      try {
-        const items =
+    try {
+      // Check multiple possible field names for items
+      let items = null;
+
+      if (order.itemsJson) {
+        items = Array.isArray(order.itemsJson) ? order.itemsJson : null;
+      } else if (order.items_json) {
+        items = Array.isArray(order.items_json) ? order.items_json : null;
+      } else if (order.items) {
+        items =
           typeof order.items === "string"
             ? JSON.parse(order.items)
-            : order.items || order.items_json || order.itemsJson;
-
-        // Calculate revenue per item based on order total
-        const totalQty = items.reduce((sum, item) => sum + (item.qty || 0), 0);
-        const orderTotal = order.total || 0;
-
-        items.forEach((item) => {
-          const key = item.name || "Unknown";
-          // If unitPrice exists, use it; otherwise distribute order total proportionally
-          const revenue = item.unitPrice
-            ? (item.unitPrice || 0) * (item.qty || 0)
-            : totalQty > 0
-            ? (orderTotal * (item.qty || 0)) / totalQty
-            : 0;
-          productRevenue[key] = (productRevenue[key] || 0) + revenue;
-        });
-      } catch (e) {
-        console.error("Error parsing order items:", e);
+            : order.items;
       }
+
+      // Ensure items is an array
+      if (!Array.isArray(items) || items.length === 0) {
+        return;
+      }
+
+      // Calculate revenue per item based on order total
+      const totalQty = items.reduce((sum, item) => sum + (item.qty || 0), 0);
+      const orderTotal = order.total || 0;
+
+      items.forEach((item) => {
+        const key = item.name || "Unknown";
+        // If unitPrice exists, use it; otherwise distribute order total proportionally
+        const revenue = item.unitPrice
+          ? (item.unitPrice || 0) * (item.qty || 0)
+          : totalQty > 0
+          ? (orderTotal * (item.qty || 0)) / totalQty
+          : 0;
+        productRevenue[key] = (productRevenue[key] || 0) + revenue;
+      });
+    } catch (e) {
+      console.error("Error parsing order items:", e, "Order:", order);
     }
   });
 
