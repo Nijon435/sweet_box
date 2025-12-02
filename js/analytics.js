@@ -97,7 +97,7 @@ function renderAnalytics() {
   const salesCutoff = new Date();
   salesCutoff.setHours(0, 0, 0, 0);
   salesCutoff.setDate(salesCutoff.getDate() - (salesTrendRange - 1));
-  
+
   const salesTrendData = (appState.salesHistory || [])
     .filter((entry) => {
       const entryDate = parseDateKey(entry.date);

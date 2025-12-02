@@ -64,11 +64,17 @@ function renderDashboard() {
   ChartManager.plot("salesTrendChart", {
     type: "line",
     data: {
-      labels: salesWindow.length > 0 ? salesWindow.map((entry) => entry.date.slice(5)) : ["No Data"],
+      labels:
+        salesWindow.length > 0
+          ? salesWindow.map((entry) => entry.date.slice(5))
+          : ["No Data"],
       datasets: [
         {
           label: "Daily Sales",
-          data: salesWindow.length > 0 ? salesWindow.map((entry) => entry.total || 0) : [0],
+          data:
+            salesWindow.length > 0
+              ? salesWindow.map((entry) => entry.total || 0)
+              : [0],
           borderColor: "#f6c343",
           backgroundColor: "rgba(246,195,67,0.15)",
           tension: 0.4,
@@ -110,9 +116,11 @@ function renderDashboard() {
       scales: {
         y: {
           beginAtZero: true,
-          suggestedMax: salesWindow.length > 0
-            ? Math.max(...salesWindow.map((entry) => entry.total || 0), 100) * 1.2
-            : 100,
+          suggestedMax:
+            salesWindow.length > 0
+              ? Math.max(...salesWindow.map((entry) => entry.total || 0), 100) *
+                1.2
+              : 100,
           ticks: {
             callback: function (value) {
               return "₱" + value.toLocaleString();
