@@ -2,6 +2,47 @@
 let attendanceCurrentPage = 1;
 const attendanceItemsPerPage = 20;
 
+// Save attendance log directly to database
+async function saveAttendanceLog(log) {
+  try {
+    // Get the base API URL from window.APP_STATE_ENDPOINT or use default
+    let baseUrl = "";
+    if (typeof window !== "undefined" && window.APP_STATE_ENDPOINT) {
+      // Extract base URL (e.g., "https://sweetbox-backend.onrender.com" from full endpoint)
+      const urlObj = new URL(window.APP_STATE_ENDPOINT);
+      baseUrl = urlObj.origin;
+    }
+
+    const url = baseUrl + "/api/attendance-logs";
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(log),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "Failed to save attendance log:",
+        response.status,
+        response.statusText,
+        errorText
+      );
+      throw new Error(`Failed to save attendance log: ${errorText}`);
+    }
+
+    console.log("Attendance log saved successfully");
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving attendance log:", error);
+    throw error;
+  }
+}
+
 function renderAttendance() {
   const currentUser = getCurrentUser();
   const clockInBtn = document.getElementById("clock-in-btn");
@@ -118,20 +159,41 @@ function renderAttendance() {
         note: note || null,
       };
 
+      // Save to local state first
       appState.attendanceLogs.push(newLog);
-      await saveState();
 
-      // Show styled success message
-      const toast = document.createElement("div");
-      toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-      toast.textContent = isLate
-        ? "✓ Clocked in (Late)"
-        : "✓ Clocked in successfully!";
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      // Save directly to database
+      try {
+        await saveAttendanceLog(newLog);
 
-      renderAttendance();
+        // Show styled success message
+        const toast = document.createElement("div");
+        toast.style.cssText =
+          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+        toast.textContent = isLate
+          ? "✓ Clocked in (Late)"
+          : "✓ Clocked in successfully!";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+
+        renderAttendance();
+      } catch (error) {
+        // Remove from local state if save failed
+        const index = appState.attendanceLogs.findIndex(
+          (log) => log.id === newLog.id
+        );
+        if (index > -1) {
+          appState.attendanceLogs.splice(index, 1);
+        }
+
+        // Show error message
+        const toast = document.createElement("div");
+        toast.style.cssText =
+          "position: fixed; top: 20px; right: 20px; background: #f44336; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+        toast.textContent = "✗ Failed to clock in. Please try again.";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
     });
   }
 
@@ -164,23 +226,44 @@ function renderAttendance() {
         note: null,
       };
 
+      // Save to local state first
       appState.attendanceLogs.push(newLog);
-      await saveState();
 
-      // Show styled success message
-      const toast = document.createElement("div");
-      toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-      toast.textContent = "✓ Clocked out successfully!";
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      // Save directly to database
+      try {
+        await saveAttendanceLog(newLog);
 
-      // Force refresh attendance display
-      renderAttendance();
+        // Show styled success message
+        const toast = document.createElement("div");
+        toast.style.cssText =
+          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+        toast.textContent = "✓ Clocked out successfully!";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
 
-      // Also update dashboard if we're on that page
-      if (typeof updateDashboardAttendance === "function") {
-        updateDashboardAttendance();
+        // Force refresh attendance display
+        renderAttendance();
+
+        // Also update dashboard if we're on that page
+        if (typeof updateDashboardAttendance === "function") {
+          updateDashboardAttendance();
+        }
+      } catch (error) {
+        // Remove from local state if save failed
+        const index = appState.attendanceLogs.findIndex(
+          (log) => log.id === newLog.id
+        );
+        if (index > -1) {
+          appState.attendanceLogs.splice(index, 1);
+        }
+
+        // Show error message
+        const toast = document.createElement("div");
+        toast.style.cssText =
+          "position: fixed; top: 20px; right: 20px; background: #f44336; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
+        toast.textContent = "✗ Failed to clock out. Please try again.";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
       }
     });
   }

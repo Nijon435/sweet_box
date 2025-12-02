@@ -542,6 +542,41 @@ async def delete_order(order_id: str):
         logger.error(f"Error deleting order: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/attendance-logs")
+async def create_attendance_log(log: dict):
+    """Create a new attendance log"""
+    try:
+        logger.info(f"Creating new attendance log: {log}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        await conn.execute(
+            """INSERT INTO attendance_logs (id, employee_id, timestamp, action, note, shift, archived, archived_at, archived_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+            log.get("id"),
+            log.get("employeeId"),
+            parse_timestamp(log.get("timestamp")),
+            log.get("action"),
+            log.get("note"),
+            log.get("shift", None),
+            log.get("archived", False),
+            parse_timestamp(log.get("archivedAt")),
+            log.get("archivedBy")
+        )
+        
+        await conn.close()
+        logger.info(f"Successfully created attendance log {log.get('id')}")
+        return {"success": True, "id": log.get("id")}
+    except Exception as e:
+        logger.error(f"Error creating attendance log: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.put("/api/attendance-logs/{log_id}")
 async def update_attendance_log(log_id: str, log: dict):
     """Update a single attendance log (for archiving, etc.)"""
@@ -574,7 +609,6 @@ async def update_attendance_log(log_id: str, log: dict):
             log.get("action"),
             log.get("note"),
             log.get("shift", None),  # Default to None if not provided
-            log.get("shift"),
             log.get("archived", False),
             parse_timestamp(log.get("archivedAt")),
             log.get("archivedBy")
