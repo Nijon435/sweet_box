@@ -125,6 +125,9 @@ function renderAnalytics() {
     salesHistory: appState.salesHistory?.length || 0,
     attendanceTrend: appState.attendanceTrend?.length || 0,
     sampleOrder: appState.orders?.[0],
+    firstOrderFields: appState.orders?.[0]
+      ? Object.keys(appState.orders[0])
+      : [],
   });
 
   // Calculate top selling products by revenue

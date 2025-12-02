@@ -78,12 +78,12 @@ async def startup_migrations():
         except Exception as e:
             logger.warning(f"Could not drop served_at column: {e}")
         
-        # Remove archived_by from users table (users don't track who archived them)
+        # Add archived_by column to users table if it doesn't exist
         try:
-            await conn.execute("ALTER TABLE users DROP COLUMN IF EXISTS archived_by")
-            logger.info("Dropped archived_by column from users table")
+            await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_by VARCHAR(64)")
+            logger.info("Added archived_by column to users table")
         except Exception as e:
-            logger.warning(f"Could not drop archived_by column from users: {e}")
+            logger.warning(f"Could not add archived_by column to users: {e}")
         
         # Add archive columns to attendance_logs table
         try:
@@ -977,7 +977,7 @@ async def save_state(state: dict):
                     logger.info(f"Saving user {idx + 1}: {user.get('email', 'NO_EMAIL')}")
                     await conn.execute(
                         """INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, require_password_reset, archived, archived_at, archived_by, created_at)
-                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, COALESCE($15, CURRENT_TIMESTAMP))
                            ON CONFLICT (id) DO UPDATE SET
                            name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password,
                            phone = EXCLUDED.phone, role = EXCLUDED.role, permission = EXCLUDED.permission,
@@ -989,7 +989,7 @@ async def save_state(state: dict):
                         parse_time(user.get("shiftStart")), parse_date(user.get("hireDate")), 
                         user.get("status", "active"), user.get("requirePasswordReset", False),
                         user.get("archived", False), parse_timestamp(user.get("archivedAt")),
-                        user.get("archivedBy"), parse_timestamp(user.get("createdAt"))
+                        user.get("archivedBy"), parse_timestamp(user.get("createdAt")) if user.get("createdAt") else None
                     )
                     logger.info(f"Successfully saved user {idx + 1}")
                 except Exception as user_error:
