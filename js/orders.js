@@ -488,9 +488,26 @@ async function processOrder(customer, orderType) {
     0
   );
 
-  // Create order
+  // Create order with date-based ID (format: ord-MMDD-N)
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const datePrefix = `${month}${day}`;
+
+  const existingOrders = appState.orders || [];
+  const todayOrders = existingOrders.filter((order) => {
+    const match = order.id?.match(/^ord-(\d{4})-(\d+)$/);
+    return match && match[1] === datePrefix;
+  });
+
+  const maxTicketNum = todayOrders.reduce((max, order) => {
+    const match = order.id?.match(/^ord-\d{4}-(\d+)$/);
+    return match ? Math.max(max, parseInt(match[1])) : max;
+  }, 0);
+  const nextTicketNum = maxTicketNum + 1;
+
   const order = {
-    id: `ord-${Date.now()}`,
+    id: `ord-${datePrefix}-${nextTicketNum}`,
     customer: customer,
     items: posCart.map((item) => `${item.qty}x ${item.name}`).join(", "),
     itemsJson: posCart,
@@ -1358,7 +1375,7 @@ function initializeOrderForm() {
 
     function updateSuppliesVisibility() {
       const type = (orderType?.value || "").toLowerCase();
-      if (type === "takeout" || type === "delivery") {
+      if (type === "pickup" || type === "delivery") {
         if (suppliesSection) suppliesSection.style.display = "";
       } else {
         if (suppliesSection) suppliesSection.style.display = "none";
