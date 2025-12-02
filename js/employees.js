@@ -1212,12 +1212,11 @@ window.approveLeave = async function (leaveId) {
     // Create logs for each day in the range
     const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
-      const dateStr = currentDate.toISOString().split("T")[0];
       const leaveLog = {
-        id: `leave-${employeeId}-${dateStr}-${Date.now()}`,
+        id: `leave-${employeeId}-${currentDate.getTime()}-${Date.now()}`,
         employeeId: employeeId,
         action: "leave",
-        timestamp: `${dateStr}T09:00:00`,
+        timestamp: getLocalTimestamp(currentDate),
         note: "On approved leave",
         archived: false,
       };
