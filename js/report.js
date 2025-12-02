@@ -1,4 +1,7 @@
 function renderReports() {
+  console.log("📊 Reports page initialized");
+  console.log("Current appState:", appState);
+
   const buttons = document.querySelectorAll("[data-report]");
   buttons.forEach((button) => {
     button.addEventListener("click", () => exportReport(button.dataset.report));
@@ -24,13 +27,13 @@ function populateStaffSelector() {
   if (!staffSelect) return;
 
   // Ensure appState is loaded
-  if (!appState || !appState.employees) {
-    console.warn("Employees not loaded yet, retrying...");
+  if (!appState || !appState.users) {
+    console.warn("Users not loaded yet, retrying...");
     setTimeout(populateStaffSelector, 500);
     return;
   }
 
-  const employees = (appState.employees || []).filter((e) => !e.archived);
+  const employees = (appState.users || []).filter((e) => !e.archived);
 
   staffSelect.innerHTML = '<option value="">Choose staff member...</option>';
   employees.forEach((emp) => {
@@ -44,6 +47,15 @@ function populateStaffSelector() {
 }
 
 function exportReport(type) {
+  console.log(`📤 Exporting report: ${type}`);
+  console.log("Available data:", {
+    users: appState.users?.length || 0,
+    inventory: appState.inventory?.length || 0,
+    orders: appState.orders?.length || 0,
+    attendanceLogs: appState.attendanceLogs?.length || 0,
+    salesHistory: appState.salesHistory?.length || 0,
+  });
+
   if (type === "staff-attendance-excel" || type === "staff-attendance-word") {
     const staffId = document.getElementById("staff-select")?.value;
     const monthValue = document.getElementById("attendance-month")?.value;
@@ -115,7 +127,8 @@ function exportInventoryReport() {
     "Unit Cost (₱)": item.cost || 0,
     "Total Value (₱)": (item.quantity * (item.cost || 0)).toFixed(2),
     "Reorder Point": item.reorderPoint || 10,
-    Status: item.quantity < (item.reorderPoint || 10) ? "Low Stock" : "In Stock",
+    Status:
+      item.quantity < (item.reorderPoint || 10) ? "Low Stock" : "In Stock",
     "Date Purchased": item.datePurchased || "N/A",
     "Use By Date": item.useByDate || "N/A",
   }));
@@ -125,18 +138,30 @@ function exportInventoryReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Inventory");
 
   ws["!cols"] = [
-    { wch: 15 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
-    { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
+    { wch: 15 },
+    { wch: 30 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 15 },
   ];
 
   XLSX.writeFile(wb, `Inventory_Ledger_${todayKey()}.xlsx`);
 }
 
 function exportInventoryUsageReport() {
-  const usageLogs = (appState.inventoryUsageLogs || []).filter((log) => !log.archived);
+  const usageLogs = (appState.inventoryUsageLogs || []).filter(
+    (log) => !log.archived
+  );
 
   const sheetData = usageLogs.map((log) => {
-    const item = (appState.inventory || []).find((i) => i.id === log.inventoryItemId);
+    const item = (appState.inventory || []).find(
+      (i) => i.id === log.inventoryItemId
+    );
 
     return {
       Date: new Date(log.timestamp || log.created_at).toLocaleDateString(),
@@ -155,8 +180,14 @@ function exportInventoryUsageReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Usage Logs");
 
   ws["!cols"] = [
-    { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 10 },
-    { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 20 },
+    { wch: 12 },
+    { wch: 10 },
+    { wch: 30 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 20 },
+    { wch: 30 },
+    { wch: 20 },
   ];
 
   XLSX.writeFile(wb, `Inventory_Usage_${todayKey()}.xlsx`);
@@ -178,7 +209,10 @@ function exportLowStockReport() {
     "Reorder Point": item.reorderPoint || 10,
     Deficit: (item.reorderPoint || 10) - item.quantity,
     "Unit Cost (₱)": item.cost || 0,
-    "Restock Cost (₱)": (((item.reorderPoint || 10) - item.quantity) * (item.cost || 0)).toFixed(2),
+    "Restock Cost (₱)": (
+      ((item.reorderPoint || 10) - item.quantity) *
+      (item.cost || 0)
+    ).toFixed(2),
     Urgency: item.quantity === 0 ? "CRITICAL" : "Low",
   }));
 
@@ -187,8 +221,15 @@ function exportLowStockReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Low Stock");
 
   ws["!cols"] = [
-    { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 12 },
-    { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 10 },
+    { wch: 15 },
+    { wch: 30 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 10 },
   ];
 
   XLSX.writeFile(wb, `Low_Stock_Alert_${todayKey()}.xlsx`);
@@ -201,7 +242,8 @@ function exportSalesReport() {
     Date: entry.date,
     "Total Sales (₱)": entry.total.toFixed(2),
     "Number of Orders": entry.orderCount || 0,
-    "Average Order Value (₱)": entry.orderCount > 0 ? (entry.total / entry.orderCount).toFixed(2) : 0,
+    "Average Order Value (₱)":
+      entry.orderCount > 0 ? (entry.total / entry.orderCount).toFixed(2) : 0,
   }));
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -222,7 +264,8 @@ function exportOrdersReport() {
     Time: new Date(order.timestamp).toLocaleTimeString(),
     Customer: order.customerName || "Walk-in",
     Type: order.orderType || order.type || "dine-in",
-    Items: order.items?.map((i) => `${i.name} (${i.quantity})`).join(", ") || "",
+    Items:
+      order.items?.map((i) => `${i.name} (${i.quantity})`).join(", ") || "",
     Subtotal: order.subtotal?.toFixed(2) || 0,
     Tax: order.tax?.toFixed(2) || 0,
     Total: order.total?.toFixed(2) || 0,
@@ -235,15 +278,27 @@ function exportOrdersReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Orders");
 
   ws["!cols"] = [
-    { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 12 },
-    { wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 },
+    { wch: 15 },
+    { wch: 12 },
+    { wch: 10 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 40 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 15 },
+    { wch: 12 },
   ];
 
   XLSX.writeFile(wb, `Order_History_${todayKey()}.xlsx`);
 }
 
 function exportFinancialReport() {
-  const totalRevenue = (appState.salesHistory || []).reduce((sum, entry) => sum + entry.total, 0);
+  const totalRevenue = (appState.salesHistory || []).reduce(
+    (sum, entry) => sum + entry.total,
+    0
+  );
 
   const inventoryValue = (appState.inventory || [])
     .filter((item) => !item.archived)
@@ -253,16 +308,26 @@ function exportFinancialReport() {
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   const last30Days = (appState.salesHistory || []).slice(-30);
-  const last30DaysRevenue = last30Days.reduce((sum, entry) => sum + entry.total, 0);
-  const avgDailyRevenue = last30Days.length > 0 ? last30DaysRevenue / last30Days.length : 0;
+  const last30DaysRevenue = last30Days.reduce(
+    (sum, entry) => sum + entry.total,
+    0
+  );
+  const avgDailyRevenue =
+    last30Days.length > 0 ? last30DaysRevenue / last30Days.length : 0;
 
   const sheetData = [
     { Metric: "Total Revenue", Value: `₱${totalRevenue.toFixed(2)}` },
     { Metric: "Total Orders", Value: totalOrders },
     { Metric: "Average Order Value", Value: `₱${avgOrderValue.toFixed(2)}` },
     { Metric: "Inventory Value", Value: `₱${inventoryValue.toFixed(2)}` },
-    { Metric: "Average Daily Revenue (Last 30 Days)", Value: `₱${avgDailyRevenue.toFixed(2)}` },
-    { Metric: "Total Employees", Value: (appState.employees || []).filter((e) => !e.archived).length },
+    {
+      Metric: "Average Daily Revenue (Last 30 Days)",
+      Value: `₱${avgDailyRevenue.toFixed(2)}`,
+    },
+    {
+      Metric: "Total Employees",
+      Value: (appState.users || []).filter((e) => !e.archived).length,
+    },
   ];
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -275,7 +340,7 @@ function exportFinancialReport() {
 }
 
 function exportEmployeesReport() {
-  const employees = (appState.employees || []).filter((e) => !e.archived);
+  const employees = (appState.users || []).filter((e) => !e.archived);
 
   const sheetData = employees.map((emp) => ({
     Name: emp.name,
@@ -292,18 +357,27 @@ function exportEmployeesReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Employees");
 
   ws["!cols"] = [
-    { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 12 },
-    { wch: 12 }, { wch: 15 }, { wch: 10 },
+    { wch: 25 },
+    { wch: 30 },
+    { wch: 15 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 10 },
   ];
 
   XLSX.writeFile(wb, `Employee_Directory_${todayKey()}.xlsx`);
 }
 
 function exportAttendanceReport() {
-  const attendanceLogs = (appState.attendanceLogs || []).filter((log) => !log.archived);
+  const attendanceLogs = (appState.attendanceLogs || []).filter(
+    (log) => !log.archived
+  );
 
   const sheetData = attendanceLogs.map((log) => {
-    const employee = (appState.employees || []).find((e) => e.id === log.employeeId);
+    const employee = (appState.users || []).find(
+      (e) => e.id === log.employeeId
+    );
 
     return {
       Date: new Date(log.timestamp).toLocaleDateString(),
@@ -320,7 +394,12 @@ function exportAttendanceReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Attendance");
 
   ws["!cols"] = [
-    { wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 30 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 25 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 30 },
   ];
 
   XLSX.writeFile(wb, `Attendance_Log_${todayKey()}.xlsx`);
@@ -333,7 +412,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
     return;
   }
 
-  const employee = (appState.employees || []).find((e) => e.id === staffId);
+  const employee = (appState.users || []).find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -472,7 +551,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
 
 // Export Staff Attendance Report as Word (Daily Time Record format)
 function exportStaffAttendanceWord(staffId, monthValue) {
-  const employee = (appState.employees || []).find((e) => e.id === staffId);
+  const employee = (appState.users || []).find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
