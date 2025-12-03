@@ -573,10 +573,10 @@ async def get_attendance_logs(start_date: str = None, end_date: str = None, limi
         )
         
         if start_date and end_date:
-            # Fetch logs within date range
+            # Fetch logs within date range (convert string dates to timestamps)
             rows = await conn.fetch(
                 """SELECT * FROM attendance_logs 
-                   WHERE timestamp >= $1 AND timestamp < $2 
+                   WHERE timestamp >= $1::timestamp AND timestamp < $2::timestamp 
                    ORDER BY timestamp DESC 
                    LIMIT $3""",
                 start_date,
@@ -587,7 +587,7 @@ async def get_attendance_logs(start_date: str = None, end_date: str = None, limi
             # Fetch logs from start_date onwards
             rows = await conn.fetch(
                 """SELECT * FROM attendance_logs 
-                   WHERE timestamp >= $1 
+                   WHERE timestamp >= $1::timestamp 
                    ORDER BY timestamp DESC 
                    LIMIT $2""",
                 start_date,
@@ -604,7 +604,18 @@ async def get_attendance_logs(start_date: str = None, end_date: str = None, limi
         
         await conn.close()
         
-        logs = [dict(row) for row in rows]
+        # Serialize the rows properly, converting datetime objects to ISO strings
+        logs = []
+        for row in rows:
+            log = dict(row)
+            # Convert timestamp to ISO string if it's a datetime object
+            if log.get('timestamp') and isinstance(log['timestamp'], datetime):
+                log['timestamp'] = log['timestamp'].isoformat()
+            # Convert archived_at to ISO string if it's a datetime object
+            if log.get('archived_at') and isinstance(log['archived_at'], datetime):
+                log['archived_at'] = log['archived_at'].isoformat()
+            logs.append(log)
+        
         logger.info(f"Successfully fetched {len(logs)} attendance logs")
         return logs
     except Exception as e:
