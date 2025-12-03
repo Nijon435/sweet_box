@@ -421,8 +421,6 @@ function renderAnalytics() {
   const absentData = [];
   const leaveData = [];
 
-  const allEmployees = appState.employees || [];
-
   // Build date labels and calculate status counts
   for (let i = attendanceDays - 1; i >= 0; i--) {
     const date = new Date();
@@ -432,64 +430,29 @@ function renderAnalytics() {
     const day = date.getDate();
     attendanceLabels.push(`${month}/${day}`);
 
-    // Get all clock-in logs for this day
+    // Get all logs for this day
     const dayLogs = (appState.attendanceLogs || []).filter(
+      (log) => log.timestamp.startsWith(dateKey) && !log.archived
+    );
+
+    // Count clock-ins with late notes
+    const lateCount = dayLogs.filter(
       (log) =>
-        log.timestamp.startsWith(dateKey) &&
         log.action === "in" &&
-        !log.archived
-    );
-
-    // Get leave requests for this day
-    const dayLeaveRequests = (appState.requests || []).filter(
-      (req) =>
-        req.type === "leave" &&
-        req.status === "approved" &&
-        req.leaveDate &&
-        req.leaveDate.startsWith(dateKey)
-    );
-
-    let presentCount = 0;
-    let lateCount = 0;
-    let leaveCount = dayLeaveRequests.length;
-
-    // Check each employee who clocked in
-    dayLogs.forEach((log) => {
-      const employee = allEmployees.find((e) => e.id === log.employeeId);
-      if (!employee || !employee.shiftStart) {
-        // No shift start time, count as present
-        presentCount++;
-        return;
-      }
-
-      // Parse shift start time
-      const [hours, minutes] = employee.shiftStart.split(":");
-      const shiftTime = new Date(date);
-      shiftTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-      // Parse clock-in time
-      const clockInTime = new Date(log.timestamp);
-
-      // Late threshold: 15 minutes after shift start
-      const lateThreshold = new Date(shiftTime.getTime() + 15 * 60000);
-
-      if (clockInTime > lateThreshold) {
-        lateCount++;
-      } else {
-        presentCount++;
-      }
-    });
-
-    // Calculate absent count (employees who didn't clock in and aren't on leave)
-    const employeesWhoLoggedIn = new Set(dayLogs.map((log) => log.employeeId));
-    const employeesOnLeave = new Set(
-      dayLeaveRequests.map((req) => req.userId || req.user_id)
-    );
-
-    const absentCount = allEmployees.filter(
-      (emp) =>
-        !employeesWhoLoggedIn.has(emp.id) && !employeesOnLeave.has(emp.id)
+        log.note &&
+        (log.note.toLowerCase().includes("late") ||
+          log.note.toLowerCase().includes("Late"))
     ).length;
+
+    // Count present (clock-ins that are not late)
+    const clockInCount = dayLogs.filter((log) => log.action === "in").length;
+    const presentCount = clockInCount - lateCount;
+
+    // Count leave logs
+    const leaveCount = dayLogs.filter((log) => log.action === "leave").length;
+
+    // Count absent logs
+    const absentCount = dayLogs.filter((log) => log.action === "absent").length;
 
     presentData.push(presentCount);
     lateData.push(lateCount);

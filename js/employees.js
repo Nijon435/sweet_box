@@ -1462,16 +1462,16 @@ window.pageRenderers["employees"] = renderEmployees;
 
 // Auto-absent logging system
 // Checks if employees haven't clocked in and marks them absent at 10 PM
-let autoAbsentCheckInterval = null;
+window.autoAbsentCheckInterval = null;
 
 window.startAutoAbsentCheck = function () {
   // Clear any existing interval
-  if (autoAbsentCheckInterval) {
-    clearInterval(autoAbsentCheckInterval);
+  if (window.autoAbsentCheckInterval) {
+    clearInterval(window.autoAbsentCheckInterval);
   }
 
   // Check every minute
-  autoAbsentCheckInterval = setInterval(window.checkAndLogAbsent, 60000);
+  window.autoAbsentCheckInterval = setInterval(window.checkAndLogAbsent, 60000);
 
   // Also run immediately on page load
   window.checkAndLogAbsent();
