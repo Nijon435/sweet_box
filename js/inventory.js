@@ -734,18 +734,20 @@ function setupRecordUsageButton() {
         }
       };
     } else {
-      // Volume/Weight: 4 buttons (-1, -0.1, +0.1, +1)
+      // Volume/Weight: 4 buttons (-1, -0.1, +0.1, +1) in a wrapped layout
       controlsContainer.innerHTML = `
-        <button type="button" class="btn btn-outline" id="qty-decrease-1" 
-          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">-1</button>
-        <button type="button" class="btn btn-outline" id="qty-decrease-decimal" 
-          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">-0.1</button>
-        <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="0.1" 
-          style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600;" />
-        <button type="button" class="btn btn-outline" id="qty-increase-decimal" 
-          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">+0.1</button>
-        <button type="button" class="btn btn-outline" id="qty-increase-1" 
-          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">+1</button>
+        <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+          <button type="button" class="btn btn-outline" id="qty-decrease-1" 
+            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">-1</button>
+          <button type="button" class="btn btn-outline" id="qty-decrease-decimal" 
+            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">-0.1</button>
+          <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="0.1" 
+            style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600; max-width: 100px;" />
+          <button type="button" class="btn btn-outline" id="qty-increase-decimal" 
+            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">+0.1</button>
+          <button type="button" class="btn btn-outline" id="qty-increase-1" 
+            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">+1</button>
+        </div>
       `;
 
       const input = document.getElementById("quantity-modal-input");
