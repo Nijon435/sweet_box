@@ -787,19 +787,23 @@ async def export_attendance(employee_id: str = None, month: str = None):
         
         if month:
             # Month format: YYYY-MM
-            start_date = f"{month}-01"
-            # Calculate last day of month
             from datetime import datetime
             import calendar
             year, month_num = map(int, month.split('-'))
             last_day = calendar.monthrange(year, month_num)[1]
-            end_date = f"{month}-{last_day}"
             
-            query += f" AND DATE(timestamp) >= ${param_count} AND DATE(timestamp) <= ${param_count + 1}"
-            params.append(start_date)
-            params.append(end_date)
+            # Use timestamp range with full datetime to capture entire month
+            start_datetime = f"{month}-01 00:00:00"
+            end_datetime = f"{month}-{last_day:02d} 23:59:59"
+            
+            query += f" AND timestamp >= ${param_count}::timestamp AND timestamp <= ${param_count + 1}::timestamp"
+            params.append(start_datetime)
+            params.append(end_datetime)
         
         query += " ORDER BY timestamp DESC"
+        
+        logger.info(f"Final query: {query}")
+        logger.info(f"Query params: {params}")
         
         if params:
             rows = await conn.fetch(query, *params)
@@ -819,6 +823,8 @@ async def export_attendance(employee_id: str = None, month: str = None):
             result.append(item)
         
         logger.info(f"Returning {len(result)} attendance logs for export")
+        if result:
+            logger.info(f"First timestamp: {result[0].get('timestamp')}, Last timestamp: {result[-1].get('timestamp')}")
         return result
     except Exception as e:
         logger.error(f"Error fetching attendance for export: {e}", exc_info=True)
