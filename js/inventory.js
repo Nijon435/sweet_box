@@ -613,52 +613,181 @@ function closeEditModal() {
 function setupRecordUsageButton() {
   const cancelBtn = document.getElementById("log-usage-cancel");
   const form = document.getElementById("log-usage-form");
-  const itemSelect = document.getElementById("usage-ingredient-select");
-  const quantityInput = document.getElementById("usage-quantity-input");
-  const addToListBtn = document.getElementById("add-to-list-btn");
   const itemsListContainer = document.getElementById("usage-items-list");
+  const ingredientsGrid = document.getElementById("ingredients-grid");
+  const searchInput = document.getElementById("ingredient-search");
 
-  if (
-    !form ||
-    !itemSelect ||
-    !quantityInput ||
-    !addToListBtn ||
-    !itemsListContainer
-  )
-    return;
+  if (!form || !itemsListContainer || !ingredientsGrid) return;
 
   // Array to hold items to be recorded
   let usageItems = [];
+  let currentIngredient = null;
 
-  // Populate the dropdown with inventory items
-  window.populateUsageItemDropdown = function () {
-    const allItems = (appState.inventory || []).filter((i) => !i.archived);
-    const categories = [...new Set(allItems.map((i) => i.category))].sort();
+  // Populate ingredients grid
+  window.populateIngredientsGrid = function (filterText = "") {
+    const allItems = (appState.inventory || []).filter(
+      (i) => !i.archived && i.category === "ingredients"
+    );
 
-    let optionsHTML = '<option value="">Choose item...</option>';
-    categories.forEach((category) => {
-      optionsHTML += `<optgroup label="${
-        category.charAt(0).toUpperCase() + category.slice(1)
-      }">`;
-      const itemsInCategory = allItems.filter((i) => i.category === category);
-      itemsInCategory.forEach((item) => {
-        optionsHTML += `<option value="${item.id}" data-unit="${
-          item.unit || "units"
-        }" data-available="${item.quantity}">${item.name} (${item.quantity} ${
-          item.unit || "units"
-        })</option>`;
+    const filteredItems = filterText
+      ? allItems.filter((item) =>
+          item.name.toLowerCase().includes(filterText.toLowerCase())
+        )
+      : allItems;
+
+    if (filteredItems.length === 0) {
+      ingredientsGrid.innerHTML =
+        '<p style="color: #9ca3af; text-align: center; padding: 2rem;">No ingredients found</p>';
+      return;
+    }
+
+    ingredientsGrid.innerHTML = filteredItems
+      .map(
+        (item) => `
+        <div 
+          class="ingredient-card" 
+          data-item-id="${item.id}"
+          style="
+            padding: 0.75rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+          "
+          onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af';"
+          onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';"
+        >
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">${
+            item.name
+          }</div>
+          <div style="color: #6b7280; font-size: 0.875rem;">
+            Available: ${item.quantity} ${item.unit || "units"}
+          </div>
+        </div>
+      `
+      )
+      .join("");
+
+    // Attach click handlers
+    document.querySelectorAll(".ingredient-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const itemId = card.dataset.itemId;
+        const item = allItems.find((i) => i.id === itemId);
+        if (item) {
+          openQuantityModal(item);
+        }
       });
-      optionsHTML += "</optgroup>";
     });
-
-    itemSelect.innerHTML = optionsHTML;
   };
+
+  // Search functionality
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      window.populateIngredientsGrid(e.target.value);
+    });
+  }
+
+  // Search functionality
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      window.populateIngredientsGrid(e.target.value);
+    });
+  }
+
+  // Open quantity modal
+  window.openQuantityModal = function (item) {
+    currentIngredient = item;
+    const modal = document.getElementById("quantity-modal");
+    const title = document.getElementById("quantity-modal-title");
+    const available = document.getElementById("quantity-modal-available");
+    const input = document.getElementById("quantity-modal-input");
+    const decreaseBtn = document.getElementById("qty-decrease");
+    const increaseBtn = document.getElementById("qty-increase");
+
+    if (!modal || !title || !available || !input) return;
+
+    title.textContent = item.name;
+    available.textContent = `Available: ${item.quantity} ${
+      item.unit || "units"
+    }`;
+
+    // Set step based on unit type
+    const isCountUnit =
+      item.unit === "count" || item.unit === "pcs" || item.unit === "pieces";
+    input.step = isCountUnit ? "1" : "0.1";
+    input.value = isCountUnit ? "1" : "0.1";
+
+    // Update button handlers
+    decreaseBtn.onclick = () => {
+      const currentValue = parseFloat(input.value) || 0;
+      const step = parseFloat(input.step);
+      const newValue = Math.max(step, currentValue - step);
+      input.value = isCountUnit ? Math.floor(newValue) : newValue.toFixed(1);
+    };
+
+    increaseBtn.onclick = () => {
+      const currentValue = parseFloat(input.value) || 0;
+      const step = parseFloat(input.step);
+      const newValue = currentValue + step;
+      if (newValue <= item.quantity) {
+        input.value = isCountUnit ? Math.floor(newValue) : newValue.toFixed(1);
+      }
+    };
+
+    modal.style.display = "flex";
+  };
+
+  // Close quantity modal
+  window.closeQuantityModal = function () {
+    const modal = document.getElementById("quantity-modal");
+    if (modal) modal.style.display = "none";
+    currentIngredient = null;
+  };
+
+  // Confirm quantity and add to list
+  const confirmBtn = document.getElementById("quantity-modal-confirm");
+  if (confirmBtn) {
+    confirmBtn.onclick = () => {
+      if (!currentIngredient) return;
+
+      const input = document.getElementById("quantity-modal-input");
+      const qty = parseFloat(input.value);
+
+      if (!qty || qty <= 0) {
+        showAlert("Please enter a valid quantity", "warning");
+        return;
+      }
+
+      // Check available quantity
+      const existingQty = usageItems
+        .filter((u) => u.ingredientId === currentIngredient.id)
+        .reduce((sum, u) => sum + u.qty, 0);
+
+      if (existingQty + qty > currentIngredient.quantity) {
+        showAlert(
+          `Insufficient quantity. Available: ${currentIngredient.quantity}, already added: ${existingQty}`,
+          "warning"
+        );
+        return;
+      }
+
+      // Add to list
+      usageItems.push({
+        ingredientId: currentIngredient.id,
+        qty: qty,
+      });
+
+      renderItemsList();
+      window.closeQuantityModal();
+    };
+  }
 
   // Render the list of items to record
   function renderItemsList() {
     if (usageItems.length === 0) {
       itemsListContainer.innerHTML =
-        '<p style="color: #9ca3af; text-align: center; margin: 2rem 0;">No items added yet</p>';
+        '<p style="color: #9ca3af; text-align: center; margin: 8rem 0; font-size: 0.95rem;">Click items from the right to add →</p>';
       return;
     }
 
@@ -692,54 +821,6 @@ function setupRecordUsageButton() {
     usageItems.splice(index, 1);
     renderItemsList();
   };
-
-  // Add to list button handler
-  addToListBtn.addEventListener("click", () => {
-    const ingredientId = itemSelect.value;
-    const qty = Number(quantityInput.value);
-
-    if (!ingredientId) {
-      showAlert("Please select an item", "warning");
-      return;
-    }
-
-    if (!qty || qty <= 0) {
-      showAlert("Please enter a valid quantity", "warning");
-      return;
-    }
-
-    // Check available quantity
-    const item = appState.inventory.find(
-      (i) => i.id === ingredientId && !i.archived
-    );
-    if (!item) {
-      showAlert("Item not found or archived", "error");
-      return;
-    }
-
-    // Calculate total quantity already in the list for this item
-    const existingQty = usageItems
-      .filter((u) => u.ingredientId === ingredientId)
-      .reduce((sum, u) => sum + u.qty, 0);
-
-    if (existingQty + qty > item.quantity) {
-      showAlert(
-        `Insufficient quantity for ${item.name}. Available: ${item.quantity} ${
-          item.unit || "units"
-        }, already added: ${existingQty}`,
-        "warning"
-      );
-      return;
-    }
-
-    // Add to list
-    usageItems.push({ ingredientId, qty });
-    renderItemsList();
-
-    // Clear inputs
-    itemSelect.value = "";
-    quantityInput.value = "";
-  });
 
   // Cancel button - switch back to all items tab
   if (cancelBtn) {
@@ -1053,9 +1134,9 @@ function setupInventoryTabs() {
         usageLogsSection.style.display = "none";
         if (recordUsageSection) {
           recordUsageSection.style.display = "block";
-          // Populate dropdown when tab is opened
-          if (typeof populateUsageItemDropdown === "function") {
-            populateUsageItemDropdown();
+          // Populate ingredients grid when tab is opened
+          if (typeof populateIngredientsGrid === "function") {
+            populateIngredientsGrid();
           }
         }
       }

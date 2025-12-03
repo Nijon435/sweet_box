@@ -837,6 +837,22 @@ function renderArchivedUsageLogs() {
       archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
     }
 
+    // Parse the date properly - handle both ISO strings and locale strings
+    let displayDate = "N/A";
+    const dateValue = firstLog.created_at || firstLog.timestamp;
+    if (dateValue) {
+      const parsedDate = new Date(dateValue);
+      if (!isNaN(parsedDate.getTime())) {
+        displayDate = parsedDate.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><strong>${itemAndQty}</strong></td>
@@ -844,7 +860,7 @@ function renderArchivedUsageLogs() {
         firstLog.reason || "--"
       }</span></td>
       <td>${firstLog.notes || "--"}</td>
-      <td>${formatTime(firstLog.created_at || firstLog.timestamp)}</td>
+      <td>${displayDate}</td>
       <td>${recordedByName}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
@@ -888,6 +904,22 @@ function renderArchivedUsageLogs() {
       archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
     }
 
+    // Parse the date properly - handle both ISO strings and locale strings
+    let displayDate = "N/A";
+    const dateValue = log.created_at || log.timestamp;
+    if (dateValue) {
+      const parsedDate = new Date(dateValue);
+      if (!isNaN(parsedDate.getTime())) {
+        displayDate = parsedDate.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><strong>${itemAndQty}</strong></td>
@@ -895,7 +927,7 @@ function renderArchivedUsageLogs() {
         log.reason || "--"
       }</span></td>
       <td>${log.notes || "--"}</td>
-      <td>${formatTime(log.created_at || log.timestamp)}</td>
+      <td>${displayDate}</td>
       <td>${recordedByName}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
