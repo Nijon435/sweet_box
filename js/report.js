@@ -23,10 +23,10 @@ function renderReports() {
     });
   });
 
-  // Populate staff selector with retry mechanism
+  // Populate staff selector with retry mechanism - wait longer for appState
   setTimeout(() => {
     populateStaffSelector();
-  }, 1000);
+  }, 2000);
 
   // Set default month to current month
   const monthInput = document.getElementById("attendance-month");
@@ -38,26 +38,42 @@ function renderReports() {
   }
 }
 
-function populateStaffSelector() {
+function populateStaffSelector(retries = 0) {
   const staffSelect = document.getElementById("staff-select");
   if (!staffSelect) {
     console.warn("Staff select element not found");
     return;
   }
 
-  // Ensure appState is loaded
-  if (!window.appState || !window.appState.users) {
-    console.warn("Users not loaded yet, retrying...");
-    setTimeout(populateStaffSelector, 500);
-    return;
+  // Ensure appState is loaded - check both window.appState and global appState
+  const currentState =
+    window.appState || (typeof appState !== "undefined" ? appState : null);
+
+  if (!currentState || !currentState.users || currentState.users.length === 0) {
+    if (retries < 10) {
+      console.warn(
+        `Users not loaded yet (attempt ${retries + 1}/10), retrying...`
+      );
+      setTimeout(() => populateStaffSelector(retries + 1), 500);
+      return;
+    } else {
+      console.error("Failed to load users after 10 attempts");
+      staffSelect.innerHTML = '<option value="">No employees found</option>';
+      return;
+    }
   }
 
-  const users = window.appState.users || [];
+  const users = currentState.users || [];
   const employees = users.filter((e) => !e.archived);
 
   console.log(
     `Total users: ${users.length}, Active employees: ${employees.length}`
   );
+
+  if (employees.length === 0) {
+    staffSelect.innerHTML = '<option value="">No active employees</option>';
+    return;
+  }
 
   staffSelect.innerHTML = '<option value="">Choose staff member...</option>';
   employees.forEach((emp) => {
@@ -74,13 +90,24 @@ function populateStaffSelector() {
 
 function exportReport(type) {
   console.log(`📤 Exporting report: ${type}`);
+
+  // Get appState from window or global scope
+  const currentState =
+    window.appState || (typeof appState !== "undefined" ? appState : null);
+
+  if (!currentState) {
+    alert("Data not loaded yet. Please wait a moment and try again.");
+    console.error("appState is not available");
+    return;
+  }
+
   console.log("Available data:", {
-    users: window.appState?.users?.length || 0,
-    inventory: window.appState?.inventory?.length || 0,
-    orders: window.appState?.orders?.length || 0,
-    attendanceLogs: window.appState?.attendanceLogs?.length || 0,
-    salesHistory: window.appState?.salesHistory?.length || 0,
-    inventoryUsageLogs: window.appState?.inventoryUsageLogs?.length || 0,
+    users: currentState.users?.length || 0,
+    inventory: currentState.inventory?.length || 0,
+    orders: currentState.orders?.length || 0,
+    attendanceLogs: currentState.attendanceLogs?.length || 0,
+    salesHistory: currentState.salesHistory?.length || 0,
+    inventoryUsageLogs: currentState.inventoryUsageLogs?.length || 0,
   });
 
   // Handle staff attendance reports separately
@@ -207,9 +234,12 @@ function exportInventoryUsageReport() {
       (i) => i.id === log.inventoryItemId
     );
 
+    // Use createdAt (camelCase) as primary field
+    const dateValue = log.createdAt || log.created_at || log.timestamp;
+
     return {
-      Date: new Date(log.timestamp || log.created_at).toLocaleDateString(),
-      Time: new Date(log.timestamp || log.created_at).toLocaleTimeString(),
+      Date: dateValue ? new Date(dateValue).toLocaleDateString() : "N/A",
+      Time: dateValue ? new Date(dateValue).toLocaleTimeString() : "N/A",
       "Item Name": item ? item.name : "Unknown",
       Quantity: log.quantity,
       Unit: item?.unit || "units",
