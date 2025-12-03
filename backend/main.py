@@ -177,8 +177,8 @@ async def fetch_table(conn, table):
             if table == "inventory_usage_logs":
                 if "inventory_item_id" in item:
                     item["inventoryItemId"] = item.pop("inventory_item_id")
-                if "order_id" in item:
-                    item["orderId"] = item.pop("order_id")
+                if "batch_id" in item:
+                    item["batchId"] = item.pop("batch_id")
                 if "created_at" in item:
                     item["createdAt"] = item.pop("created_at")
                 if "archived_at" in item:
@@ -692,7 +692,7 @@ async def get_usage_logs():
                 "inventoryItemId": row["inventory_item_id"],
                 "quantity": float(row["quantity"]),
                 "reason": row["reason"],
-                "orderId": row["order_id"],
+                "batchId": row.get("batch_id"),
                 "notes": row["notes"],
                 "timestamp": row["created_at"].isoformat() if row["created_at"] else None,
                 "createdBy": row["user_name"] if row["user_name"] else "System",
@@ -730,12 +730,12 @@ async def create_usage_log(log: dict):
         user_id = log.get("userId") or log.get("createdBy")
         
         await conn.execute(
-            """INSERT INTO inventory_usage_logs (inventory_item_id, quantity, reason, order_id, notes, created_at, created_by)
+            """INSERT INTO inventory_usage_logs (inventory_item_id, quantity, reason, batch_id, notes, created_at, created_by)
                VALUES ($1, $2, $3, $4, $5, $6, $7)""",
             log.get("inventoryItemId"),
             float(log.get("quantity", 0)),
             log.get("reason"),
-            log.get("orderId"),
+            log.get("batchId"),
             log.get("notes"),
             timestamp,
             user_id

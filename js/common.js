@@ -1744,68 +1744,74 @@ async function logIngredientUsage(
 }
 
 /**
- * Log multiple ingredients as a single consolidated usage entry
+ * Log multiple ingredients as separate database entries with shared batch_id
  * @param {array} items - Array of {id, name, quantity, unit}
  * @param {string} reason - Reason for usage
  * @param {string} notes - Additional notes
- * @returns {object} The created usage log
+ * @returns {array} Array of created usage logs
  */
 async function logConsolidatedIngredientUsage(items, reason, notes = "") {
   if (!appState.ingredientUsageLogs) {
     appState.ingredientUsageLogs = [];
   }
 
-  // Create a consolidated items string
-  const itemsDescription = items
-    .map(item => `${item.name} (${item.quantity} ${item.unit})`)
-    .join(", ");
+  // Generate a batch ID to link these entries together
+  const batchId = `batch-${Date.now()}-${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+  const timestamp = getLocalTimestamp();
+  const userId = appState.currentUser?.id;
 
-  const usageLog = {
-    id: `usage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    inventoryItemId: null, // Null for consolidated entries
-    consolidatedItems: items, // Store all items in this field
-    itemsDescription: itemsDescription, // Human-readable description
-    quantity: items.reduce((sum, item) => sum + item.quantity, 0), // Total quantity
-    reason: reason,
-    orderId: null,
-    notes: notes,
-    timestamp: getLocalTimestamp(),
-    userId: appState.currentUser?.id,
-    createdBy: appState.currentUser?.id,
-  };
+  const createdLogs = [];
 
-  // Add to local state
-  appState.ingredientUsageLogs.push(usageLog);
+  // Create separate log entry for each item
+  for (const item of items) {
+    const usageLog = {
+      id: `usage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      inventoryItemId: item.id,
+      quantity: parseFloat(item.quantity),
+      reason: reason,
+      notes: notes,
+      batchId: batchId, // Link entries together
+      timestamp: timestamp,
+      userId: userId,
+      createdBy: userId,
+    };
 
-  // Save to database
-  try {
-    const apiBase = window.API_BASE_URL || "";
-    const response = await fetch(`${apiBase}/api/inventory-usage-logs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(usageLog),
-    });
+    // Add to local state
+    appState.ingredientUsageLogs.push(usageLog);
+    createdLogs.push(usageLog);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(
-        "Failed to save consolidated usage log to database:",
-        response.status,
-        errorText
-      );
-    } else {
-      console.log(
-        `Logged consolidated ingredient usage: ${items.length} items for ${reason}`
-      );
+    // Save to database
+    try {
+      const apiBase = window.API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/inventory-usage-logs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(usageLog),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          "Failed to save usage log to database:",
+          response.status,
+          errorText
+        );
+      }
+    } catch (error) {
+      console.error("Error saving usage log:", error);
     }
-  } catch (error) {
-    console.error("Error saving consolidated usage log:", error);
   }
 
-  return usageLog;
+  console.log(
+    `Logged consolidated ingredient usage: ${items.length} items with batch ID ${batchId}`
+  );
+
+  return createdLogs;
 }
 
 /**

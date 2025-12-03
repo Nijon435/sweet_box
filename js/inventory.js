@@ -794,7 +794,7 @@ function setupRecordUsageButton() {
         id: ingredientId,
         name: item.name,
         quantity: qty,
-        unit: item.unit || "units"
+        unit: item.unit || "units",
       });
 
       // Update totalUsed
@@ -823,7 +823,10 @@ function setupRecordUsageButton() {
     }
 
     // Create a single consolidated usage log for all items
-    if (itemsToLog.length > 0 && typeof logConsolidatedIngredientUsage === "function") {
+    if (
+      itemsToLog.length > 0 &&
+      typeof logConsolidatedIngredientUsage === "function"
+    ) {
       await logConsolidatedIngredientUsage(itemsToLog, usageReason, notes);
     }
 
@@ -1074,41 +1077,91 @@ function renderUsageLogs(logs) {
     return;
   }
 
-  tbody.innerHTML = logs
-    .map((log) => {
-      const timestamp = new Date(log.timestamp || log.created_at);
-      const formattedDate = timestamp.toLocaleDateString();
-      const formattedTime = timestamp.toLocaleTimeString();
-      
-      let itemAndQty;
-      
-      // Check if this is a consolidated log entry
-      if (log.consolidatedItems && log.consolidatedItems.length > 0) {
-        // Display all items in the consolidated entry
-        itemAndQty = log.consolidatedItems
-          .map(item => `${item.name} (${item.quantity} ${item.unit})`)
-          .join("<br>");
-      } else if (log.itemsDescription) {
-        // Use the pre-formatted description if available
-        itemAndQty = log.itemsDescription.replace(/,/g, "<br>");
-      } else {
-        // Single item log (legacy format)
+  // Group logs by batch_id
+  const groupedLogs = {};
+  const standaloneLogIds = [];
+
+  logs.forEach((log) => {
+    if (log.batchId) {
+      if (!groupedLogs[log.batchId]) {
+        groupedLogs[log.batchId] = [];
+      }
+      groupedLogs[log.batchId].push(log);
+    } else {
+      standaloneLogIds.push(log.id);
+    }
+  });
+
+  // Build rows: first show batched entries, then standalone ones
+  let rows = [];
+
+  // Render batched entries
+  Object.entries(groupedLogs).forEach(([batchId, batchLogs]) => {
+    // Sort batch logs by timestamp
+    batchLogs.sort(
+      (a, b) =>
+        new Date(b.timestamp || b.created_at) -
+        new Date(a.timestamp || a.created_at)
+    );
+
+    const firstLog = batchLogs[0];
+    const timestamp = new Date(firstLog.timestamp || firstLog.created_at);
+    const formattedDate = timestamp.toLocaleDateString();
+    const formattedTime = timestamp.toLocaleTimeString();
+
+    // Combine all items from the batch
+    const itemAndQty = batchLogs
+      .map((log) => {
         const item = appState.inventory?.find(
           (i) => i.id === log.inventoryItemId
         );
         const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
         const quantity = log.quantity || 0;
         const unit = item?.unit || "";
-        itemAndQty = `${itemName} - ${quantity} ${unit}`;
-      }
-      
-      const reason = log.reason || "N/A";
-      const notes = log.notes || "-";
-      const recordedBy = log.createdBy || log.userName || "System";
+        return `${itemName} (${quantity} ${unit})`;
+      })
+      .join("<br>");
 
-      console.log("Log createdBy:", log.createdBy, "userName:", log.userName); // Debug
+    const reason = firstLog.reason || "N/A";
+    const notes = firstLog.notes || "-";
+    const recordedBy = firstLog.createdBy || firstLog.userName || "System";
 
-      return `
+    rows.push(`
+      <tr>
+        <td>${formattedDate} ${formattedTime}</td>
+        <td>${itemAndQty}</td>
+        <td>${formatReason(reason)}</td>
+        <td>${notes}</td>
+        <td>${recordedBy}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="archiveBatchUsageLogs('${batchId}')" title="Archive this batch">
+            Archive
+          </button>
+        </td>
+      </tr>
+    `);
+  });
+
+  // Render standalone entries
+  standaloneLogIds.forEach((logId) => {
+    const log = logs.find((l) => l.id === logId);
+    if (!log) return;
+
+    const timestamp = new Date(log.timestamp || log.created_at);
+    const formattedDate = timestamp.toLocaleDateString();
+    const formattedTime = timestamp.toLocaleTimeString();
+
+    const item = appState.inventory?.find((i) => i.id === log.inventoryItemId);
+    const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
+    const quantity = log.quantity || 0;
+    const unit = item?.unit || "";
+    const itemAndQty = `${itemName} (${quantity} ${unit})`;
+
+    const reason = log.reason || "N/A";
+    const notes = log.notes || "-";
+    const recordedBy = log.createdBy || log.userName || "System";
+
+    rows.push(`
       <tr>
         <td>${formattedDate} ${formattedTime}</td>
         <td>${itemAndQty}</td>
@@ -1123,9 +1176,10 @@ function renderUsageLogs(logs) {
           </button>
         </td>
       </tr>
-    `;
-    })
-    .join("");
+    `);
+  });
+
+  tbody.innerHTML = rows.join("");
 }
 
 // Format reason text for display
@@ -1179,7 +1233,54 @@ async function archiveUsageLog(logId) {
   }
 }
 
+// Archive all usage logs in a batch
+async function archiveBatchUsageLogs(batchId) {
+  if (
+    !confirm(
+      "Archive all logs in this batch? They will be moved to the Archive page."
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const logsToArchive = appState.ingredientUsageLogs.filter(
+      (log) => log.batchId === batchId && !log.archived
+    );
+
+    const apiBase = window.API_BASE_URL || "";
+    const archivePromises = logsToArchive.map((log) =>
+      fetch(`${apiBase}/api/inventory-usage-logs/${log.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          archived: true,
+          archivedAt: new Date().toISOString(),
+          archivedBy: appState.currentUser?.id,
+        }),
+      })
+    );
+
+    const results = await Promise.all(archivePromises);
+    const allSuccess = results.every((res) => res.ok);
+
+    if (!allSuccess) {
+      throw new Error("Failed to archive some logs");
+    }
+
+    alert("Batch logs archived successfully");
+    loadUsageLogs(); // Reload the table
+  } catch (error) {
+    console.error("Error archiving batch logs:", error);
+    alert("Failed to archive batch logs");
+  }
+}
+
 window.archiveUsageLog = archiveUsageLog;
+window.archiveBatchUsageLogs = archiveBatchUsageLogs;
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["inventory"] = function () {

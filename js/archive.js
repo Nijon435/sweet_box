@@ -778,29 +778,95 @@ function renderArchivedUsageLogs() {
     return;
   }
 
+  // Group logs by batch_id
+  const groupedLogs = {};
+  const standaloneLogIds = [];
+
   archivedLogs.forEach((log) => {
-    // Determine item display
-    let itemAndQty;
-    
-    // Check if this is a consolidated log entry
-    if (log.consolidatedItems && log.consolidatedItems.length > 0) {
-      // Display all items in the consolidated entry
-      itemAndQty = log.consolidatedItems
-        .map(item => `${item.name} (${item.quantity} ${item.unit})`)
-        .join("<br>");
-    } else if (log.itemsDescription) {
-      // Use the pre-formatted description if available
-      itemAndQty = log.itemsDescription.replace(/,/g, "<br>");
+    if (log.batchId) {
+      if (!groupedLogs[log.batchId]) {
+        groupedLogs[log.batchId] = [];
+      }
+      groupedLogs[log.batchId].push(log);
     } else {
-      // Single item log (legacy format)
-      const inventoryItem = (appState.inventory || []).find(
-        (item) =>
-          item.id === log.inventory_item_id || item.id === log.inventoryItemId
-      );
-      const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
-      const unit = inventoryItem?.unit || "";
-      itemAndQty = `${itemName} - ${log.quantity} ${unit}`;
+      standaloneLogIds.push(log.id);
     }
+  });
+
+  // Render batched entries
+  Object.entries(groupedLogs).forEach(([batchId, batchLogs]) => {
+    // Sort batch logs by timestamp
+    batchLogs.sort(
+      (a, b) =>
+        new Date(b.timestamp || b.created_at) -
+        new Date(a.timestamp || a.created_at)
+    );
+
+    const firstLog = batchLogs[0];
+
+    // Combine all items from the batch
+    const itemAndQty = batchLogs
+      .map((log) => {
+        const inventoryItem = (appState.inventory || []).find(
+          (item) =>
+            item.id === log.inventory_item_id || item.id === log.inventoryItemId
+        );
+        const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
+        const unit = inventoryItem?.unit || "";
+        return `${itemName} (${log.quantity} ${unit})`;
+      })
+      .join("<br>");
+
+    // Get recorded by user name
+    let recordedByName = "--";
+    const createdById = firstLog.createdBy || firstLog.created_by;
+    if (createdById) {
+      const createdByUser = (appState.users || []).find(
+        (u) => u.id === createdById
+      );
+      recordedByName = createdByUser ? createdByUser.name : createdById;
+    }
+
+    // Get archived by user name
+    let archivedByName = "--";
+    const archivedById = firstLog.archivedBy || firstLog.archived_by;
+    if (archivedById) {
+      const archivedByUser = (appState.users || []).find(
+        (u) => u.id === archivedById
+      );
+      archivedByName = archivedByUser ? archivedByUser.name : "Unknown";
+    }
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${itemAndQty}</strong></td>
+      <td><span class="pill" style="background: #e3f2fd; color: #1565c0; font-size: 0.75rem">${
+        firstLog.reason || "--"
+      }</span></td>
+      <td>${firstLog.notes || "--"}</td>
+      <td>${formatTime(firstLog.created_at || firstLog.timestamp)}</td>
+      <td>${recordedByName}</td>
+      <td>${archivedByName}</td>
+      <td class="archive-actions">
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-batch="${batchId}">Restore</button>
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-batch="${batchId}">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Render standalone entries
+  standaloneLogIds.forEach((logId) => {
+    const log = archivedLogs.find((l) => l.id === logId);
+    if (!log) return;
+
+    const inventoryItem = (appState.inventory || []).find(
+      (item) =>
+        item.id === log.inventory_item_id || item.id === log.inventoryItemId
+    );
+    const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
+    const unit = inventoryItem?.unit || "";
+    const itemAndQty = `${itemName} (${log.quantity} ${unit})`;
 
     // Get recorded by user name
     let recordedByName = "--";
@@ -844,7 +910,7 @@ function renderArchivedUsageLogs() {
     tbody.appendChild(row);
   });
 
-  // Attach event listeners
+  // Attach event listeners for standalone logs
   document.querySelectorAll("[data-restore-usage-log]").forEach((btn) => {
     btn.addEventListener("click", () =>
       restoreUsageLog(btn.dataset.restoreUsageLog)
@@ -854,6 +920,19 @@ function renderArchivedUsageLogs() {
   document.querySelectorAll("[data-delete-usage-log]").forEach((btn) => {
     btn.addEventListener("click", () =>
       deleteUsageLog(btn.dataset.deleteUsageLog)
+    );
+  });
+
+  // Attach event listeners for batch logs
+  document.querySelectorAll("[data-restore-batch]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      restoreBatchUsageLogs(btn.dataset.restoreBatch)
+    );
+  });
+
+  document.querySelectorAll("[data-delete-batch]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      deleteBatchUsageLogs(btn.dataset.deleteBatch)
     );
   });
 }
@@ -894,6 +973,50 @@ async function restoreUsageLog(logId) {
   );
 }
 
+// Restore all usage logs in a batch
+async function restoreBatchUsageLogs(batchId) {
+  const batchLogs = (appState.inventoryUsageLogs || []).filter(
+    (log) => log.batchId === batchId && log.archived
+  );
+
+  if (batchLogs.length === 0) return;
+
+  showCustomConfirm(
+    "Restore Batch Logs",
+    `Are you sure you want to restore all ${batchLogs.length} logs in this batch?`,
+    async () => {
+      try {
+        const restorePromises = batchLogs.map((log) => {
+          log.archived = false;
+          log.archivedAt = null;
+          log.archivedBy = null;
+
+          return fetch(
+            `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(log),
+            }
+          );
+        });
+
+        const results = await Promise.all(restorePromises);
+        const allSuccess = results.every((res) => res.ok);
+
+        if (!allSuccess) throw new Error("Failed to restore some logs");
+
+        showToast("Batch logs restored successfully!", "#4caf50");
+        renderArchive();
+      } catch (error) {
+        console.error("Error restoring batch logs:", error);
+        showToast("Failed to restore batch logs", "#f44336");
+      }
+    }
+  );
+}
+
 // Delete Usage Log
 async function deleteUsageLog(logId) {
   showCustomConfirm(
@@ -921,6 +1044,49 @@ async function deleteUsageLog(logId) {
       } catch (error) {
         console.error("Error deleting usage log:", error);
         showToast("Failed to delete usage log", "#f44336");
+      }
+    }
+  );
+}
+
+// Delete all usage logs in a batch
+async function deleteBatchUsageLogs(batchId) {
+  const batchLogs = (appState.inventoryUsageLogs || []).filter(
+    (log) => log.batchId === batchId
+  );
+
+  if (batchLogs.length === 0) return;
+
+  showCustomConfirm(
+    "Permanently Delete Batch Logs",
+    `This action cannot be undone. All ${batchLogs.length} logs in this batch will be permanently deleted.`,
+    async () => {
+      try {
+        const deletePromises = batchLogs.map((log) =>
+          fetch(
+            `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
+            {
+              method: "DELETE",
+              credentials: "include",
+            }
+          )
+        );
+
+        const results = await Promise.all(deletePromises);
+        const allSuccess = results.every((res) => res.ok);
+
+        if (!allSuccess) throw new Error("Failed to delete some logs");
+
+        // Remove from appState
+        appState.inventoryUsageLogs = (
+          appState.inventoryUsageLogs || []
+        ).filter((l) => l.batchId !== batchId);
+
+        showToast("Batch logs permanently deleted", "#ff9800");
+        renderArchive();
+      } catch (error) {
+        console.error("Error deleting batch logs:", error);
+        showToast("Failed to delete batch logs", "#f44336");
       }
     }
   );
