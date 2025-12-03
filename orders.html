@@ -240,6 +240,38 @@
             </thead>
             <tbody></tbody>
           </table>
+          <div
+            id="orders-pagination"
+            style="
+              display: none;
+              justify-content: center;
+              align-items: center;
+              gap: 1rem;
+              margin-top: 1rem;
+              padding: 1rem;
+            "
+          >
+            <button
+              class="btn btn-outline btn-sm"
+              id="orders-prev-btn"
+              onclick="ordersPreviousPage()"
+              disabled
+            >
+              ← Previous
+            </button>
+            <span style="color: #666; font-size: 0.9rem">
+              Page <span id="orders-current-page">1</span> of
+              <span id="orders-total-pages">1</span>
+            </span>
+            <button
+              class="btn btn-outline btn-sm"
+              id="orders-next-btn"
+              onclick="ordersNextPage()"
+              disabled
+            >
+              Next →
+            </button>
+          </div>
         </section>
 
         <p class="footer-note" style="display: none;">

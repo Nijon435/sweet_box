@@ -972,8 +972,15 @@ function renderOrders() {
       const emptyRow = document.createElement("tr");
       emptyRow.innerHTML = `<td colspan="5" class="empty-state">No orders yet.</td>`;
       tableBody.appendChild(emptyRow);
+      updateOrdersPaginationControls(0);
     } else {
-      allOrders.forEach((order) => {
+      // Apply pagination
+      const totalPages = Math.ceil(allOrders.length / ordersItemsPerPage);
+      const startIdx = (ordersCurrentPage - 1) * ordersItemsPerPage;
+      const endIdx = startIdx + ordersItemsPerPage;
+      const pageOrders = allOrders.slice(startIdx, endIdx);
+
+      pageOrders.forEach((order) => {
         const orderTypeKey = normalizeOrderType(order.type);
         const orderTypeTag = `<span class="pill pill-ghost order-type-tag order-type-${orderTypeKey}">${getOrderTypeLabel(
           orderTypeKey
@@ -997,6 +1004,8 @@ function renderOrders() {
         `;
         tableBody.appendChild(row);
       });
+
+      updateOrdersPaginationControls(totalPages);
     }
   }
 
@@ -1424,6 +1433,48 @@ function initializeOrderForm() {
     console.warn("initializeOrderForm failed", err);
   }
 }
+
+// Orders pagination functions
+function updateOrdersPaginationControls(totalPages) {
+  const currentPageEl = document.getElementById("orders-current-page");
+  const totalPagesEl = document.getElementById("orders-total-pages");
+  const prevBtn = document.getElementById("orders-prev-btn");
+  const nextBtn = document.getElementById("orders-next-btn");
+  const pagination = document.getElementById("orders-pagination");
+
+  if (!currentPageEl || !totalPagesEl || !prevBtn || !nextBtn || !pagination)
+    return;
+
+  // Hide pagination if no pages or only one page
+  if (totalPages <= 1) {
+    pagination.style.display = "none";
+    return;
+  } else {
+    pagination.style.display = "flex";
+  }
+
+  currentPageEl.textContent = ordersCurrentPage;
+  totalPagesEl.textContent = totalPages;
+
+  // Enable/disable buttons
+  prevBtn.disabled = ordersCurrentPage === 1;
+  nextBtn.disabled = ordersCurrentPage >= totalPages;
+}
+
+function ordersPreviousPage() {
+  if (ordersCurrentPage > 1) {
+    ordersCurrentPage--;
+    renderOrders();
+  }
+}
+
+function ordersNextPage() {
+  ordersCurrentPage++;
+  renderOrders();
+}
+
+window.ordersPreviousPage = ordersPreviousPage;
+window.ordersNextPage = ordersNextPage;
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["orders"] = function () {

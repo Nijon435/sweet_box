@@ -460,6 +460,38 @@
               </tr>
             </tbody>
           </table>
+          <div
+            id="usage-logs-pagination"
+            style="
+              display: none;
+              justify-content: center;
+              align-items: center;
+              gap: 1rem;
+              margin-top: 1rem;
+              padding: 1rem;
+            "
+          >
+            <button
+              class="btn btn-outline btn-sm"
+              id="usage-logs-prev-btn"
+              onclick="usageLogsPreviousPage()"
+              disabled
+            >
+              ← Previous
+            </button>
+            <span style="color: #666; font-size: 0.9rem">
+              Page <span id="usage-logs-current-page">1</span> of
+              <span id="usage-logs-total-pages">1</span>
+            </span>
+            <button
+              class="btn btn-outline btn-sm"
+              id="usage-logs-next-btn"
+              onclick="usageLogsNextPage()"
+              disabled
+            >
+              Next →
+            </button>
+          </div>
         </section>
 
         <!-- Record Usage Tab Section -->
@@ -631,7 +663,7 @@
               id="quantity-modal"
               style="display: none"
             >
-              <div class="modal-card" style="max-width: 400px">
+              <div class="modal-card" style="max-width: 480px">
                 <div class="modal-card__header">
                   <h3 id="quantity-modal-title">Enter Quantity</h3>
                   <button

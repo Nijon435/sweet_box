@@ -10,6 +10,10 @@ let currentFilters = {
 let currentPage = 1;
 const itemsPerPage = 20;
 
+// Usage logs pagination state
+let usageLogsCurrentPage = 1;
+const usageLogsItemsPerPage = 20;
+
 function renderInventory() {
   renderMetrics();
   setupForms();
@@ -711,10 +715,10 @@ function setupRecordUsageButton() {
     if (isCountUnit) {
       // Simple +/- buttons for count
       controlsContainer.innerHTML = `
-        <button type="button" class="btn btn-outline" id="qty-decrease" style="width: 40px; height: 40px; padding: 0;">−</button>
-        <input type="number" id="quantity-modal-input" min="1" step="1" value="1" 
-          style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600;" />
-        <button type="button" class="btn btn-outline" id="qty-increase" style="width: 40px; height: 40px; padding: 0;">+</button>
+        <button type="button" class="btn btn-outline" id="qty-decrease" style="width: 50px; height: 40px; padding: 0; font-size: 1.1rem;">−</button>
+        <input type="number" id="quantity-modal-input" min="1" step="1" value="1" readonly
+          style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600; cursor: default;" />
+        <button type="button" class="btn btn-outline" id="qty-increase" style="width: 50px; height: 40px; padding: 0; font-size: 1.1rem;">+</button>
       `;
 
       const input = document.getElementById("quantity-modal-input");
@@ -736,17 +740,17 @@ function setupRecordUsageButton() {
     } else {
       // Volume/Weight: 4 buttons (-1, -0.1, +0.1, +1) in a wrapped layout
       controlsContainer.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%; justify-content: center;">
           <button type="button" class="btn btn-outline" id="qty-decrease-1" 
-            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">-1</button>
+            style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">-1</button>
           <button type="button" class="btn btn-outline" id="qty-decrease-decimal" 
-            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">-0.1</button>
-          <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="0.1" 
-            style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600; max-width: 100px;" />
+            style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">-0.1</button>
+          <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="0.1" readonly
+            style="width: 90px; text-align: center; font-size: 1.25rem; font-weight: 600; cursor: default;" />
           <button type="button" class="btn btn-outline" id="qty-increase-decimal" 
-            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">+0.1</button>
+            style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">+0.1</button>
           <button type="button" class="btn btn-outline" id="qty-increase-1" 
-            style="width: 50px; height: 40px; padding: 0; font-size: 0.85rem;">+1</button>
+            style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">+1</button>
         </div>
       `;
 
@@ -1229,6 +1233,7 @@ function renderUsageLogs(logs) {
         </td>
       </tr>
     `;
+    updateUsageLogsPaginationControls(0);
     return;
   }
 
@@ -1248,7 +1253,7 @@ function renderUsageLogs(logs) {
   });
 
   // Build rows: first show batched entries, then standalone ones
-  let rows = [];
+  let allRows = [];
 
   // Render batched entries
   Object.entries(groupedLogs).forEach(([batchId, batchLogs]) => {
@@ -1292,7 +1297,7 @@ function renderUsageLogs(logs) {
       }
     }
 
-    rows.push(`
+    allRows.push(`
       <tr>
         <td>${formattedDate} ${formattedTime}</td>
         <td>${itemAndQty}</td>
@@ -1338,7 +1343,7 @@ function renderUsageLogs(logs) {
       }
     }
 
-    rows.push(`
+    allRows.push(`
       <tr>
         <td>${formattedDate} ${formattedTime}</td>
         <td>${itemAndQty}</td>
@@ -1356,7 +1361,14 @@ function renderUsageLogs(logs) {
     `);
   });
 
-  tbody.innerHTML = rows.join("");
+  // Apply pagination
+  const totalPages = Math.ceil(allRows.length / usageLogsItemsPerPage);
+  const startIdx = (usageLogsCurrentPage - 1) * usageLogsItemsPerPage;
+  const endIdx = startIdx + usageLogsItemsPerPage;
+  const pageRows = allRows.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageRows.join("");
+  updateUsageLogsPaginationControls(totalPages);
 }
 
 // Format reason text for display
@@ -1489,6 +1501,48 @@ async function archiveBatchUsageLogs(batchId) {
 
 window.archiveUsageLog = archiveUsageLog;
 window.archiveBatchUsageLogs = archiveBatchUsageLogs;
+
+// Usage logs pagination functions
+function updateUsageLogsPaginationControls(totalPages) {
+  const currentPageEl = document.getElementById("usage-logs-current-page");
+  const totalPagesEl = document.getElementById("usage-logs-total-pages");
+  const prevBtn = document.getElementById("usage-logs-prev-btn");
+  const nextBtn = document.getElementById("usage-logs-next-btn");
+  const pagination = document.getElementById("usage-logs-pagination");
+
+  if (!currentPageEl || !totalPagesEl || !prevBtn || !nextBtn || !pagination)
+    return;
+
+  // Hide pagination if no pages or only one page
+  if (totalPages <= 1) {
+    pagination.style.display = "none";
+    return;
+  } else {
+    pagination.style.display = "flex";
+  }
+
+  currentPageEl.textContent = usageLogsCurrentPage;
+  totalPagesEl.textContent = totalPages;
+
+  // Enable/disable buttons
+  prevBtn.disabled = usageLogsCurrentPage === 1;
+  nextBtn.disabled = usageLogsCurrentPage >= totalPages;
+}
+
+function usageLogsPreviousPage() {
+  if (usageLogsCurrentPage > 1) {
+    usageLogsCurrentPage--;
+    loadUsageLogs();
+  }
+}
+
+function usageLogsNextPage() {
+  usageLogsCurrentPage++;
+  loadUsageLogs();
+}
+
+window.usageLogsPreviousPage = usageLogsPreviousPage;
+window.usageLogsNextPage = usageLogsNextPage;
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["inventory"] = function () {
