@@ -764,6 +764,7 @@ async def export_attendance(employee_id: str = None, month: str = None):
         employee_id: Filter by specific employee ID
         month: Filter by month in YYYY-MM format
     """
+    conn = None
     try:
         logger.info(f"Fetching attendance logs for export: employee_id={employee_id}, month={month}")
         conn = await asyncpg.connect(
@@ -787,18 +788,18 @@ async def export_attendance(employee_id: str = None, month: str = None):
         
         if month:
             # Month format: YYYY-MM
-            from datetime import datetime
             import calendar
             year, month_num = map(int, month.split('-'))
             last_day = calendar.monthrange(year, month_num)[1]
             
-            # Use ISO format timestamps for PostgreSQL
-            start_datetime = f"{year}-{month_num:02d}-01T00:00:00"
-            end_datetime = f"{year}-{month_num:02d}-{last_day:02d}T23:59:59"
+            # Use simple date strings that PostgreSQL can handle
+            start_date = f"{year}-{month_num:02d}-01"
+            end_date = f"{year}-{month_num:02d}-{last_day:02d}"
             
-            query += f" AND timestamp >= ${param_count} AND timestamp <= ${param_count + 1}"
-            params.append(start_datetime)
-            params.append(end_datetime)
+            # Compare using date extraction from timestamp
+            query += f" AND DATE(timestamp) >= ${param_count}::date AND DATE(timestamp) <= ${param_count + 1}::date"
+            params.append(start_date)
+            params.append(end_date)
             param_count += 2
         
         query += " ORDER BY timestamp DESC"
@@ -810,7 +811,6 @@ async def export_attendance(employee_id: str = None, month: str = None):
             rows = await conn.fetch(query, *params)
         else:
             rows = await conn.fetch(query)
-        await conn.close()
         
         result = []
         for row in rows:
@@ -830,6 +830,9 @@ async def export_attendance(employee_id: str = None, month: str = None):
     except Exception as e:
         logger.error(f"Error fetching attendance for export: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            await conn.close()
 
 # ========== END EXPORT API ENDPOINTS ==========
 
