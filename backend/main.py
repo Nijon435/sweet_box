@@ -558,6 +558,274 @@ async def delete_order(order_id: str):
         logger.error(f"Error deleting order: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+# ========== EXPORT API ENDPOINTS (No Limits) ==========
+
+@app.get("/api/export/inventory")
+async def export_inventory():
+    """Get all inventory items for export"""
+    try:
+        logger.info("Fetching all inventory for export")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        query = "SELECT * FROM inventory WHERE archived = FALSE ORDER BY category, name"
+        rows = await conn.fetch(query)
+        await conn.close()
+        
+        result = []
+        for row in rows:
+            item = dict(row)
+            if "date_purchased" in item:
+                item["datePurchased"] = item.pop("date_purchased")
+            if "use_by_date" in item:
+                item["useByDate"] = item.pop("use_by_date")
+            if "expiry_date" in item:
+                item["expiryDate"] = item.pop("expiry_date")
+            if "reorder_point" in item:
+                item["reorderPoint"] = item.pop("reorder_point")
+            if "last_restocked" in item:
+                item["lastRestocked"] = item.pop("last_restocked")
+            if "total_used" in item:
+                item["totalUsed"] = item.pop("total_used")
+            if "created_at" in item:
+                item["createdAt"] = item.pop("created_at")
+            if "archived_at" in item:
+                item["archivedAt"] = item.pop("archived_at")
+            if "archived_by" in item:
+                item["archivedBy"] = item.pop("archived_by")
+            result.append(item)
+        
+        logger.info(f"Returning {len(result)} inventory items for export")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching inventory for export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/inventory-usage")
+async def export_inventory_usage():
+    """Get all inventory usage logs for export"""
+    try:
+        logger.info("Fetching all inventory usage logs for export")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        query = "SELECT * FROM inventory_usage_logs WHERE archived = FALSE ORDER BY created_at DESC"
+        rows = await conn.fetch(query)
+        await conn.close()
+        
+        result = []
+        for row in rows:
+            item = dict(row)
+            if "inventory_item_id" in item:
+                item["inventoryItemId"] = item.pop("inventory_item_id")
+            if "batch_id" in item:
+                item["batchId"] = item.pop("batch_id")
+            if "created_at" in item:
+                item["createdAt"] = item.pop("created_at")
+            if "archived_at" in item:
+                item["archivedAt"] = item.pop("archived_at")
+            if "archived_by" in item:
+                item["archivedBy"] = item.pop("archived_by")
+            result.append(item)
+        
+        logger.info(f"Returning {len(result)} usage logs for export")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching inventory usage for export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/orders")
+async def export_orders():
+    """Get all orders for export"""
+    try:
+        logger.info("Fetching all orders for export")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        query = "SELECT * FROM orders WHERE archived = FALSE ORDER BY timestamp DESC"
+        rows = await conn.fetch(query)
+        await conn.close()
+        
+        result = []
+        for row in rows:
+            item = dict(row)
+            if "items_json" in item:
+                items_json = item.pop("items_json")
+                item["itemsJson"] = items_json
+            if "served_at" in item:
+                item["servedAt"] = item.pop("served_at")
+            if "archived_at" in item:
+                item["archivedAt"] = item.pop("archived_at")
+            if "archived_by" in item:
+                item["archivedBy"] = item.pop("archived_by")
+            result.append(item)
+        
+        logger.info(f"Returning {len(result)} orders for export")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching orders for export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/sales")
+async def export_sales():
+    """Get all sales history for export"""
+    try:
+        logger.info("Fetching all sales history for export")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        query = "SELECT * FROM sales_history ORDER BY date DESC"
+        rows = await conn.fetch(query)
+        await conn.close()
+        
+        result = []
+        for row in rows:
+            item = dict(row)
+            if "orders_count" in item:
+                item["ordersCount"] = item.pop("orders_count")
+            result.append(item)
+        
+        logger.info(f"Returning {len(result)} sales records for export")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching sales for export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/users")
+async def export_users():
+    """Get all users/employees for export"""
+    try:
+        logger.info("Fetching all users for export")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        query = "SELECT * FROM users WHERE archived = FALSE ORDER BY name"
+        rows = await conn.fetch(query)
+        await conn.close()
+        
+        result = []
+        for row in rows:
+            item = dict(row)
+            if "hire_date" in item:
+                item["hireDate"] = item.pop("hire_date")
+            if "shift_start" in item:
+                item["shiftStart"] = item.pop("shift_start")
+            if "created_at" in item:
+                item["createdAt"] = item.pop("created_at")
+            if "require_password_reset" in item:
+                item["requirePasswordReset"] = item.pop("require_password_reset")
+            if "archived_at" in item:
+                item["archivedAt"] = item.pop("archived_at")
+            if "archived_by" in item:
+                item["archivedBy"] = item.pop("archived_by")
+            result.append(item)
+        
+        logger.info(f"Returning {len(result)} users for export")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching users for export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/attendance")
+async def export_attendance(employee_id: str = None, month: str = None):
+    """Get attendance logs for export with optional filters
+    
+    Args:
+        employee_id: Filter by specific employee ID
+        month: Filter by month in YYYY-MM format
+    """
+    try:
+        logger.info(f"Fetching attendance logs for export: employee_id={employee_id}, month={month}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        # Build query with filters
+        query = "SELECT * FROM attendance_logs WHERE archived = FALSE"
+        params = []
+        param_count = 1
+        
+        if employee_id:
+            query += f" AND employee_id = ${param_count}"
+            params.append(employee_id)
+            param_count += 1
+        
+        if month:
+            # Month format: YYYY-MM
+            start_date = f"{month}-01"
+            # Calculate last day of month
+            from datetime import datetime
+            import calendar
+            year, month_num = map(int, month.split('-'))
+            last_day = calendar.monthrange(year, month_num)[1]
+            end_date = f"{month}-{last_day}"
+            
+            query += f" AND DATE(timestamp) >= ${param_count} AND DATE(timestamp) <= ${param_count + 1}"
+            params.append(start_date)
+            params.append(end_date)
+        
+        query += " ORDER BY timestamp DESC"
+        
+        if params:
+            rows = await conn.fetch(query, *params)
+        else:
+            rows = await conn.fetch(query)
+        await conn.close()
+        
+        result = []
+        for row in rows:
+            item = dict(row)
+            if "employee_id" in item:
+                item["employeeId"] = item.pop("employee_id")
+            if "archived_at" in item:
+                item["archivedAt"] = item.pop("archived_at")
+            if "archived_by" in item:
+                item["archivedBy"] = item.pop("archived_by")
+            result.append(item)
+        
+        logger.info(f"Returning {len(result)} attendance logs for export")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching attendance for export: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ========== END EXPORT API ENDPOINTS ==========
+
 @app.get("/api/attendance-logs")
 async def get_attendance_logs(start_date: str = None, end_date: str = None, limit: int = 1000):
     """Get attendance logs with optional date range filtering"""

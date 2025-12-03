@@ -5,6 +5,20 @@
 
 console.log("🔄 Reports module loading...");
 
+// Helper function to fetch data from export API
+async function fetchExportData(endpoint) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/export/${endpoint}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${endpoint}: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching export data for ${endpoint}:`, error);
+    throw error;
+  }
+}
+
 function renderReports() {
   console.log("📊 Reports page initialized");
   console.log("Current appState:", appState);
@@ -130,11 +144,19 @@ function exportReport(type) {
       return;
     }
 
-    if (type === "staff-attendance-excel") {
-      exportStaffAttendanceExcel(staffId, monthValue);
-    } else {
-      exportStaffAttendanceWord(staffId, monthValue);
-    }
+    // Call async functions
+    (async () => {
+      try {
+        if (type === "staff-attendance-excel") {
+          await exportStaffAttendanceExcel(staffId, monthValue);
+        } else {
+          await exportStaffAttendanceWord(staffId, monthValue);
+        }
+      } catch (error) {
+        console.error("Error exporting staff attendance:", error);
+        alert(`Error exporting report: ${error.message}`);
+      }
+    })();
     return;
   }
 
@@ -149,50 +171,50 @@ function exportReport(type) {
 
   console.log(`Routing to export function for: ${type}`);
 
-  // Route to appropriate export function
-  try {
-    switch (type) {
-      case "inventory":
-        exportInventoryReport();
-        break;
-      case "inventory-usage":
-        exportInventoryUsageReport();
-        break;
-      case "low-stock":
-        exportLowStockReport();
-        break;
-      case "sales":
-        exportSalesReport();
-        break;
-      case "orders":
-        exportOrdersReport();
-        break;
-      case "financial":
-        exportFinancialReport();
-        break;
-      case "employees":
-        exportEmployeesReport();
-        break;
-      case "attendance":
-        exportAttendanceReport();
-        break;
-      default:
-        console.error(`Unknown report type: ${type}`);
-        alert(`Report type "${type}" not implemented yet`);
+  // Route to appropriate export function - use async for API calls
+  (async () => {
+    try {
+      switch (type) {
+        case "inventory":
+          await exportInventoryReport();
+          break;
+        case "inventory-usage":
+          await exportInventoryUsageReport();
+          break;
+        case "low-stock":
+          await exportLowStockReport();
+          break;
+        case "sales":
+          await exportSalesReport();
+          break;
+        case "orders":
+          await exportOrdersReport();
+          break;
+        case "financial":
+          await exportFinancialReport();
+          break;
+        case "employees":
+          await exportEmployeesReport();
+          break;
+        case "attendance":
+          await exportAttendanceReport();
+          break;
+        default:
+          console.error(`Unknown report type: ${type}`);
+          alert(`Report type "${type}" not implemented yet`);
+      }
+    } catch (error) {
+      console.error(`Error exporting ${type}:`, error);
+      alert(`Error exporting report: ${error.message}`);
     }
-  } catch (error) {
-    console.error(`Error exporting ${type}:`, error);
-    alert(`Error exporting report: ${error.message}`);
-  }
+  })();
 }
 
 // ========== EXPORT FUNCTIONS ==========
 
-function exportInventoryReport() {
+async function exportInventoryReport() {
   console.log("Exporting inventory report...");
-  const inventory = (getAppState().inventory || []).filter(
-    (item) => !item.archived
-  );
+  const inventory = await fetchExportData("inventory");
 
   const sheetData = inventory.map((item) => ({
     Category: item.category || "N/A",
@@ -228,16 +250,13 @@ function exportInventoryReport() {
   XLSX.writeFile(wb, `Inventory_Ledger_${todayKey()}.xlsx`);
 }
 
-function exportInventoryUsageReport() {
+async function exportInventoryUsageReport() {
   console.log("Exporting inventory usage report...");
-  const usageLogs = (getAppState().inventoryUsageLogs || []).filter(
-    (log) => !log.archived
-  );
+  const usageLogs = await fetchExportData("inventory-usage");
+  const inventory = await fetchExportData("inventory");
 
   const sheetData = usageLogs.map((log) => {
-    const item = (getAppState().inventory || []).find(
-      (i) => i.id === log.inventoryItemId
-    );
+    const item = inventory.find((i) => i.id === log.inventoryItemId);
 
     // Use createdAt (camelCase) as primary field
     const dateValue = log.createdAt || log.created_at || log.timestamp;
@@ -272,11 +291,9 @@ function exportInventoryUsageReport() {
   XLSX.writeFile(wb, `Inventory_Usage_${todayKey()}.xlsx`);
 }
 
-function exportLowStockReport() {
+async function exportLowStockReport() {
   console.log("Exporting low stock report...");
-  const inventory = (getAppState().inventory || []).filter(
-    (item) => !item.archived
-  );
+  const inventory = await fetchExportData("inventory");
 
   const lowStockItems = inventory.filter((item) => {
     const reorderPoint = item.reorderPoint || 10;
@@ -317,9 +334,9 @@ function exportLowStockReport() {
   XLSX.writeFile(wb, `Low_Stock_Alert_${todayKey()}.xlsx`);
 }
 
-function exportSalesReport() {
+async function exportSalesReport() {
   console.log("Exporting sales report...");
-  const orders = getAppState().orders || [];
+  const orders = await fetchExportData("orders");
 
   // Group orders by date
   const salesByDate = {};
@@ -348,9 +365,9 @@ function exportSalesReport() {
   XLSX.writeFile(wb, `Sales_Summary_${todayKey()}.xlsx`);
 }
 
-function exportOrdersReport() {
+async function exportOrdersReport() {
   console.log("Exporting orders report...");
-  const orders = getAppState().orders || [];
+  const orders = await fetchExportData("orders");
   console.log("Orders data:", orders);
   console.log("First order sample:", orders[0]);
 
@@ -412,17 +429,21 @@ function exportOrdersReport() {
   XLSX.writeFile(wb, `Order_History_${todayKey()}.xlsx`);
 }
 
-function exportFinancialReport() {
+async function exportFinancialReport() {
   console.log("Exporting financial report...");
-  const orders = getAppState().orders || [];
+  const orders = await fetchExportData("orders");
+  const inventory = await fetchExportData("inventory");
+  const users = await fetchExportData("users");
+
   const totalRevenue = orders.reduce(
     (sum, order) => sum + (order.total || 0),
     0
   );
 
-  const inventoryValue = (getAppState().inventory || [])
-    .filter((item) => !item.archived)
-    .reduce((sum, item) => sum + item.quantity * (item.cost || 0), 0);
+  const inventoryValue = inventory.reduce(
+    (sum, item) => sum + item.quantity * (item.cost || 0),
+    0
+  );
 
   const totalOrders = orders.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -451,7 +472,7 @@ function exportFinancialReport() {
     },
     {
       Metric: "Total Employees",
-      Value: (getAppState().users || []).filter((e) => !e.archived).length,
+      Value: users.length,
     },
   ];
 
@@ -464,9 +485,9 @@ function exportFinancialReport() {
   XLSX.writeFile(wb, `Financial_Snapshot_${todayKey()}.xlsx`);
 }
 
-function exportEmployeesReport() {
+async function exportEmployeesReport() {
   console.log("Exporting employees report...");
-  const employees = (getAppState().users || []).filter((e) => !e.archived);
+  const employees = await fetchExportData("users");
 
   const sheetData = employees.map((emp) => ({
     Name: emp.name,
@@ -496,16 +517,13 @@ function exportEmployeesReport() {
   XLSX.writeFile(wb, `Employee_Directory_${todayKey()}.xlsx`);
 }
 
-function exportAttendanceReport() {
+async function exportAttendanceReport() {
   console.log("Exporting attendance report...");
-  const attendanceLogs = (getAppState().attendanceLogs || []).filter(
-    (log) => !log.archived
-  );
+  const attendanceLogs = await fetchExportData("attendance");
+  const users = await fetchExportData("users");
 
   const sheetData = attendanceLogs.map((log) => {
-    const employee = (getAppState().users || []).find(
-      (e) => e.id === log.employeeId
-    );
+    const employee = users.find((e) => e.id === log.employeeId);
 
     let status = "";
     if (log.action === "in") status = "Clock In";
@@ -538,13 +556,15 @@ function exportAttendanceReport() {
 }
 
 // Export Staff Attendance Report as Excel (Daily Time Record format)
-function exportStaffAttendanceExcel(staffId, monthValue) {
+async function exportStaffAttendanceExcel(staffId, monthValue) {
   if (typeof XLSX === "undefined") {
     alert("SheetJS is required for Excel export");
     return;
   }
 
-  const employee = (getAppState().users || []).find((e) => e.id === staffId);
+  // Fetch users to get employee details
+  const users = await fetchExportData("users");
+  const employee = users.find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -558,15 +578,15 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
   // Get number of days in month
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Get all attendance logs for this employee in this month
-  const monthLogs = (getAppState().attendanceLogs || []).filter((log) => {
-    if (log.employeeId !== staffId || log.archived) return false;
-    const logDate = new Date(log.timestamp);
-    return (
-      logDate.getFullYear() === parseInt(year) &&
-      logDate.getMonth() === parseInt(month) - 1
-    );
-  });
+  // Fetch attendance logs for this employee and month from API
+  const response = await fetch(
+    `${API_BASE_URL}/api/export/attendance?employee_id=${staffId}&month=${monthValue}`
+  );
+  if (!response.ok) {
+    alert("Failed to fetch attendance data");
+    return;
+  }
+  const monthLogs = await response.json();
 
   // Build the report data
   const reportData = [];
@@ -681,8 +701,10 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
 }
 
 // Export Staff Attendance Report as Word (Daily Time Record format)
-function exportStaffAttendanceWord(staffId, monthValue) {
-  const employee = (getAppState().users || []).find((e) => e.id === staffId);
+async function exportStaffAttendanceWord(staffId, monthValue) {
+  // Fetch users to get employee details
+  const users = await fetchExportData("users");
+  const employee = users.find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -696,15 +718,15 @@ function exportStaffAttendanceWord(staffId, monthValue) {
   // Get number of days in month
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Get all attendance logs for this employee in this month
-  const monthLogs = (getAppState().attendanceLogs || []).filter((log) => {
-    if (log.employeeId !== staffId || log.archived) return false;
-    const logDate = new Date(log.timestamp);
-    return (
-      logDate.getFullYear() === parseInt(year) &&
-      logDate.getMonth() === parseInt(month) - 1
-    );
-  });
+  // Fetch attendance logs for this employee and month from API
+  const response = await fetch(
+    `${API_BASE_URL}/api/export/attendance?employee_id=${staffId}&month=${monthValue}`
+  );
+  if (!response.ok) {
+    alert("Failed to fetch attendance data");
+    return;
+  }
+  const monthLogs = await response.json();
 
   // Build the report data first for calculations
   const reportData = [];
