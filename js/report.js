@@ -830,13 +830,12 @@ function exportStaffAttendanceWord(staffId, monthValue) {
         }
         .tables-wrapper {
           width: 100%;
-          display: flex;
-          justify-content: space-between;
-          gap: 15px;
         }
         .table-column {
-          flex: 1;
+          display: inline-block;
           width: 48%;
+          vertical-align: top;
+          margin: 0 1%;
         }
         table { 
           width: 100%;
@@ -880,7 +879,7 @@ function exportStaffAttendanceWord(staffId, monthValue) {
         <div class="header-row">
           <div class="header-split">
             <div class="header-left"><strong>Role:</strong> ${
-              employee.permission || "Staff"
+              employee.role || "Staff"
             }</div>
             <div class="header-right"><strong>Access:</strong> ${
               employee.permission || "Staff"
