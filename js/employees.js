@@ -1464,20 +1464,20 @@ window.pageRenderers["employees"] = renderEmployees;
 // Checks if employees haven't clocked in and marks them absent at 10 PM
 let autoAbsentCheckInterval = null;
 
-function startAutoAbsentCheck() {
+window.startAutoAbsentCheck = function () {
   // Clear any existing interval
   if (autoAbsentCheckInterval) {
     clearInterval(autoAbsentCheckInterval);
   }
 
   // Check every minute
-  autoAbsentCheckInterval = setInterval(checkAndLogAbsent, 60000);
+  autoAbsentCheckInterval = setInterval(window.checkAndLogAbsent, 60000);
 
   // Also run immediately on page load
-  checkAndLogAbsent();
-}
+  window.checkAndLogAbsent();
+};
 
-async function checkAndLogAbsent() {
+window.checkAndLogAbsent = async function () {
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
@@ -1601,20 +1601,16 @@ async function checkAndLogAbsent() {
   } catch (error) {
     console.error("Error saving absent logs:", error);
   }
-}
+};
 
 // Start the auto-absent check when the page loads
 if (typeof window !== "undefined") {
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startAutoAbsentCheck);
+    document.addEventListener("DOMContentLoaded", window.startAutoAbsentCheck);
   } else {
-    startAutoAbsentCheck();
+    window.startAutoAbsentCheck();
   }
 }
-
-// Export functions for testing/manual triggering
-window.startAutoAbsentCheck = startAutoAbsentCheck;
-window.checkAndLogAbsent = checkAndLogAbsent;
 
 // Edit employee modal with inline styles and permission editing
 window.openEditEmployeeModal = function (userId) {
