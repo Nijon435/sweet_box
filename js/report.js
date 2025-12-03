@@ -90,7 +90,7 @@ function populateStaffSelector(retries = 0) {
 
 // Helper function to get appState from correct source
 function getAppState() {
-  return getAppState() || (typeof appState !== "undefined" ? appState : null);
+  return window.appState || (typeof appState !== "undefined" ? appState : null);
 }
 
 function exportReport(type) {
