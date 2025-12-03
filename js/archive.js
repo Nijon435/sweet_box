@@ -170,10 +170,10 @@ function renderArchivedInventory() {
       <td>${item.unit || "--"}</td>
       <td>${archivedByName}</td>
       <td class="archive-actions">
-        <button class="btn btn-outline btn-sm btn-restore" data-restore-item="${
+        <button class="btn btn-outline btn-sm btn-restore" data-restore-inventory="${
           item.id
         }">Restore</button>
-        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-item="${
+        <button class="btn btn-warning btn-sm btn-permanent-delete" data-delete-inventory="${
           item.id
         }">Delete</button>
       </td>
@@ -942,35 +942,41 @@ async function restoreUsageLog(logId) {
   const log = (appState.inventoryUsageLogs || []).find((l) => l.id == logId);
   if (!log) return;
 
-  showCustomConfirm(
+  const confirmed = await showConfirmAlert(
     "Restore Usage Log",
-    `Are you sure you want to restore this usage log?`,
-    async () => {
-      log.archived = false;
-      log.archivedAt = null;
-      log.archivedBy = null;
-
-      try {
-        const response = await fetch(
-          `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${logId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(log),
-          }
-        );
-
-        if (!response.ok) throw new Error("Failed to restore");
-
-        showToast("Usage log restored successfully!", "#4caf50");
-        renderArchive();
-      } catch (error) {
-        console.error("Error restoring usage log:", error);
-        showToast("Failed to restore usage log", "#f44336");
-      }
-    }
+    `Are you sure you want to restore this usage log?`
   );
+  
+  if (!confirmed) return;
+
+  showLoading("Restoring usage log...");
+  
+  log.archived = false;
+  log.archivedAt = null;
+  log.archivedBy = null;
+
+  try {
+    const response = await fetch(
+      `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${logId}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(log),
+      }
+    );
+
+    hideLoading();
+
+    if (!response.ok) throw new Error("Failed to restore");
+
+    showAlert("Usage log restored successfully!", "success");
+    renderArchive();
+  } catch (error) {
+    hideLoading();
+    console.error("Error restoring usage log:", error);
+    showAlert("Failed to restore usage log", "error");
+  }
 }
 
 // Restore all usage logs in a batch
@@ -981,33 +987,47 @@ async function restoreBatchUsageLogs(batchId) {
 
   if (batchLogs.length === 0) return;
 
-  showCustomConfirm(
+  const confirmed = await showConfirmAlert(
     "Restore Batch Logs",
-    `Are you sure you want to restore all ${batchLogs.length} logs in this batch?`,
-    async () => {
-      try {
-        const restorePromises = batchLogs.map((log) => {
-          log.archived = false;
-          log.archivedAt = null;
-          log.archivedBy = null;
+    `Are you sure you want to restore all ${batchLogs.length} logs in this batch?`
+  );
+  
+  if (!confirmed) return;
 
-          return fetch(
-            `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
-            {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify(log),
-            }
-          );
-        });
+  showLoading("Restoring batch logs...");
 
-        const results = await Promise.all(restorePromises);
-        const allSuccess = results.every((res) => res.ok);
+  try {
+    const restorePromises = batchLogs.map((log) => {
+      log.archived = false;
+      log.archivedAt = null;
+      log.archivedBy = null;
 
-        if (!allSuccess) throw new Error("Failed to restore some logs");
+      return fetch(
+        `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(log),
+        }
+      );
+    });
 
-        showToast("Batch logs restored successfully!", "#4caf50");
+    const results = await Promise.all(restorePromises);
+    const allSuccess = results.every((res) => res.ok);
+
+    hideLoading();
+
+    if (!allSuccess) throw new Error("Failed to restore some logs");
+
+    showAlert("Batch logs restored successfully!", "success");
+    renderArchive();
+  } catch (error) {
+    hideLoading();
+    console.error("Error restoring batch logs:", error);
+    showAlert("Failed to restore batch logs", "error");
+  }
+}
         renderArchive();
       } catch (error) {
         console.error("Error restoring batch logs:", error);
@@ -1019,34 +1039,40 @@ async function restoreBatchUsageLogs(batchId) {
 
 // Delete Usage Log
 async function deleteUsageLog(logId) {
-  showCustomConfirm(
+  const confirmed = await showConfirmAlert(
     "Permanently Delete Usage Log",
-    "This action cannot be undone. The usage log will be permanently deleted.",
-    async () => {
-      try {
-        const response = await fetch(
-          `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${logId}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) throw new Error("Failed to delete");
-
-        // Remove from appState
-        appState.inventoryUsageLogs = (
-          appState.inventoryUsageLogs || []
-        ).filter((l) => l.id != logId);
-
-        showToast("Usage log permanently deleted", "#ff9800");
-        renderArchive();
-      } catch (error) {
-        console.error("Error deleting usage log:", error);
-        showToast("Failed to delete usage log", "#f44336");
-      }
-    }
+    "This action cannot be undone. The usage log will be permanently deleted."
   );
+  
+  if (!confirmed) return;
+
+  showLoading("Deleting usage log...");
+
+  try {
+    const response = await fetch(
+      `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${logId}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+      }
+    );
+
+    hideLoading();
+
+    if (!response.ok) throw new Error("Failed to delete");
+
+    // Remove from appState
+    appState.inventoryUsageLogs = (
+      appState.inventoryUsageLogs || []
+    ).filter((l) => l.id != logId);
+
+    showAlert("Usage log permanently deleted", "success");
+    renderArchive();
+  } catch (error) {
+    hideLoading();
+    console.error("Error deleting usage log:", error);
+    showAlert("Failed to delete usage log", "error");
+  }
 }
 
 // Delete all usage logs in a batch
@@ -1057,37 +1083,46 @@ async function deleteBatchUsageLogs(batchId) {
 
   if (batchLogs.length === 0) return;
 
-  showCustomConfirm(
+  const confirmed = await showConfirmAlert(
     "Permanently Delete Batch Logs",
-    `This action cannot be undone. All ${batchLogs.length} logs in this batch will be permanently deleted.`,
-    async () => {
-      try {
-        const deletePromises = batchLogs.map((log) =>
-          fetch(
-            `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
-            {
-              method: "DELETE",
-              credentials: "include",
-            }
-          )
-        );
+    `This action cannot be undone. All ${batchLogs.length} logs in this batch will be permanently deleted.`
+  );
+  
+  if (!confirmed) return;
 
-        const results = await Promise.all(deletePromises);
-        const allSuccess = results.every((res) => res.ok);
+  showLoading("Deleting batch logs...");
 
-        if (!allSuccess) throw new Error("Failed to delete some logs");
+  try {
+    const deletePromises = batchLogs.map((log) =>
+      fetch(
+        `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      )
+    );
 
-        // Remove from appState
-        appState.inventoryUsageLogs = (
-          appState.inventoryUsageLogs || []
-        ).filter((l) => l.batchId !== batchId);
+    const results = await Promise.all(deletePromises);
+    const allSuccess = results.every((res) => res.ok);
 
-        showToast("Batch logs permanently deleted", "#ff9800");
-        renderArchive();
-      } catch (error) {
-        console.error("Error deleting batch logs:", error);
-        showToast("Failed to delete batch logs", "#f44336");
-      }
+    hideLoading();
+
+    if (!allSuccess) throw new Error("Failed to delete some logs");
+
+    // Remove from appState
+    appState.inventoryUsageLogs = (
+      appState.inventoryUsageLogs || []
+    ).filter((l) => l.batchId !== batchId);
+
+    showAlert("Batch logs permanently deleted", "success");
+    renderArchive();
+  } catch (error) {
+    hideLoading();
+    console.error("Error deleting batch logs:", error);
+    showAlert("Failed to delete batch logs", "error");
+  }
+}
     }
   );
 }

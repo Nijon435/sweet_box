@@ -335,7 +335,9 @@ async function saveAttendanceLog(log) {
 }
 
 const formatTime = (isoString) => {
+  if (!isoString) return "N/A";
   const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "Invalid Date";
   return date.toLocaleString("en-PH", {
     month: "short",
     day: "numeric",

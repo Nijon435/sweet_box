@@ -977,6 +977,18 @@ async def create_request(request: dict):
         )
         
         # Insert request into database
+        # Handle requestedChanges properly - don't double-encode
+        requested_changes = request.get("requestedChanges")
+        if requested_changes:
+            if isinstance(requested_changes, str):
+                # Already a JSON string, use as-is
+                requested_changes_json = requested_changes
+            else:
+                # It's a dict/object, serialize it
+                requested_changes_json = json.dumps(requested_changes)
+        else:
+            requested_changes_json = None
+            
         await conn.execute(
             """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -987,7 +999,7 @@ async def create_request(request: dict):
             parse_date(request.get("startDate")),
             parse_date(request.get("endDate")),
             request.get("reason"),
-            json.dumps(request.get("requestedChanges")) if request.get("requestedChanges") else None,
+            requested_changes_json,
             request.get("status", "pending"),
             parse_timestamp(request.get("requestedAt")),
             request.get("reviewedBy"),
@@ -1015,6 +1027,18 @@ async def update_request(request_id: str, request: dict):
             ssl='require'
         )
         
+        # Handle requestedChanges properly - don't double-encode
+        requested_changes = request.get("requestedChanges")
+        if requested_changes:
+            if isinstance(requested_changes, str):
+                # Already a JSON string, use as-is
+                requested_changes_json = requested_changes
+            else:
+                # It's a dict/object, serialize it
+                requested_changes_json = json.dumps(requested_changes)
+        else:
+            requested_changes_json = None
+            
         await conn.execute(
             """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -1035,7 +1059,7 @@ async def update_request(request_id: str, request: dict):
             parse_date(request.get("startDate")),
             parse_date(request.get("endDate")),
             request.get("reason"),
-            json.dumps(request.get("requestedChanges")) if request.get("requestedChanges") else None,
+            requested_changes_json,
             request.get("status", "pending"),
             parse_timestamp(request.get("requestedAt")),
             request.get("reviewedBy"),
@@ -1200,6 +1224,18 @@ async def save_state(state: dict):
         # Save requests (leave and profile edit requests)
         if "requests" in state and state["requests"]:
             for request in state["requests"]:
+                # Handle requestedChanges properly - don't double-encode
+                requested_changes = request.get("requestedChanges")
+                if requested_changes:
+                    if isinstance(requested_changes, str):
+                        # Already a JSON string, use as-is
+                        requested_changes_json = requested_changes
+                    else:
+                        # It's a dict/object, serialize it
+                        requested_changes_json = json.dumps(requested_changes)
+                else:
+                    requested_changes_json = None
+                    
                 await conn.execute(
                     """INSERT INTO requests (id, employee_id, request_type, start_date, end_date, reason, requested_changes, status, requested_at, reviewed_by, reviewed_at)
                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -1212,7 +1248,7 @@ async def save_state(state: dict):
                     request.get("id"), request.get("employeeId"),
                     request.get("requestType", "leave"),
                     parse_date(request.get("startDate")), parse_date(request.get("endDate")),
-                    request.get("reason"), json.dumps(request.get("requestedChanges")) if request.get("requestedChanges") else None,
+                    request.get("reason"), requested_changes_json,
                     request.get("status", "pending"),
                     parse_timestamp(request.get("requestedAt")),
                     request.get("reviewedBy"), parse_timestamp(request.get("reviewedAt"))
