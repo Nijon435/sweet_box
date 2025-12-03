@@ -1505,6 +1505,185 @@ function hideLoading() {
   }
 }
 
+// Custom success alert with modern design
+function showCustomSuccessAlert(title, message) {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; transform-origin: center;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333; font-weight: 600;">${title}</h3>
+        <p style="margin: 0; color: #666; font-size: 1rem; line-height: 1.5;">${message}</p>
+      </div>
+      <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="width: 100%; padding: 0.875rem; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)';">
+        Got it!
+      </button>
+    </div>
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes scaleIn {
+        from { transform: scale(0); }
+        to { transform: scale(1); }
+      }
+    </style>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Auto-close after 3 seconds
+  setTimeout(() => {
+    if (modal.parentNode) {
+      modal.style.animation = "fadeOut 0.2s ease-out";
+      setTimeout(() => modal.remove(), 200);
+    }
+  }, 3000);
+
+  // Click outside to close
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
+
+// Default styled alert system - replaces window.alert()
+function showAlert(message, type = "info") {
+  const colors = {
+    success: { bg: "#4caf50", icon: "✓" },
+    error: { bg: "#f44336", icon: "✕" },
+    warning: { bg: "#ff9800", icon: "⚠" },
+    info: { bg: "#2196F3", icon: "ℹ" },
+  };
+
+  const config = colors[type] || colors.info;
+
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px ${config.bg}40;">
+          <span style="color: white; font-size: 1.5rem; font-weight: bold;">${config.icon}</span>
+        </div>
+        <p style="margin: 0; color: #333; font-size: 1rem; line-height: 1.5; flex: 1;">${message}</p>
+      </div>
+      <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="width: 100%; padding: 0.75rem; background: ${config.bg}; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+        OK
+      </button>
+    </div>
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+    </style>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Click outside to close
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+
+  // Auto-close after 5 seconds for non-error messages
+  if (type !== "error") {
+    setTimeout(() => {
+      if (modal.parentNode) {
+        modal.remove();
+      }
+    }, 5000);
+  }
+}
+
+// Confirm dialog with promise
+function showConfirmAlert(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.createElement("div");
+    modal.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+    modal.innerHTML = `
+      <div style="background: white; border-radius: 12px; padding: 1.5rem; max-width: 420px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);">
+            <span style="color: white; font-size: 1.75rem;">?</span>
+          </div>
+          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #333; font-weight: 600;">${title}</h3>
+          <p style="margin: 0; color: #666; font-size: 0.95rem; line-height: 1.5;">${message}</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button id="confirm-cancel" style="flex: 1; padding: 0.75rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #6b7280; font-size: 0.95rem; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
+            Cancel
+          </button>
+          <button id="confirm-ok" style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            Confirm
+          </button>
+        </div>
+      </div>
+      <style>
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      </style>
+    `;
+
+    document.body.appendChild(modal);
+
+    const okBtn = modal.querySelector("#confirm-ok");
+    const cancelBtn = modal.querySelector("#confirm-cancel");
+
+    const cleanup = () => {
+      modal.remove();
+    };
+
+    okBtn.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    cancelBtn.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    // Click outside to cancel
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        cleanup();
+        resolve(false);
+      }
+    });
+  });
+}
+
 // Edit profile modal for current user
 function openEditProfileModal() {
   const currentUser = getCurrentUser();
@@ -1760,7 +1939,13 @@ async function logConsolidatedIngredientUsage(items, reason, notes = "") {
     .toString(36)
     .substr(2, 9)}`;
   const timestamp = getLocalTimestamp();
-  const userId = appState.currentUser?.id;
+
+  // Get current user ID properly
+  const currentUser = getCurrentUser();
+  const userId = currentUser?.id;
+
+  console.log("Current user for usage log:", currentUser);
+  console.log("User ID:", userId);
 
   const createdLogs = [];
 

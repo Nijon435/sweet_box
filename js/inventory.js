@@ -229,7 +229,13 @@ function renderUnifiedTable() {
       const id = btn.dataset.archive;
       const item = appState.inventory.find((i) => i.id === id);
       if (!item) return;
-      if (confirm(`Archive ${item.name}? This will move it to the archive.`)) {
+
+      const confirmed = await showConfirmAlert(
+        "Archive Item",
+        `Archive ${item.name}? This will move it to the archive.`
+      );
+
+      if (confirmed) {
         const currentUser = getCurrentUser();
         item.archived = true;
         item.archivedAt = getLocalTimestamp();
@@ -263,11 +269,11 @@ function renderUnifiedTable() {
 
           hideLoading();
           renderInventory();
-          alert("Item archived successfully");
+          showAlert("Item archived successfully!", "success");
         } catch (error) {
           hideLoading();
           console.error("Error archiving item:", error);
-          alert("Failed to archive item");
+          showAlert("Failed to archive item", "error");
           return;
         }
       }
@@ -335,7 +341,7 @@ function setupAddModal() {
     addBtn.dataset.bound = "true";
     addBtn.addEventListener("click", () => {
       if (!isAdmin()) {
-        alert("Only administrators can add inventory items.");
+        showAlert("Only administrators can add inventory items.", "warning");
         return;
       }
       openAddModal();
@@ -368,7 +374,7 @@ function setupAddModal() {
       e.preventDefault();
 
       if (!isAdmin()) {
-        alert("Only administrators can add inventory items.");
+        showAlert("Only administrators can add inventory items.", "warning");
         return;
       }
 
@@ -388,7 +394,7 @@ function setupAddModal() {
       };
 
       if (!payload.category || !payload.name) {
-        alert("Please fill in all required fields.");
+        showAlert("Please fill in all required fields.", "warning");
         return;
       }
 
@@ -424,11 +430,11 @@ function setupAddModal() {
           hideLoading();
           closeAddModal();
           renderInventory();
-          alert("Inventory item added successfully!");
+          showAlert("Inventory item added successfully!", "success");
         } catch (error) {
           hideLoading();
           console.error("Error adding inventory item:", error);
-          alert("Failed to add inventory item");
+          showAlert("Failed to add inventory item", "error");
         }
       })();
     });
@@ -487,7 +493,10 @@ function setupEditModal() {
       e.preventDefault();
 
       if (!isAdmin()) {
-        alert("Only administrators can update inventory records.");
+        showAlert(
+          "Only administrators can update inventory records.",
+          "warning"
+        );
         return;
       }
 
@@ -548,11 +557,11 @@ function setupEditModal() {
           hideLoading();
           closeEditModal();
           renderInventory();
-          alert("Inventory item updated successfully!");
+          showAlert("Inventory item updated successfully!", "success");
         } catch (error) {
           hideLoading();
           console.error("Error updating inventory:", error);
-          alert("Failed to update inventory item");
+          showAlert("Failed to update inventory item", "error");
         }
       })();
     });
@@ -690,12 +699,12 @@ function setupRecordUsageButton() {
     const qty = Number(quantityInput.value);
 
     if (!ingredientId) {
-      alert("Please select an item");
+      showAlert("Please select an item", "warning");
       return;
     }
 
     if (!qty || qty <= 0) {
-      alert("Please enter a valid quantity");
+      showAlert("Please enter a valid quantity", "warning");
       return;
     }
 
@@ -704,7 +713,7 @@ function setupRecordUsageButton() {
       (i) => i.id === ingredientId && !i.archived
     );
     if (!item) {
-      alert("Item not found or archived");
+      showAlert("Item not found or archived", "error");
       return;
     }
 
@@ -714,10 +723,11 @@ function setupRecordUsageButton() {
       .reduce((sum, u) => sum + u.qty, 0);
 
     if (existingQty + qty > item.quantity) {
-      alert(
+      showAlert(
         `Insufficient quantity for ${item.name}. Available: ${item.quantity} ${
           item.unit || "units"
-        }, already added: ${existingQty}`
+        }, already added: ${existingQty}`,
+        "warning"
       );
       return;
     }
@@ -755,7 +765,7 @@ function setupRecordUsageButton() {
     const notes = document.getElementById("usage-notes-field").value || "";
 
     if (usageItems.length === 0) {
-      alert("Please add at least one item to the list");
+      showAlert("Please add at least one item to the list", "warning");
       return;
     }
 
@@ -771,17 +781,18 @@ function setupRecordUsageButton() {
       );
 
       if (idx < 0) {
-        alert(`Item ${ingredientId} not found or archived`);
+        showAlert(`Item ${ingredientId} not found or archived`, "error");
         continue;
       }
 
       const item = appState.inventory[idx];
 
       if (item.quantity < qty) {
-        alert(
+        showAlert(
           `Insufficient quantity for ${item.name}. Available: ${
             item.quantity
-          } ${item.unit || "units"}`
+          } ${item.unit || "units"}`,
+          "warning"
         );
         continue;
       }
@@ -818,9 +829,12 @@ function setupRecordUsageButton() {
         successCount++;
       } catch (error) {
         console.error("Error updating inventory:", error);
-        alert(`Failed to update ${item.name}. Please try again.`);
+        showAlert(`Failed to update ${item.name}. Please try again.`, "error");
       }
     }
+
+    // Show loader
+    showLoading("Recording usage logs...");
 
     // Create a single consolidated usage log for all items
     if (
@@ -829,6 +843,9 @@ function setupRecordUsageButton() {
     ) {
       await logConsolidatedIngredientUsage(itemsToLog, usageReason, notes);
     }
+
+    // Hide loader
+    hideLoading();
 
     // Success
     if (successCount > 0) {
@@ -847,8 +864,10 @@ function setupRecordUsageButton() {
         other: "Other",
       };
 
-      alert(
-        `Successfully recorded ${successCount} item(s) for ${
+      // Show custom success alert
+      showCustomSuccessAlert(
+        "Usage Recorded Successfully",
+        `${successCount} item${successCount > 1 ? "s" : ""} recorded as ${
           reasonLabels[usageReason] || usageReason
         }`
       );
@@ -858,6 +877,9 @@ function setupRecordUsageButton() {
       if (allItemsTab) {
         allItemsTab.click();
       }
+
+      // Reload usage logs to show the new entry
+      loadUsageLogs();
     }
   });
 }
@@ -1124,7 +1146,18 @@ function renderUsageLogs(logs) {
 
     const reason = firstLog.reason || "N/A";
     const notes = firstLog.notes || "-";
-    const recordedBy = firstLog.createdBy || firstLog.userName || "System";
+
+    // Get user name - check userName first (from backend), then lookup by createdBy ID
+    let recordedBy = "System";
+    if (firstLog.userName) {
+      recordedBy = firstLog.userName;
+    } else {
+      const createdById = firstLog.createdBy || firstLog.created_by;
+      if (createdById) {
+        const user = appState.users?.find((u) => u.id === createdById);
+        recordedBy = user ? user.name : createdById;
+      }
+    }
 
     rows.push(`
       <tr>
@@ -1159,7 +1192,18 @@ function renderUsageLogs(logs) {
 
     const reason = log.reason || "N/A";
     const notes = log.notes || "-";
-    const recordedBy = log.createdBy || log.userName || "System";
+
+    // Get user name - check userName first (from backend), then lookup by createdBy ID
+    let recordedBy = "System";
+    if (log.userName) {
+      recordedBy = log.userName;
+    } else {
+      const createdById = log.createdBy || log.created_by;
+      if (createdById) {
+        const user = appState.users?.find((u) => u.id === createdById);
+        recordedBy = user ? user.name : createdById;
+      }
+    }
 
     rows.push(`
       <tr>
@@ -1197,13 +1241,19 @@ function formatReason(reason) {
 
 // Archive a usage log
 async function archiveUsageLog(logId) {
-  if (
-    !confirm("Archive this usage log? It will be moved to the Archive page.")
-  ) {
+  const confirmed = await showConfirmAlert(
+    "Archive Log",
+    "Archive this usage log? It will be moved to the Archive page."
+  );
+
+  if (!confirmed) {
     return;
   }
 
+  showLoading("Archiving log...");
+
   try {
+    const currentUser = getCurrentUser();
     const apiBase = window.API_BASE_URL || "";
     const response = await fetch(
       `${apiBase}/api/inventory-usage-logs/${logId}`,
@@ -1216,39 +1266,61 @@ async function archiveUsageLog(logId) {
         body: JSON.stringify({
           archived: true,
           archivedAt: new Date().toISOString(),
-          archivedBy: appState.currentUser?.id,
+          archivedBy: currentUser?.id,
         }),
       }
     );
+
+    hideLoading();
 
     if (!response.ok) {
       throw new Error("Failed to archive usage log");
     }
 
-    alert("Usage log archived successfully");
+    showAlert("Usage log archived successfully!", "success");
     loadUsageLogs(); // Reload the table
   } catch (error) {
+    hideLoading();
     console.error("Error archiving usage log:", error);
-    alert("Failed to archive usage log");
+    showAlert("Failed to archive usage log", "error");
   }
 }
 
 // Archive all usage logs in a batch
 async function archiveBatchUsageLogs(batchId) {
-  if (
-    !confirm(
-      "Archive all logs in this batch? They will be moved to the Archive page."
-    )
-  ) {
+  const confirmed = await showConfirmAlert(
+    "Archive Batch",
+    "Archive all logs in this batch? They will be moved to the Archive page."
+  );
+
+  if (!confirmed) {
     return;
   }
 
+  showLoading("Archiving batch logs...");
+
   try {
-    const logsToArchive = appState.ingredientUsageLogs.filter(
+    const apiBase = window.API_BASE_URL || "";
+
+    // First, fetch all current logs to get the ones with this batchId
+    const response = await fetch(`${apiBase}/api/inventory-usage-logs`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch usage logs");
+
+    const allLogs = await response.json();
+    const logsToArchive = allLogs.filter(
       (log) => log.batchId === batchId && !log.archived
     );
 
-    const apiBase = window.API_BASE_URL || "";
+    if (logsToArchive.length === 0) {
+      hideLoading();
+      showAlert("No logs found to archive", "warning");
+      return;
+    }
+
+    const currentUser = getCurrentUser();
     const archivePromises = logsToArchive.map((log) =>
       fetch(`${apiBase}/api/inventory-usage-logs/${log.id}`, {
         method: "PUT",
@@ -1259,7 +1331,7 @@ async function archiveBatchUsageLogs(batchId) {
         body: JSON.stringify({
           archived: true,
           archivedAt: new Date().toISOString(),
-          archivedBy: appState.currentUser?.id,
+          archivedBy: currentUser?.id,
         }),
       })
     );
@@ -1267,15 +1339,18 @@ async function archiveBatchUsageLogs(batchId) {
     const results = await Promise.all(archivePromises);
     const allSuccess = results.every((res) => res.ok);
 
+    hideLoading();
+
     if (!allSuccess) {
       throw new Error("Failed to archive some logs");
     }
 
-    alert("Batch logs archived successfully");
+    showAlert("Batch logs archived successfully!", "success");
     loadUsageLogs(); // Reload the table
   } catch (error) {
+    hideLoading();
     console.error("Error archiving batch logs:", error);
-    alert("Failed to archive batch logs");
+    showAlert("Failed to archive batch logs", "error");
   }
 }
 

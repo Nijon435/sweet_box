@@ -695,7 +695,8 @@ async def get_usage_logs():
                 "batchId": row.get("batch_id"),
                 "notes": row["notes"],
                 "timestamp": row["created_at"].isoformat() if row["created_at"] else None,
-                "createdBy": row["user_name"] if row["user_name"] else "System",
+                "createdBy": row.get("created_by"),  # Return user ID
+                "userName": row["user_name"] if row["user_name"] else "System",  # Return user name separately
                 "archived": row.get("archived", False),
             })
         
