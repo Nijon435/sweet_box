@@ -1744,6 +1744,71 @@ async function logIngredientUsage(
 }
 
 /**
+ * Log multiple ingredients as a single consolidated usage entry
+ * @param {array} items - Array of {id, name, quantity, unit}
+ * @param {string} reason - Reason for usage
+ * @param {string} notes - Additional notes
+ * @returns {object} The created usage log
+ */
+async function logConsolidatedIngredientUsage(items, reason, notes = "") {
+  if (!appState.ingredientUsageLogs) {
+    appState.ingredientUsageLogs = [];
+  }
+
+  // Create a consolidated items string
+  const itemsDescription = items
+    .map(item => `${item.name} (${item.quantity} ${item.unit})`)
+    .join(", ");
+
+  const usageLog = {
+    id: `usage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    inventoryItemId: null, // Null for consolidated entries
+    consolidatedItems: items, // Store all items in this field
+    itemsDescription: itemsDescription, // Human-readable description
+    quantity: items.reduce((sum, item) => sum + item.quantity, 0), // Total quantity
+    reason: reason,
+    orderId: null,
+    notes: notes,
+    timestamp: getLocalTimestamp(),
+    userId: appState.currentUser?.id,
+    createdBy: appState.currentUser?.id,
+  };
+
+  // Add to local state
+  appState.ingredientUsageLogs.push(usageLog);
+
+  // Save to database
+  try {
+    const apiBase = window.API_BASE_URL || "";
+    const response = await fetch(`${apiBase}/api/inventory-usage-logs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(usageLog),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "Failed to save consolidated usage log to database:",
+        response.status,
+        errorText
+      );
+    } else {
+      console.log(
+        `Logged consolidated ingredient usage: ${items.length} items for ${reason}`
+      );
+    }
+  } catch (error) {
+    console.error("Error saving consolidated usage log:", error);
+  }
+
+  return usageLog;
+}
+
+/**
  * Get all ingredient usage logs for a specific item
  * @param {string} inventoryItemId - ID of the inventory item
  * @param {object} options - Filter options: {startDate, endDate, reason}

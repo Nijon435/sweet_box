@@ -602,7 +602,6 @@ function closeEditModal() {
 }
 
 function setupRecordUsageButton() {
-  const recordUsageBtn = document.getElementById("log-usage-btn");
   const cancelBtn = document.getElementById("log-usage-cancel");
   const form = document.getElementById("log-usage-form");
   const itemSelect = document.getElementById("usage-ingredient-select");
@@ -732,16 +731,6 @@ function setupRecordUsageButton() {
     quantityInput.value = "";
   });
 
-  // Record usage button - switch to record usage tab
-  if (recordUsageBtn) {
-    recordUsageBtn.addEventListener("click", () => {
-      const recordTab = document.querySelector('[data-tab="record-usage"]');
-      if (recordTab) {
-        recordTab.click(); // Switch to record usage tab
-      }
-    });
-  }
-
   // Cancel button - switch back to all items tab
   if (cancelBtn) {
     cancelBtn.addEventListener("click", () => {
@@ -773,6 +762,7 @@ function setupRecordUsageButton() {
     console.log("Processing usage for items:", usageItems);
 
     let successCount = 0;
+    const itemsToLog = []; // Collect items for consolidated log
 
     // Process each item
     for (const { ingredientId, qty } of usageItems) {
@@ -799,16 +789,13 @@ function setupRecordUsageButton() {
       // Deduct from inventory
       item.quantity -= qty;
 
-      // Log ingredient usage
-      if (typeof logIngredientUsage === "function") {
-        await logIngredientUsage(
-          ingredientId,
-          qty,
-          usageReason,
-          null,
-          notes || `${usageReason}: ${item.name}`
-        );
-      }
+      // Collect item info for consolidated log
+      itemsToLog.push({
+        id: ingredientId,
+        name: item.name,
+        quantity: qty,
+        unit: item.unit || "units"
+      });
 
       // Update totalUsed
       const currentTotalUsed = item.totalUsed || item.total_used || 0;
@@ -833,6 +820,11 @@ function setupRecordUsageButton() {
         console.error("Error updating inventory:", error);
         alert(`Failed to update ${item.name}. Please try again.`);
       }
+    }
+
+    // Create a single consolidated usage log for all items
+    if (itemsToLog.length > 0 && typeof logConsolidatedIngredientUsage === "function") {
+      await logConsolidatedIngredientUsage(itemsToLog, usageReason, notes);
     }
 
     // Success
@@ -1087,13 +1079,29 @@ function renderUsageLogs(logs) {
       const timestamp = new Date(log.timestamp || log.created_at);
       const formattedDate = timestamp.toLocaleDateString();
       const formattedTime = timestamp.toLocaleTimeString();
-      const item = appState.inventory?.find(
-        (i) => i.id === log.inventoryItemId
-      );
-      const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
-      const quantity = log.quantity || 0;
-      const unit = item?.unit || "";
-      const itemAndQty = `${itemName} - ${quantity} ${unit}`;
+      
+      let itemAndQty;
+      
+      // Check if this is a consolidated log entry
+      if (log.consolidatedItems && log.consolidatedItems.length > 0) {
+        // Display all items in the consolidated entry
+        itemAndQty = log.consolidatedItems
+          .map(item => `${item.name} (${item.quantity} ${item.unit})`)
+          .join("<br>");
+      } else if (log.itemsDescription) {
+        // Use the pre-formatted description if available
+        itemAndQty = log.itemsDescription.replace(/,/g, "<br>");
+      } else {
+        // Single item log (legacy format)
+        const item = appState.inventory?.find(
+          (i) => i.id === log.inventoryItemId
+        );
+        const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
+        const quantity = log.quantity || 0;
+        const unit = item?.unit || "";
+        itemAndQty = `${itemName} - ${quantity} ${unit}`;
+      }
+      
       const reason = log.reason || "N/A";
       const notes = log.notes || "-";
       const recordedBy = log.createdBy || log.userName || "System";

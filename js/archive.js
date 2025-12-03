@@ -779,14 +779,28 @@ function renderArchivedUsageLogs() {
   }
 
   archivedLogs.forEach((log) => {
-    // Get inventory item name
-    const inventoryItem = (appState.inventory || []).find(
-      (item) =>
-        item.id === log.inventory_item_id || item.id === log.inventoryItemId
-    );
-    const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
-    const unit = inventoryItem?.unit || "";
-    const itemAndQty = `${itemName} - ${log.quantity} ${unit}`;
+    // Determine item display
+    let itemAndQty;
+    
+    // Check if this is a consolidated log entry
+    if (log.consolidatedItems && log.consolidatedItems.length > 0) {
+      // Display all items in the consolidated entry
+      itemAndQty = log.consolidatedItems
+        .map(item => `${item.name} (${item.quantity} ${item.unit})`)
+        .join("<br>");
+    } else if (log.itemsDescription) {
+      // Use the pre-formatted description if available
+      itemAndQty = log.itemsDescription.replace(/,/g, "<br>");
+    } else {
+      // Single item log (legacy format)
+      const inventoryItem = (appState.inventory || []).find(
+        (item) =>
+          item.id === log.inventory_item_id || item.id === log.inventoryItemId
+      );
+      const itemName = inventoryItem ? inventoryItem.name : "Unknown Item";
+      const unit = inventoryItem?.unit || "";
+      itemAndQty = `${itemName} - ${log.quantity} ${unit}`;
+    }
 
     // Get recorded by user name
     let recordedByName = "--";
