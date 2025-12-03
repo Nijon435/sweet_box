@@ -1,4 +1,4 @@
-function renderAnalytics() {
+async function renderAnalytics() {
   const attendanceRangeSelect = document.getElementById("attendance-range");
   if (attendanceRangeSelect && !attendanceRangeSelect.dataset.bound) {
     attendanceRangeSelect.dataset.bound = "true";
@@ -432,21 +432,24 @@ function renderAnalytics() {
     // Fetch attendance logs from database
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = endDate.toISOString().split("T")[0];
-    const baseUrl = typeof window !== "undefined" && window.APP_STATE_ENDPOINT 
-      ? window.APP_STATE_ENDPOINT.replace("/api/state", "") 
-      : "";
-    
+    const baseUrl =
+      typeof window !== "undefined" && window.APP_STATE_ENDPOINT
+        ? window.APP_STATE_ENDPOINT.replace("/api/state", "")
+        : "";
+
     const response = await fetch(
       `${baseUrl}/api/attendance-logs?start_date=${startDateStr}&end_date=${endDateStr}&limit=5000`,
       { credentials: "include" }
     );
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch attendance logs: ${response.status}`);
     }
-    
+
     const attendanceLogs = await response.json();
-    console.log(`Fetched ${attendanceLogs.length} attendance logs for date range ${startDateStr} to ${endDateStr}`);
+    console.log(
+      `Fetched ${attendanceLogs.length} attendance logs for date range ${startDateStr} to ${endDateStr}`
+    );
 
     // Build date labels and calculate status counts
     for (let i = attendanceDays - 1; i >= 0; i--) {
@@ -479,7 +482,9 @@ function renderAnalytics() {
       const leaveCount = dayLogs.filter((log) => log.action === "leave").length;
 
       // Count absent logs
-      const absentCount = dayLogs.filter((log) => log.action === "absent").length;
+      const absentCount = dayLogs.filter(
+        (log) => log.action === "absent"
+      ).length;
 
       presentData.push(presentCount);
       lateData.push(lateCount);
