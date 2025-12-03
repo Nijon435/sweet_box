@@ -351,13 +351,32 @@ function exportSalesReport() {
 function exportOrdersReport() {
   console.log("Exporting orders report...");
   const orders = getAppState().orders || [];
+  console.log("Orders data:", orders);
+  console.log("First order sample:", orders[0]);
 
   const sheetData = orders.map((order) => {
     // Get items from itemsJson (camelCase from backend)
     const items = order.itemsJson || order.items_json || order.items || [];
-    const itemsText = Array.isArray(items)
-      ? items.map((i) => `${i.name} (x${i.quantity})`).join(", ")
-      : "No items";
+    console.log(`Order ${order.id} items:`, items);
+
+    let itemsText = "No items";
+    if (Array.isArray(items) && items.length > 0) {
+      itemsText = items
+        .map((i) => `${i.name || "Unknown"} (x${i.quantity || 0})`)
+        .join(", ");
+    } else if (typeof items === "string") {
+      // If items is a JSON string, parse it
+      try {
+        const parsed = JSON.parse(items);
+        if (Array.isArray(parsed)) {
+          itemsText = parsed
+            .map((i) => `${i.name || "Unknown"} (x${i.quantity || 0})`)
+            .join(", ");
+        }
+      } catch (e) {
+        itemsText = items; // Use as is if can't parse
+      }
+    }
 
     return {
       "Order ID": order.id,
@@ -546,11 +565,10 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
 
   // Header rows
   reportData.push(["DAILY TIME RECORD"]);
-  reportData.push([`Student Assistantship Program`]);
   reportData.push([`For the Period: ${monthName} ${year}`]);
   reportData.push([]);
   reportData.push([`Name: ${employee.name}`]);
-  reportData.push([`Dept/Office: ${employee.permission || "Staff"}`]);
+  reportData.push([`Department: ${employee.permission || "Staff"}`]);
   reportData.push([]);
 
   // Column headers
@@ -680,6 +698,81 @@ function exportStaffAttendanceWord(staffId, monthValue) {
     );
   });
 
+  // Build the report data first for calculations
+  const reportData = [];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
+
+    const dayLogs = monthLogs.filter((log) =>
+      log.timestamp.startsWith(dateStr)
+    );
+
+    dayLogs.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    let amIn = "";
+    let amOut = "";
+    let pmIn = "";
+    let pmOut = "";
+    let totalHours = 0;
+
+    dayLogs.forEach((log) => {
+      const time = new Date(log.timestamp);
+      const hours = time.getHours();
+      const timeStr = time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      if (log.action === "in") {
+        if (hours < 12) {
+          amIn = timeStr;
+        } else {
+          pmIn = timeStr;
+        }
+      } else if (log.action === "out") {
+        if (hours < 12) {
+          amOut = timeStr;
+        } else {
+          pmOut = timeStr;
+        }
+      }
+    });
+
+    if (amIn && amOut) {
+      const inTime = new Date(`${dateStr}T${amIn}`);
+      const outTime = new Date(`${dateStr}T${amOut}`);
+      totalHours += (outTime - inTime) / (1000 * 60 * 60);
+    }
+    if (pmIn && pmOut) {
+      const inTime = new Date(`${dateStr}T${pmIn}`);
+      const outTime = new Date(`${dateStr}T${pmOut}`);
+      totalHours += (outTime - inTime) / (1000 * 60 * 60);
+    }
+
+    const totalStr = totalHours > 0 ? totalHours.toFixed(2) : "";
+    reportData.push({ day, amIn, amOut, pmIn, pmOut, totalStr, totalHours });
+  }
+
+  // Calculate totals for each half
+  const firstHalf = reportData.slice(0, 15);
+  const secondHalf = reportData.slice(15);
+  const firstHalfTotal = firstHalf.reduce(
+    (sum, row) => sum + row.totalHours,
+    0
+  );
+  const secondHalfTotal = secondHalf.reduce(
+    (sum, row) => sum + row.totalHours,
+    0
+  );
+  const totalHoursSum = firstHalfTotal + secondHalfTotal;
+
   // Build HTML content for Word
   let htmlContent = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -688,281 +781,208 @@ function exportStaffAttendanceWord(staffId, monthValue) {
       <title>Daily Time Record</title>
       <style>
         @page {
-          size: 8.5in 14in; /* Legal size */
+          size: 8.5in 14in;
           margin: 0.5in;
         }
         body { 
           font-family: Arial, sans-serif; 
-          font-size: 9pt;
-          margin: 0;
-          padding: 0;
+          font-size: 10pt;
         }
-        .header-section {
+        .header-box {
           border: 2px solid black;
-          padding: 10px;
-          margin-bottom: 10px;
+          padding: 8px;
+          margin-bottom: 15px;
         }
         .header-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 5px;
+          margin: 3px 0;
+        }
+        .header-split {
+          display: table;
+          width: 100%;
         }
         .header-left {
-          text-align: left;
-          flex: 1;
+          display: table-cell;
+          width: 50%;
         }
         .header-right {
+          display: table-cell;
+          width: 50%;
           text-align: right;
-          flex: 1;
         }
         h2 { 
           text-align: center; 
-          margin: 10px 0 5px 0;
-          font-size: 14pt;
+          margin: 10px 0;
+          font-size: 12pt;
+          font-weight: bold;
         }
-        .period {
+        .subtitle {
           text-align: center;
-          margin: 5px 0 10px 0;
+          margin: 5px 0 15px 0;
           font-size: 10pt;
         }
-        .table-container {
-          display: flex;
-          gap: 10px;
-          margin-top: 10px;
+        .tables-wrapper {
+          display: table;
+          width: 100%;
+          border-spacing: 15px 0;
+        }
+        .table-column {
+          display: table-cell;
+          width: 48%;
+          vertical-align: top;
         }
         table { 
-          flex: 1;
+          width: 100%;
           border-collapse: collapse;
-          font-size: 8pt;
+          font-size: 9pt;
         }
         th, td { 
           border: 1px solid black; 
-          padding: 3px;
+          padding: 4px 2px;
           text-align: center;
         }
         th { 
-          background-color: #f0f0f0; 
           font-weight: bold;
-          font-size: 7pt;
+          font-size: 8pt;
         }
-        td {
-          height: 18px;
+        .signature-section {
+          margin-top: 40px;
+          page-break-inside: avoid;
         }
-        .total-row {
-          margin-top: 10px;
-          text-align: right;
-          font-weight: bold;
+        .sig-line {
+          margin: 30px 0 5px 0;
+          border-bottom: 1px solid black;
+          height: 1px;
+        }
+        .sig-label {
+          font-size: 9pt;
+          margin-top: 3px;
         }
       </style>
     </head>
     <body>
-      <div class="header-section">
+      <div class="header-box">
         <div class="header-row">
-          <div class="header-left"><strong>Name:</strong> ${employee.name}</div>
-          <div class="header-right"><strong>For the Period:</strong> ${monthName} ${year}</div>
+          <div class="header-split">
+            <div class="header-left"><strong>Name:</strong> ${
+              employee.name
+            }</div>
+            <div class="header-right"><strong>For the Period:</strong> ${monthName} ${year}</div>
+          </div>
         </div>
         <div class="header-row">
-          <div class="header-left"><strong>Role:</strong> ${
-            employee.permission || "Staff"
-          }</div>
-          <div class="header-right"><strong>Access:</strong> ${
-            employee.permission || "Staff"
-          }</div>
+          <div class="header-split">
+            <div class="header-left"><strong>Role:</strong> ${
+              employee.permission || "Staff"
+            }</div>
+            <div class="header-right"><strong>Department:</strong> ${
+              employee.department || "N/A"
+            }</div>
+          </div>
         </div>
       </div>
       
       <h2>DAILY TIME RECORD</h2>
+      <div class="subtitle">For the Period: ${monthName} ${year}</div>
       
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Day</th>
-              <th>AM<br>In</th>
-              <th>AM<br>Out</th>
-              <th>PM<br>In</th>
-              <th>PM<br>Out</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div class="tables-wrapper">
+        <div class="table-column">
+          <table>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>AM<br>In</th>
+                <th>AM<br>Out</th>
+                <th>PM<br>In</th>
+                <th>PM<br>Out</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
   `;
 
-  let totalHoursSum = 0;
-
   // Add rows for days 1-15 in first table
-  for (let day = 1; day <= 15; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
-
-    // Get logs for this specific day
-    const dayLogs = monthLogs.filter((log) =>
-      log.timestamp.startsWith(dateStr)
-    );
-
-    // Sort by timestamp
-    dayLogs.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    let amIn = "";
-    let amOut = "";
-    let pmIn = "";
-    let pmOut = "";
-    let totalHours = 0;
-
-    // Categorize clock-ins and clock-outs
-    dayLogs.forEach((log) => {
-      const time = new Date(log.timestamp);
-      const hours = time.getHours();
-      const timeStr = time.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-
-      if (log.action === "in") {
-        if (hours < 12) {
-          amIn = timeStr;
-        } else {
-          pmIn = timeStr;
-        }
-      } else if (log.action === "out") {
-        if (hours < 12) {
-          amOut = timeStr;
-        } else {
-          pmOut = timeStr;
-        }
-      }
-    });
-
-    // Calculate total hours
-    if (amIn && amOut) {
-      const inTime = new Date(`${dateStr}T${amIn}`);
-      const outTime = new Date(`${dateStr}T${amOut}`);
-      totalHours += (outTime - inTime) / (1000 * 60 * 60);
-    }
-    if (pmIn && pmOut) {
-      const inTime = new Date(`${dateStr}T${pmIn}`);
-      const outTime = new Date(`${dateStr}T${pmOut}`);
-      totalHours += (outTime - inTime) / (1000 * 60 * 60);
-    }
-
-    totalHoursSum += totalHours;
-    const totalStr = totalHours > 0 ? totalHours.toFixed(2) : "";
-
+  for (let i = 0; i < 15 && i < reportData.length; i++) {
+    const row = reportData[i];
     htmlContent += `
       <tr>
-        <td>${day}</td>
-        <td>${amIn}</td>
-        <td>${amOut}</td>
-        <td>${pmIn}</td>
-        <td>${pmOut}</td>
-        <td>${totalStr}</td>
+        <td>${row.day}</td>
+        <td>${row.amIn}</td>
+        <td>${row.amOut}</td>
+        <td>${row.pmIn}</td>
+        <td>${row.pmOut}</td>
+        <td>${row.totalStr}</td>
       </tr>
     `;
   }
 
-  // Close first table and start second table for days 16-31
+  // Close first table with Total Hours row
   htmlContent += `
-          </tbody>
-        </table>
+            </tbody>
+            <tfoot>
+              <tr style="font-weight: bold;">
+                <td colspan="5" style="text-align: right;">Total Hours:</td>
+                <td>${firstHalfTotal.toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
         
-        <table>
-          <thead>
-            <tr>
-              <th>Day</th>
-              <th>AM<br>In</th>
-              <th>AM<br>Out</th>
-              <th>PM<br>In</th>
-              <th>PM<br>Out</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div class="table-column">
+          <table>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>AM<br>In</th>
+                <th>AM<br>Out</th>
+                <th>PM<br>In</th>
+                <th>PM<br>Out</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
   `;
 
   // Add rows for days 16 to end of month
-  for (let day = 16; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
-
-    const dayLogs = monthLogs.filter((log) =>
-      log.timestamp.startsWith(dateStr)
-    );
-
-    dayLogs.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    let amIn = "";
-    let amOut = "";
-    let pmIn = "";
-    let pmOut = "";
-    let totalHours = 0;
-
-    dayLogs.forEach((log) => {
-      const time = new Date(log.timestamp);
-      const hours = time.getHours();
-      const timeStr = time.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-
-      if (log.action === "in") {
-        if (hours < 12) {
-          amIn = timeStr;
-        } else {
-          pmIn = timeStr;
-        }
-      } else if (log.action === "out") {
-        if (hours < 12) {
-          amOut = timeStr;
-        } else {
-          pmOut = timeStr;
-        }
-      }
-    });
-
-    if (amIn && amOut) {
-      const inTime = new Date(`${dateStr}T${amIn}`);
-      const outTime = new Date(`${dateStr}T${amOut}`);
-      totalHours += (outTime - inTime) / (1000 * 60 * 60);
-    }
-    if (pmIn && pmOut) {
-      const inTime = new Date(`${dateStr}T${pmIn}`);
-      const outTime = new Date(`${dateStr}T${pmOut}`);
-      totalHours += (outTime - inTime) / (1000 * 60 * 60);
-    }
-
-    totalHoursSum += totalHours;
-    const totalStr = totalHours > 0 ? totalHours.toFixed(2) : "";
+  for (let i = 15; i < reportData.length; i++) {
+    const row = reportData[i];
     htmlContent += `
       <tr>
-        <td>${day}</td>
-        <td>${amIn}</td>
-        <td>${amOut}</td>
-        <td>${pmIn}</td>
-        <td>${pmOut}</td>
-        <td>${totalStr}</td>
+        <td>${row.day}</td>
+        <td>${row.amIn}</td>
+        <td>${row.amOut}</td>
+        <td>${row.pmIn}</td>
+        <td>${row.pmOut}</td>
+        <td>${row.totalStr}</td>
       </tr>
     `;
   }
 
   htmlContent += `
-          </tbody>
-        </table>
+            </tbody>
+            <tfoot>
+              <tr style="font-weight: bold;">
+                <td colspan="5" style="text-align: right;">Total Hours:</td>
+                <td>${secondHalfTotal.toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
       
-      <div class="total-row">
-        <p><strong>Total Hours Rendered:</strong> ${totalHoursSum.toFixed(
-          2
-        )}</p>
+      <div style="text-align: center; margin: 20px 0; font-weight: bold; font-size: 11pt;">
+        Total Hours Rendered: ${totalHoursSum.toFixed(2)}
+      </div>
+      
+      <div class="signature-section">
+        <div style="margin-bottom: 50px;">
+          <div class="sig-line"></div>
+          <div class="sig-label">Name and Signature of Employee</div>
+        </div>
+        
+        <div>
+          <div class="sig-line"></div>
+          <div class="sig-label">Name and Signature of Immediate Supervisor</div>
+        </div>
       </div>
     </body>
     </html>
