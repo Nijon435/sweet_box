@@ -352,16 +352,22 @@ function exportOrdersReport() {
   console.log("Exporting orders report...");
   const orders = getAppState().orders || [];
 
-  const sheetData = orders.map((order) => ({
-    "Order ID": order.id,
-    Date: new Date(order.timestamp).toLocaleDateString(),
-    Time: new Date(order.timestamp).toLocaleTimeString(),
-    Type: order.orderType || order.type || "dine-in",
-    Items:
-      order.items?.map((i) => `${i.name} (x${i.quantity})`).join(", ") ||
-      "No items",
-    Total: order.total?.toFixed(2) || "0.00",
-  }));
+  const sheetData = orders.map((order) => {
+    // Get items from itemsJson (camelCase from backend)
+    const items = order.itemsJson || order.items_json || order.items || [];
+    const itemsText = Array.isArray(items)
+      ? items.map((i) => `${i.name} (x${i.quantity})`).join(", ")
+      : "No items";
+
+    return {
+      "Order ID": order.id,
+      Date: new Date(order.timestamp).toLocaleDateString(),
+      Time: new Date(order.timestamp).toLocaleTimeString(),
+      Type: order.orderType || order.type || "dine-in",
+      Items: itemsText,
+      Total: order.total?.toFixed(2) || "0.00",
+    };
+  });
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
   const wb = XLSX.utils.book_new();
@@ -681,42 +687,111 @@ function exportStaffAttendanceWord(staffId, monthValue) {
       <meta charset='utf-8'>
       <title>Daily Time Record</title>
       <style>
-        body { font-family: Arial, sans-serif; font-size: 11pt; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: center; }
-        th { background-color: #f0f0f0; font-weight: bold; }
-        h2 { text-align: center; margin: 5px 0; }
-        .header-info { margin: 10px 0; }
+        @page {
+          size: 8.5in 14in; /* Legal size */
+          margin: 0.5in;
+        }
+        body { 
+          font-family: Arial, sans-serif; 
+          font-size: 9pt;
+          margin: 0;
+          padding: 0;
+        }
+        .header-section {
+          border: 2px solid black;
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+        .header-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 5px;
+        }
+        .header-left {
+          text-align: left;
+          flex: 1;
+        }
+        .header-right {
+          text-align: right;
+          flex: 1;
+        }
+        h2 { 
+          text-align: center; 
+          margin: 10px 0 5px 0;
+          font-size: 14pt;
+        }
+        .period {
+          text-align: center;
+          margin: 5px 0 10px 0;
+          font-size: 10pt;
+        }
+        .table-container {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+        table { 
+          flex: 1;
+          border-collapse: collapse;
+          font-size: 8pt;
+        }
+        th, td { 
+          border: 1px solid black; 
+          padding: 3px;
+          text-align: center;
+        }
+        th { 
+          background-color: #f0f0f0; 
+          font-weight: bold;
+          font-size: 7pt;
+        }
+        td {
+          height: 18px;
+        }
+        .total-row {
+          margin-top: 10px;
+          text-align: right;
+          font-weight: bold;
+        }
       </style>
     </head>
     <body>
-      <h2>DAILY TIME RECORD</h2>
-      <h3 style="text-align: center; margin: 5px 0;">Student Assistantship Program</h3>
-      <h3 style="text-align: center; margin: 5px 0;">For the Period: ${monthName} ${year}</h3>
-      
-      <div class="header-info">
-        <p><strong>Name:</strong> ${employee.name}</p>
-        <p><strong>Dept/Office:</strong> ${employee.permission || "Staff"}</p>
+      <div class="header-section">
+        <div class="header-row">
+          <div class="header-left"><strong>Name:</strong> ${employee.name}</div>
+          <div class="header-right"><strong>For the Period:</strong> ${monthName} ${year}</div>
+        </div>
+        <div class="header-row">
+          <div class="header-left"><strong>Role:</strong> ${
+            employee.permission || "Staff"
+          }</div>
+          <div class="header-right"><strong>Access:</strong> ${
+            employee.permission || "Staff"
+          }</div>
+        </div>
       </div>
       
-      <table>
-        <thead>
-          <tr>
-            <th>Day</th>
-            <th>AM<br>In</th>
-            <th>AM<br>Out</th>
-            <th>PM<br>In</th>
-            <th>PM<br>Out</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
+      <h2>DAILY TIME RECORD</h2>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>AM<br>In</th>
+              <th>AM<br>Out</th>
+              <th>PM<br>In</th>
+              <th>PM<br>Out</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
   `;
 
   let totalHoursSum = 0;
 
-  // Add rows for each day
-  for (let day = 1; day <= daysInMonth; day++) {
+  // Add rows for days 1-15 in first table
+  for (let day = 1; day <= 15; day++) {
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
       day
     ).padStart(2, "0")}`;
@@ -788,35 +863,103 @@ function exportStaffAttendanceWord(staffId, monthValue) {
         <td>${totalStr}</td>
       </tr>
     `;
+  }
 
-    // Add page break after day 15 to ensure 2 pages
-    if (day === 15) {
-      htmlContent += `
-        </tbody>
-      </table>
-      <div style="page-break-after: always;"></div>
-      <table>
-        <thead>
-          <tr>
-            <th>Day</th>
-            <th>AM<br>In</th>
-            <th>AM<br>Out</th>
-            <th>PM<br>In</th>
-            <th>PM<br>Out</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-      `;
+  // Close first table and start second table for days 16-31
+  htmlContent += `
+          </tbody>
+        </table>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>AM<br>In</th>
+              <th>AM<br>Out</th>
+              <th>PM<br>In</th>
+              <th>PM<br>Out</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  // Add rows for days 16 to end of month
+  for (let day = 16; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
+
+    const dayLogs = monthLogs.filter((log) =>
+      log.timestamp.startsWith(dateStr)
+    );
+
+    dayLogs.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    let amIn = "";
+    let amOut = "";
+    let pmIn = "";
+    let pmOut = "";
+    let totalHours = 0;
+
+    dayLogs.forEach((log) => {
+      const time = new Date(log.timestamp);
+      const hours = time.getHours();
+      const timeStr = time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      if (log.action === "in") {
+        if (hours < 12) {
+          amIn = timeStr;
+        } else {
+          pmIn = timeStr;
+        }
+      } else if (log.action === "out") {
+        if (hours < 12) {
+          amOut = timeStr;
+        } else {
+          pmOut = timeStr;
+        }
+      }
+    });
+
+    if (amIn && amOut) {
+      const inTime = new Date(`${dateStr}T${amIn}`);
+      const outTime = new Date(`${dateStr}T${amOut}`);
+      totalHours += (outTime - inTime) / (1000 * 60 * 60);
     }
+    if (pmIn && pmOut) {
+      const inTime = new Date(`${dateStr}T${pmIn}`);
+      const outTime = new Date(`${dateStr}T${pmOut}`);
+      totalHours += (outTime - inTime) / (1000 * 60 * 60);
+    }
+
+    totalHoursSum += totalHours;
+    const totalStr = totalHours > 0 ? totalHours.toFixed(2) : "";
+    htmlContent += `
+      <tr>
+        <td>${day}</td>
+        <td>${amIn}</td>
+        <td>${amOut}</td>
+        <td>${pmIn}</td>
+        <td>${pmOut}</td>
+        <td>${totalStr}</td>
+      </tr>
+    `;
   }
 
   htmlContent += `
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
       
-      <div style="margin-top: 20px;">
-        <p><strong>Total Hours:</strong> ${totalHoursSum.toFixed(2)}</p>
+      <div class="total-row">
         <p><strong>Total Hours Rendered:</strong> ${totalHoursSum.toFixed(
           2
         )}</p>
