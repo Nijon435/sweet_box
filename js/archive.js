@@ -946,11 +946,11 @@ async function restoreUsageLog(logId) {
     "Restore Usage Log",
     `Are you sure you want to restore this usage log?`
   );
-  
+
   if (!confirmed) return;
 
   showLoading("Restoring usage log...");
-  
+
   log.archived = false;
   log.archivedAt = null;
   log.archivedBy = null;
@@ -991,7 +991,7 @@ async function restoreBatchUsageLogs(batchId) {
     "Restore Batch Logs",
     `Are you sure you want to restore all ${batchLogs.length} logs in this batch?`
   );
-  
+
   if (!confirmed) return;
 
   showLoading("Restoring batch logs...");
@@ -1028,14 +1028,6 @@ async function restoreBatchUsageLogs(batchId) {
     showAlert("Failed to restore batch logs", "error");
   }
 }
-        renderArchive();
-      } catch (error) {
-        console.error("Error restoring batch logs:", error);
-        showToast("Failed to restore batch logs", "#f44336");
-      }
-    }
-  );
-}
 
 // Delete Usage Log
 async function deleteUsageLog(logId) {
@@ -1043,7 +1035,7 @@ async function deleteUsageLog(logId) {
     "Permanently Delete Usage Log",
     "This action cannot be undone. The usage log will be permanently deleted."
   );
-  
+
   if (!confirmed) return;
 
   showLoading("Deleting usage log...");
@@ -1062,9 +1054,9 @@ async function deleteUsageLog(logId) {
     if (!response.ok) throw new Error("Failed to delete");
 
     // Remove from appState
-    appState.inventoryUsageLogs = (
-      appState.inventoryUsageLogs || []
-    ).filter((l) => l.id != logId);
+    appState.inventoryUsageLogs = (appState.inventoryUsageLogs || []).filter(
+      (l) => l.id != logId
+    );
 
     showAlert("Usage log permanently deleted", "success");
     renderArchive();
@@ -1087,20 +1079,17 @@ async function deleteBatchUsageLogs(batchId) {
     "Permanently Delete Batch Logs",
     `This action cannot be undone. All ${batchLogs.length} logs in this batch will be permanently deleted.`
   );
-  
+
   if (!confirmed) return;
 
   showLoading("Deleting batch logs...");
 
   try {
     const deletePromises = batchLogs.map((log) =>
-      fetch(
-        `${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      )
+      fetch(`${window.API_BASE_URL || ""}/api/inventory-usage-logs/${log.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
     );
 
     const results = await Promise.all(deletePromises);
@@ -1111,9 +1100,9 @@ async function deleteBatchUsageLogs(batchId) {
     if (!allSuccess) throw new Error("Failed to delete some logs");
 
     // Remove from appState
-    appState.inventoryUsageLogs = (
-      appState.inventoryUsageLogs || []
-    ).filter((l) => l.batchId !== batchId);
+    appState.inventoryUsageLogs = (appState.inventoryUsageLogs || []).filter(
+      (l) => l.batchId !== batchId
+    );
 
     showAlert("Batch logs permanently deleted", "success");
     renderArchive();
@@ -1122,9 +1111,6 @@ async function deleteBatchUsageLogs(batchId) {
     console.error("Error deleting batch logs:", error);
     showAlert("Failed to delete batch logs", "error");
   }
-}
-    }
-  );
 }
 
 // Page renderer
