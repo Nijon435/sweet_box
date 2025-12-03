@@ -485,7 +485,7 @@
               id="log-usage-form"
               style="
                 background: white;
-                padding: 2rem;
+                padding: 1.5rem 1rem;
                 border-radius: 8px;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
               "
@@ -656,6 +656,7 @@
                     style="color: #6b7280; margin-bottom: 1rem"
                   ></p>
                   <div
+                    id="quantity-controls"
                     style="
                       display: flex;
                       align-items: center;
@@ -663,35 +664,7 @@
                       margin-bottom: 1.5rem;
                     "
                   >
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      id="qty-decrease"
-                      style="width: 40px; height: 40px; padding: 0"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="quantity-modal-input"
-                      min="0.01"
-                      step="0.01"
-                      value="1"
-                      style="
-                        flex: 1;
-                        text-align: center;
-                        font-size: 1.25rem;
-                        font-weight: 600;
-                      "
-                    />
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      id="qty-increase"
-                      style="width: 40px; height: 40px; padding: 0"
-                    >
-                      +
-                    </button>
+                    <!-- Dynamic buttons will be inserted here -->
                   </div>
                   <div style="display: flex; gap: 0.75rem">
                     <button

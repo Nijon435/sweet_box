@@ -619,8 +619,8 @@ function setupRecordUsageButton() {
 
   if (!form || !itemsListContainer || !ingredientsGrid) return;
 
-  // Array to hold items to be recorded
-  let usageItems = [];
+  // Make usageItems accessible globally for form submission
+  window.usageItems = [];
   let currentIngredient = null;
 
   // Populate ingredients grid
@@ -688,52 +688,102 @@ function setupRecordUsageButton() {
     });
   }
 
-  // Search functionality
-  if (searchInput) {
-    searchInput.addEventListener("input", (e) => {
-      window.populateIngredientsGrid(e.target.value);
-    });
-  }
-
   // Open quantity modal
   window.openQuantityModal = function (item) {
     currentIngredient = item;
     const modal = document.getElementById("quantity-modal");
     const title = document.getElementById("quantity-modal-title");
     const available = document.getElementById("quantity-modal-available");
-    const input = document.getElementById("quantity-modal-input");
-    const decreaseBtn = document.getElementById("qty-decrease");
-    const increaseBtn = document.getElementById("qty-increase");
+    const controlsContainer = document.getElementById("quantity-controls");
 
-    if (!modal || !title || !available || !input) return;
+    if (!modal || !title || !available || !controlsContainer) return;
 
     title.textContent = item.name;
     available.textContent = `Available: ${item.quantity} ${
       item.unit || "units"
     }`;
 
-    // Set step based on unit type
+    // Determine if count or volume/weight
     const isCountUnit =
       item.unit === "count" || item.unit === "pcs" || item.unit === "pieces";
-    input.step = isCountUnit ? "1" : "0.1";
-    input.value = isCountUnit ? "1" : "0.1";
 
-    // Update button handlers
-    decreaseBtn.onclick = () => {
-      const currentValue = parseFloat(input.value) || 0;
-      const step = parseFloat(input.step);
-      const newValue = Math.max(step, currentValue - step);
-      input.value = isCountUnit ? Math.floor(newValue) : newValue.toFixed(1);
-    };
+    // Build controls based on unit type
+    if (isCountUnit) {
+      // Simple +/- buttons for count
+      controlsContainer.innerHTML = `
+        <button type="button" class="btn btn-outline" id="qty-decrease" style="width: 40px; height: 40px; padding: 0;">−</button>
+        <input type="number" id="quantity-modal-input" min="1" step="1" value="1" 
+          style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600;" />
+        <button type="button" class="btn btn-outline" id="qty-increase" style="width: 40px; height: 40px; padding: 0;">+</button>
+      `;
 
-    increaseBtn.onclick = () => {
-      const currentValue = parseFloat(input.value) || 0;
-      const step = parseFloat(input.step);
-      const newValue = currentValue + step;
-      if (newValue <= item.quantity) {
-        input.value = isCountUnit ? Math.floor(newValue) : newValue.toFixed(1);
-      }
-    };
+      const input = document.getElementById("quantity-modal-input");
+      const decreaseBtn = document.getElementById("qty-decrease");
+      const increaseBtn = document.getElementById("qty-increase");
+
+      decreaseBtn.onclick = () => {
+        const currentValue = parseInt(input.value) || 1;
+        input.value = Math.max(1, currentValue - 1);
+      };
+
+      increaseBtn.onclick = () => {
+        const currentValue = parseInt(input.value) || 1;
+        const newValue = currentValue + 1;
+        if (newValue <= item.quantity) {
+          input.value = newValue;
+        }
+      };
+    } else {
+      // Volume/Weight: 4 buttons (-1, -0.1, +0.1, +1)
+      controlsContainer.innerHTML = `
+        <button type="button" class="btn btn-outline" id="qty-decrease-1" 
+          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">-1</button>
+        <button type="button" class="btn btn-outline" id="qty-decrease-decimal" 
+          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">-0.1</button>
+        <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="0.1" 
+          style="flex: 1; text-align: center; font-size: 1.25rem; font-weight: 600;" />
+        <button type="button" class="btn btn-outline" id="qty-increase-decimal" 
+          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">+0.1</button>
+        <button type="button" class="btn btn-outline" id="qty-increase-1" 
+          style="width: 45px; height: 40px; padding: 0; font-size: 0.85rem;">+1</button>
+      `;
+
+      const input = document.getElementById("quantity-modal-input");
+      const decrease1Btn = document.getElementById("qty-decrease-1");
+      const decreaseDecimalBtn = document.getElementById(
+        "qty-decrease-decimal"
+      );
+      const increaseDecimalBtn = document.getElementById(
+        "qty-increase-decimal"
+      );
+      const increase1Btn = document.getElementById("qty-increase-1");
+
+      decrease1Btn.onclick = () => {
+        const currentValue = parseFloat(input.value) || 0.1;
+        input.value = Math.max(0.1, currentValue - 1).toFixed(1);
+      };
+
+      decreaseDecimalBtn.onclick = () => {
+        const currentValue = parseFloat(input.value) || 0.1;
+        input.value = Math.max(0.1, currentValue - 0.1).toFixed(1);
+      };
+
+      increaseDecimalBtn.onclick = () => {
+        const currentValue = parseFloat(input.value) || 0.1;
+        const newValue = currentValue + 0.1;
+        if (newValue <= item.quantity) {
+          input.value = newValue.toFixed(1);
+        }
+      };
+
+      increase1Btn.onclick = () => {
+        const currentValue = parseFloat(input.value) || 0.1;
+        const newValue = currentValue + 1;
+        if (newValue <= item.quantity) {
+          input.value = newValue.toFixed(1);
+        }
+      };
+    }
 
     modal.style.display = "flex";
   };
@@ -760,7 +810,7 @@ function setupRecordUsageButton() {
       }
 
       // Check available quantity
-      const existingQty = usageItems
+      const existingQty = window.usageItems
         .filter((u) => u.ingredientId === currentIngredient.id)
         .reduce((sum, u) => sum + u.qty, 0);
 
@@ -773,7 +823,7 @@ function setupRecordUsageButton() {
       }
 
       // Add to list
-      usageItems.push({
+      window.usageItems.push({
         ingredientId: currentIngredient.id,
         qty: qty,
       });
@@ -785,7 +835,7 @@ function setupRecordUsageButton() {
 
   // Render the list of items to record
   function renderItemsList() {
-    if (usageItems.length === 0) {
+    if (window.usageItems.length === 0) {
       itemsListContainer.innerHTML =
         '<p style="color: #9ca3af; text-align: center; margin: 8rem 0; font-size: 0.95rem;">Click items from the right to add →</p>';
       return;
@@ -793,7 +843,7 @@ function setupRecordUsageButton() {
 
     let html =
       '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
-    usageItems.forEach((usageItem, index) => {
+    window.usageItems.forEach((usageItem, index) => {
       const inventoryItem = appState.inventory.find(
         (i) => i.id === usageItem.ingredientId
       );
@@ -818,7 +868,7 @@ function setupRecordUsageButton() {
 
   // Global function to remove item from list
   window.removeUsageItem = function (index) {
-    usageItems.splice(index, 1);
+    window.usageItems.splice(index, 1);
     renderItemsList();
   };
 
@@ -830,7 +880,7 @@ function setupRecordUsageButton() {
         allItemsTab.click();
       }
       form.reset();
-      usageItems = [];
+      window.usageItems = [];
       renderItemsList();
     });
   }
@@ -845,18 +895,18 @@ function setupRecordUsageButton() {
     const usageReason = document.getElementById("usage-reason").value;
     const notes = document.getElementById("usage-notes-field").value || "";
 
-    if (usageItems.length === 0) {
+    if (!window.usageItems || window.usageItems.length === 0) {
       showAlert("Please add at least one item to the list", "warning");
       return;
     }
 
-    console.log("Processing usage for items:", usageItems);
+    console.log("Processing usage for items:", window.usageItems);
 
     let successCount = 0;
     const itemsToLog = []; // Collect items for consolidated log
 
     // Process each item
-    for (const { ingredientId, qty } of usageItems) {
+    for (const { ingredientId, qty } of window.usageItems) {
       const idx = appState.inventory.findIndex(
         (i) => i.id === ingredientId && !i.archived
       );
@@ -933,7 +983,7 @@ function setupRecordUsageButton() {
       saveState();
       renderInventory();
       form.reset();
-      usageItems = [];
+      window.usageItems = [];
       renderItemsList();
 
       const reasonLabels = {
