@@ -573,24 +573,32 @@ async def get_attendance_logs(start_date: str = None, end_date: str = None, limi
         )
         
         if start_date and end_date:
-            # Fetch logs within date range (convert string dates to timestamps)
+            # Convert string dates to datetime objects for asyncpg
+            from datetime import datetime as dt
+            start_dt = dt.fromisoformat(start_date)
+            end_dt = dt.fromisoformat(end_date)
+            
+            # Fetch logs within date range
             rows = await conn.fetch(
                 """SELECT * FROM attendance_logs 
-                   WHERE timestamp >= $1::timestamp AND timestamp < $2::timestamp 
+                   WHERE timestamp >= $1 AND timestamp < $2 
                    ORDER BY timestamp DESC 
                    LIMIT $3""",
-                start_date,
-                end_date,
+                start_dt,
+                end_dt,
                 limit
             )
         elif start_date:
             # Fetch logs from start_date onwards
+            from datetime import datetime as dt
+            start_dt = dt.fromisoformat(start_date)
+            
             rows = await conn.fetch(
                 """SELECT * FROM attendance_logs 
-                   WHERE timestamp >= $1::timestamp 
+                   WHERE timestamp >= $1 
                    ORDER BY timestamp DESC 
                    LIMIT $2""",
-                start_date,
+                start_dt,
                 limit
             )
         else:
