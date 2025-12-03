@@ -45,9 +45,9 @@ function populateStaffSelector(retries = 0) {
     return;
   }
 
-  // Ensure appState is loaded - check both window.appState and global appState
+  // Ensure appState is loaded - check both getAppState() and global appState
   const currentState =
-    window.appState || (typeof appState !== "undefined" ? appState : null);
+    getAppState() || (typeof appState !== "undefined" ? appState : null);
 
   if (!currentState || !currentState.users || currentState.users.length === 0) {
     if (retries < 10) {
@@ -88,12 +88,17 @@ function populateStaffSelector(retries = 0) {
   console.log(`✅ Loaded ${employees.length} employees into dropdown`);
 }
 
+// Helper function to get appState from correct source
+function getAppState() {
+  return getAppState() || (typeof appState !== "undefined" ? appState : null);
+}
+
 function exportReport(type) {
   console.log(`📤 Exporting report: ${type}`);
 
   // Get appState from window or global scope
   const currentState =
-    window.appState || (typeof appState !== "undefined" ? appState : null);
+    getAppState() || (typeof appState !== "undefined" ? appState : null);
 
   if (!currentState) {
     alert("Data not loaded yet. Please wait a moment and try again.");
@@ -185,7 +190,7 @@ function exportReport(type) {
 
 function exportInventoryReport() {
   console.log("Exporting inventory report...");
-  const inventory = (window.appState.inventory || []).filter(
+  const inventory = (getAppState().inventory || []).filter(
     (item) => !item.archived
   );
 
@@ -225,12 +230,12 @@ function exportInventoryReport() {
 
 function exportInventoryUsageReport() {
   console.log("Exporting inventory usage report...");
-  const usageLogs = (window.appState.inventoryUsageLogs || []).filter(
+  const usageLogs = (getAppState().inventoryUsageLogs || []).filter(
     (log) => !log.archived
   );
 
   const sheetData = usageLogs.map((log) => {
-    const item = (window.appState.inventory || []).find(
+    const item = (getAppState().inventory || []).find(
       (i) => i.id === log.inventoryItemId
     );
 
@@ -269,7 +274,7 @@ function exportInventoryUsageReport() {
 
 function exportLowStockReport() {
   console.log("Exporting low stock report...");
-  const inventory = (window.appState.inventory || []).filter(
+  const inventory = (getAppState().inventory || []).filter(
     (item) => !item.archived
   );
 
@@ -314,7 +319,7 @@ function exportLowStockReport() {
 
 function exportSalesReport() {
   console.log("Exporting sales report...");
-  const salesHistory = window.appState.salesHistory || [];
+  const salesHistory = getAppState().salesHistory || [];
 
   const sheetData = salesHistory.map((entry) => ({
     Date: entry.date,
@@ -335,7 +340,7 @@ function exportSalesReport() {
 
 function exportOrdersReport() {
   console.log("Exporting orders report...");
-  const orders = window.appState.orders || [];
+  const orders = getAppState().orders || [];
 
   const sheetData = orders.map((order) => ({
     "Order ID": order.id,
@@ -375,19 +380,19 @@ function exportOrdersReport() {
 
 function exportFinancialReport() {
   console.log("Exporting financial report...");
-  const totalRevenue = (window.appState.salesHistory || []).reduce(
+  const totalRevenue = (getAppState().salesHistory || []).reduce(
     (sum, entry) => sum + entry.total,
     0
   );
 
-  const inventoryValue = (window.appState.inventory || [])
+  const inventoryValue = (getAppState().inventory || [])
     .filter((item) => !item.archived)
     .reduce((sum, item) => sum + item.quantity * (item.cost || 0), 0);
 
-  const totalOrders = (window.appState.orders || []).length;
+  const totalOrders = (getAppState().orders || []).length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  const last30Days = (window.appState.salesHistory || []).slice(-30);
+  const last30Days = (getAppState().salesHistory || []).slice(-30);
   const last30DaysRevenue = last30Days.reduce(
     (sum, entry) => sum + entry.total,
     0
@@ -406,7 +411,7 @@ function exportFinancialReport() {
     },
     {
       Metric: "Total Employees",
-      Value: (window.appState.users || []).filter((e) => !e.archived).length,
+      Value: (getAppState().users || []).filter((e) => !e.archived).length,
     },
   ];
 
@@ -421,7 +426,7 @@ function exportFinancialReport() {
 
 function exportEmployeesReport() {
   console.log("Exporting employees report...");
-  const employees = (window.appState.users || []).filter((e) => !e.archived);
+  const employees = (getAppState().users || []).filter((e) => !e.archived);
 
   const sheetData = employees.map((emp) => ({
     Name: emp.name,
@@ -452,12 +457,12 @@ function exportEmployeesReport() {
 
 function exportAttendanceReport() {
   console.log("Exporting attendance report...");
-  const attendanceLogs = (window.appState.attendanceLogs || []).filter(
+  const attendanceLogs = (getAppState().attendanceLogs || []).filter(
     (log) => !log.archived
   );
 
   const sheetData = attendanceLogs.map((log) => {
-    const employee = (window.appState.users || []).find(
+    const employee = (getAppState().users || []).find(
       (e) => e.id === log.employeeId
     );
 
@@ -494,7 +499,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
     return;
   }
 
-  const employee = (window.appState.users || []).find((e) => e.id === staffId);
+  const employee = (getAppState().users || []).find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -509,7 +514,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
   const daysInMonth = new Date(year, month, 0).getDate();
 
   // Get all attendance logs for this employee in this month
-  const monthLogs = (window.appState.attendanceLogs || []).filter((log) => {
+  const monthLogs = (getAppState().attendanceLogs || []).filter((log) => {
     if (log.employeeId !== staffId || log.archived) return false;
     const logDate = new Date(log.timestamp);
     return (
@@ -633,7 +638,7 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
 
 // Export Staff Attendance Report as Word (Daily Time Record format)
 function exportStaffAttendanceWord(staffId, monthValue) {
-  const employee = (window.appState.users || []).find((e) => e.id === staffId);
+  const employee = (getAppState().users || []).find((e) => e.id === staffId);
   if (!employee) {
     alert("Employee not found");
     return;
@@ -648,7 +653,7 @@ function exportStaffAttendanceWord(staffId, monthValue) {
   const daysInMonth = new Date(year, month, 0).getDate();
 
   // Get all attendance logs for this employee in this month
-  const monthLogs = (window.appState.attendanceLogs || []).filter((log) => {
+  const monthLogs = (getAppState().attendanceLogs || []).filter((log) => {
     if (log.employeeId !== staffId || log.archived) return false;
     const logDate = new Date(log.timestamp);
     return (
