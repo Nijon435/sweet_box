@@ -319,14 +319,24 @@ function exportLowStockReport() {
 
 function exportSalesReport() {
   console.log("Exporting sales report...");
-  const salesHistory = getAppState().salesHistory || [];
+  const orders = getAppState().orders || [];
 
-  const sheetData = salesHistory.map((entry) => ({
-    Date: entry.date,
-    "Total Sales (₱)": entry.total.toFixed(2),
-    "Number of Orders": entry.orderCount || 0,
-    "Average Order Value (₱)":
-      entry.orderCount > 0 ? (entry.total / entry.orderCount).toFixed(2) : 0,
+  // Group orders by date
+  const salesByDate = {};
+  orders.forEach((order) => {
+    const date = new Date(order.timestamp).toLocaleDateString();
+    if (!salesByDate[date]) {
+      salesByDate[date] = { total: 0, count: 0 };
+    }
+    salesByDate[date].total += order.total || 0;
+    salesByDate[date].count += 1;
+  });
+
+  const sheetData = Object.entries(salesByDate).map(([date, data]) => ({
+    Date: date,
+    "Total Sales (₱)": data.total.toFixed(2),
+    "Number of Orders": data.count,
+    "Average Order Value (₱)": (data.total / data.count).toFixed(2),
   }));
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -346,15 +356,11 @@ function exportOrdersReport() {
     "Order ID": order.id,
     Date: new Date(order.timestamp).toLocaleDateString(),
     Time: new Date(order.timestamp).toLocaleTimeString(),
-    Customer: order.customerName || "Walk-in",
     Type: order.orderType || order.type || "dine-in",
     Items:
-      order.items?.map((i) => `${i.name} (${i.quantity})`).join(", ") || "",
-    Subtotal: order.subtotal?.toFixed(2) || 0,
-    Tax: order.tax?.toFixed(2) || 0,
-    Total: order.total?.toFixed(2) || 0,
-    "Payment Method": order.paymentMethod || "cash",
-    Status: order.status || "completed",
+      order.items?.map((i) => `${i.name} (x${i.quantity})`).join(", ") ||
+      "No items",
+    Total: order.total?.toFixed(2) || "0.00",
   }));
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -362,16 +368,11 @@ function exportOrdersReport() {
   XLSX.utils.book_append_sheet(wb, ws, "Orders");
 
   ws["!cols"] = [
-    { wch: 15 },
-    { wch: 12 },
-    { wch: 10 },
     { wch: 20 },
     { wch: 12 },
-    { wch: 40 },
-    { wch: 10 },
-    { wch: 10 },
     { wch: 10 },
     { wch: 15 },
+    { wch: 50 },
     { wch: 12 },
   ];
 
@@ -380,8 +381,9 @@ function exportOrdersReport() {
 
 function exportFinancialReport() {
   console.log("Exporting financial report...");
-  const totalRevenue = (getAppState().salesHistory || []).reduce(
-    (sum, entry) => sum + entry.total,
+  const orders = getAppState().orders || [];
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + (order.total || 0),
     0
   );
 
@@ -389,16 +391,21 @@ function exportFinancialReport() {
     .filter((item) => !item.archived)
     .reduce((sum, item) => sum + item.quantity * (item.cost || 0), 0);
 
-  const totalOrders = (getAppState().orders || []).length;
+  const totalOrders = orders.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  const last30Days = (getAppState().salesHistory || []).slice(-30);
-  const last30DaysRevenue = last30Days.reduce(
-    (sum, entry) => sum + entry.total,
+  // Calculate last 30 days revenue
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const last30DaysOrders = orders.filter(
+    (o) => new Date(o.timestamp) >= thirtyDaysAgo
+  );
+  const last30DaysRevenue = last30DaysOrders.reduce(
+    (sum, o) => sum + (o.total || 0),
     0
   );
   const avgDailyRevenue =
-    last30Days.length > 0 ? last30DaysRevenue / last30Days.length : 0;
+    last30DaysOrders.length > 0 ? last30DaysRevenue / 30 : 0;
 
   const sheetData = [
     { Metric: "Total Revenue", Value: `₱${totalRevenue.toFixed(2)}` },
@@ -433,8 +440,10 @@ function exportEmployeesReport() {
     Email: emp.email || "N/A",
     Role: emp.permission || "staff",
     "Shift Start": emp.shiftStart || "N/A",
-    "Shift End": emp.shiftEnd || "N/A",
-    "Date Hired": emp.dateHired || "N/A",
+    "Date Hired":
+      emp.dateHired || emp.createdAt
+        ? new Date(emp.dateHired || emp.createdAt).toLocaleDateString()
+        : "N/A",
     Status: emp.archived ? "Archived" : "Active",
   }));
 
@@ -446,7 +455,6 @@ function exportEmployeesReport() {
     { wch: 25 },
     { wch: 30 },
     { wch: 15 },
-    { wch: 12 },
     { wch: 12 },
     { wch: 15 },
     { wch: 10 },
@@ -466,12 +474,17 @@ function exportAttendanceReport() {
       (e) => e.id === log.employeeId
     );
 
+    let status = "";
+    if (log.action === "in") status = "Clock In";
+    else if (log.action === "out") status = "Clock Out";
+    else if (log.action === "leave") status = "On Leave";
+    else if (log.action === "absent") status = "Absent";
+
     return {
       Date: new Date(log.timestamp).toLocaleDateString(),
       Time: new Date(log.timestamp).toLocaleTimeString(),
       Employee: employee ? employee.name : log.employeeId,
-      Action: log.action === "in" ? "Clock In" : "Clock Out",
-      Shift: log.shift || "N/A",
+      Status: status,
       Notes: log.note || "",
     };
   });
@@ -484,7 +497,6 @@ function exportAttendanceReport() {
     { wch: 12 },
     { wch: 12 },
     { wch: 25 },
-    { wch: 12 },
     { wch: 15 },
     { wch: 30 },
   ];
@@ -603,11 +615,11 @@ function exportStaffAttendanceExcel(staffId, monthValue) {
     reportData.push([day, amIn, amOut, pmIn, pmOut, totalStr]);
   }
 
-  // Add total hours row
+  // Add total hours row - properly calculate sum from all days
   const allTotalHours = reportData
     .slice(8) // Skip header rows
-    .filter((row) => row[5])
-    .reduce((sum, row) => sum + parseFloat(row[5] || 0), 0);
+    .filter((row) => row[5] && row[5] !== "") // Filter out empty strings
+    .reduce((sum, row) => sum + parseFloat(row[5]), 0);
 
   reportData.push([]);
   reportData.push(["Total Hours:", "", "", "", "", allTotalHours.toFixed(2)]);
@@ -776,6 +788,27 @@ function exportStaffAttendanceWord(staffId, monthValue) {
         <td>${totalStr}</td>
       </tr>
     `;
+
+    // Add page break after day 15 to ensure 2 pages
+    if (day === 15) {
+      htmlContent += `
+        </tbody>
+      </table>
+      <div style="page-break-after: always;"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>AM<br>In</th>
+            <th>AM<br>Out</th>
+            <th>PM<br>In</th>
+            <th>PM<br>Out</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+    }
   }
 
   htmlContent += `
