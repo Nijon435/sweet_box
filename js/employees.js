@@ -1460,6 +1460,162 @@ window.rejectProfileEdit = function (requestId) {
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["employees"] = renderEmployees;
 
+// Auto-absent logging system
+// Checks if employees haven't clocked in and marks them absent at 10 PM
+let autoAbsentCheckInterval = null;
+
+function startAutoAbsentCheck() {
+  // Clear any existing interval
+  if (autoAbsentCheckInterval) {
+    clearInterval(autoAbsentCheckInterval);
+  }
+
+  // Check every minute
+  autoAbsentCheckInterval = setInterval(checkAndLogAbsent, 60000);
+
+  // Also run immediately on page load
+  checkAndLogAbsent();
+}
+
+async function checkAndLogAbsent() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  // Only run at 10:00 PM (22:00)
+  if (currentHour !== 22 || currentMinute !== 0) {
+    return;
+  }
+
+  console.log("🕒 Running auto-absent check at 10 PM...");
+
+  // Get today's date in YYYY-MM-DD format
+  const today = now.toISOString().split("T")[0];
+
+  // Get all active employees
+  const activeEmployees = (appState.users || []).filter(
+    (user) => user.status === "active" && !user.archived
+  );
+
+  // Get today's attendance logs
+  let todayLogs = [];
+  try {
+    const apiBase = window.API_BASE_URL || "";
+    const response = await fetch(`${apiBase}/api/attendance-logs`, {
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const allLogs = await response.json();
+      // Filter logs for today
+      todayLogs = allLogs.filter((log) => {
+        const logDate = new Date(log.timestamp).toISOString().split("T")[0];
+        return logDate === today;
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching attendance logs:", error);
+    return;
+  }
+
+  // Get employees who clocked in today
+  const clockedInEmployees = new Set(
+    todayLogs
+      .filter((log) => log.action === "clock-in")
+      .map((log) => log.employee_id || log.employeeId)
+  );
+
+  // Find employees who haven't clocked in
+  const absentEmployees = activeEmployees.filter(
+    (emp) => !clockedInEmployees.has(emp.id)
+  );
+
+  if (absentEmployees.length === 0) {
+    console.log("✅ All employees have clocked in today");
+    return;
+  }
+
+  console.log(`📝 Marking ${absentEmployees.length} employee(s) as absent`);
+
+  // Create absent logs for employees who didn't clock in
+  const currentUser = getCurrentUser();
+  const absentLogs = [];
+
+  for (const employee of absentEmployees) {
+    const absentLog = {
+      id: `absent-${employee.id}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
+      employee_id: employee.id,
+      employeeId: employee.id,
+      action: "absent",
+      timestamp: now.toISOString(),
+      shift: employee.shift_start || "N/A",
+      note: "Auto-logged: No clock-in recorded by 10 PM",
+      archived: false,
+      archived_at: null,
+      archived_by: null,
+    };
+
+    absentLogs.push(absentLog);
+
+    // Add to local state
+    if (!appState.attendanceLogs) {
+      appState.attendanceLogs = [];
+    }
+    appState.attendanceLogs.push(absentLog);
+  }
+
+  // Save to database
+  try {
+    const apiBase = window.API_BASE_URL || "";
+
+    // Save each log individually
+    for (const log of absentLogs) {
+      const response = await fetch(`${apiBase}/api/attendance-logs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(log),
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to save absent log for ${log.employee_id}`);
+      } else {
+        console.log(`✅ Absent log created for employee ${log.employee_id}`);
+      }
+    }
+
+    // Show notification to user if on the employees page
+    if (window.location.pathname.includes("employees.html")) {
+      showAlert(
+        `${absentEmployees.length} employee(s) marked as absent (no clock-in by 10 PM)`,
+        "info"
+      );
+
+      // Refresh the page if we're viewing attendance
+      if (typeof renderEmployees === "function") {
+        renderEmployees();
+      }
+    }
+  } catch (error) {
+    console.error("Error saving absent logs:", error);
+  }
+}
+
+// Start the auto-absent check when the page loads
+if (typeof window !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startAutoAbsentCheck);
+  } else {
+    startAutoAbsentCheck();
+  }
+}
+
+// Export functions for testing/manual triggering
+window.startAutoAbsentCheck = startAutoAbsentCheck;
+window.checkAndLogAbsent = checkAndLogAbsent;
+
 // Edit employee modal with inline styles and permission editing
 window.openEditEmployeeModal = function (userId) {
   const user = appState.users.find((u) => u.id === userId);

@@ -87,14 +87,16 @@ CREATE TABLE IF NOT EXISTS inventory_usage_logs (
   id SERIAL PRIMARY KEY,
   inventory_item_id VARCHAR(64) NOT NULL,
   quantity NUMERIC(12,2) NOT NULL,
-  reason VARCHAR(64) NOT NULL, -- 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'other'
+  reason VARCHAR(64) NOT NULL, -- 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'production', 'other'
   batch_id VARCHAR(64), -- Groups multiple items logged together
   notes TEXT,
+  created_by VARCHAR(64), -- User who created this log
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   archived BOOLEAN DEFAULT FALSE,
   archived_at TIMESTAMP,
   archived_by VARCHAR(64),
   FOREIGN KEY (inventory_item_id) REFERENCES inventory(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
