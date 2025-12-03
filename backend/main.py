@@ -558,6 +558,59 @@ async def delete_order(order_id: str):
         logger.error(f"Error deleting order: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/attendance-logs")
+async def get_attendance_logs(start_date: str = None, end_date: str = None, limit: int = 1000):
+    """Get attendance logs with optional date range filtering"""
+    try:
+        logger.info(f"Fetching attendance logs: start_date={start_date}, end_date={end_date}, limit={limit}")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        if start_date and end_date:
+            # Fetch logs within date range
+            rows = await conn.fetch(
+                """SELECT * FROM attendance_logs 
+                   WHERE timestamp >= $1 AND timestamp < $2 
+                   ORDER BY timestamp DESC 
+                   LIMIT $3""",
+                start_date,
+                end_date,
+                limit
+            )
+        elif start_date:
+            # Fetch logs from start_date onwards
+            rows = await conn.fetch(
+                """SELECT * FROM attendance_logs 
+                   WHERE timestamp >= $1 
+                   ORDER BY timestamp DESC 
+                   LIMIT $2""",
+                start_date,
+                limit
+            )
+        else:
+            # Fetch recent logs
+            rows = await conn.fetch(
+                """SELECT * FROM attendance_logs 
+                   ORDER BY timestamp DESC 
+                   LIMIT $1""",
+                limit
+            )
+        
+        await conn.close()
+        
+        logs = [dict(row) for row in rows]
+        logger.info(f"Successfully fetched {len(logs)} attendance logs")
+        return logs
+    except Exception as e:
+        logger.error(f"Error fetching attendance logs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/attendance-logs")
 async def create_attendance_log(log: dict):
     """Create a new attendance log"""

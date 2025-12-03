@@ -414,6 +414,7 @@ function renderAnalytics() {
   });
 
   // Attendance Trend - Multi-line chart showing daily frequency of each status
+  // Fetch attendance data directly from database with date range
   const attendanceDays = attendanceRange;
   const attendanceLabels = [];
   const presentData = [];
@@ -421,43 +422,84 @@ function renderAnalytics() {
   const absentData = [];
   const leaveData = [];
 
-  // Build date labels and calculate status counts
-  for (let i = attendanceDays - 1; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateKey = date.toISOString().split("T")[0];
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    attendanceLabels.push(`${month}/${day}`);
+  // Calculate date range
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + 1); // Include today
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - attendanceDays + 1);
 
-    // Get all logs for this day
-    const dayLogs = (appState.attendanceLogs || []).filter(
-      (log) => log.timestamp.startsWith(dateKey) && !log.archived
+  try {
+    // Fetch attendance logs from database
+    const startDateStr = startDate.toISOString().split("T")[0];
+    const endDateStr = endDate.toISOString().split("T")[0];
+    const baseUrl = typeof window !== "undefined" && window.APP_STATE_ENDPOINT 
+      ? window.APP_STATE_ENDPOINT.replace("/api/state", "") 
+      : "";
+    
+    const response = await fetch(
+      `${baseUrl}/api/attendance-logs?start_date=${startDateStr}&end_date=${endDateStr}&limit=5000`,
+      { credentials: "include" }
     );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch attendance logs: ${response.status}`);
+    }
+    
+    const attendanceLogs = await response.json();
+    console.log(`Fetched ${attendanceLogs.length} attendance logs for date range ${startDateStr} to ${endDateStr}`);
 
-    // Count clock-ins with late notes
-    const lateCount = dayLogs.filter(
-      (log) =>
-        log.action === "in" &&
-        log.note &&
-        (log.note.toLowerCase().includes("late") ||
-          log.note.toLowerCase().includes("Late"))
-    ).length;
+    // Build date labels and calculate status counts
+    for (let i = attendanceDays - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split("T")[0];
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      attendanceLabels.push(`${month}/${day}`);
 
-    // Count present (clock-ins that are not late)
-    const clockInCount = dayLogs.filter((log) => log.action === "in").length;
-    const presentCount = clockInCount - lateCount;
+      // Get all logs for this day
+      const dayLogs = (attendanceLogs || []).filter(
+        (log) => log.timestamp.startsWith(dateKey) && !log.archived
+      );
 
-    // Count leave logs
-    const leaveCount = dayLogs.filter((log) => log.action === "leave").length;
+      // Count clock-ins with late notes
+      const lateCount = dayLogs.filter(
+        (log) =>
+          log.action === "in" &&
+          log.note &&
+          (log.note.toLowerCase().includes("late") ||
+            log.note.toLowerCase().includes("Late"))
+      ).length;
 
-    // Count absent logs
-    const absentCount = dayLogs.filter((log) => log.action === "absent").length;
+      // Count present (clock-ins that are not late)
+      const clockInCount = dayLogs.filter((log) => log.action === "in").length;
+      const presentCount = clockInCount - lateCount;
 
-    presentData.push(presentCount);
-    lateData.push(lateCount);
-    absentData.push(absentCount);
-    leaveData.push(leaveCount);
+      // Count leave logs
+      const leaveCount = dayLogs.filter((log) => log.action === "leave").length;
+
+      // Count absent logs
+      const absentCount = dayLogs.filter((log) => log.action === "absent").length;
+
+      presentData.push(presentCount);
+      lateData.push(lateCount);
+      absentData.push(absentCount);
+      leaveData.push(leaveCount);
+    }
+  } catch (error) {
+    console.error("Error fetching attendance logs for trend chart:", error);
+    // Fill with zeros if fetch fails
+    for (let i = 0; i < attendanceDays; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (attendanceDays - 1 - i));
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      attendanceLabels.push(`${month}/${day}`);
+      presentData.push(0);
+      lateData.push(0);
+      absentData.push(0);
+      leaveData.push(0);
+    }
   }
 
   ChartManager.plot("attendanceTrendChart", {
