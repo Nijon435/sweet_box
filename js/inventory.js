@@ -1266,8 +1266,12 @@ function renderUsageLogs(logs) {
 
     const firstLog = batchLogs[0];
     const timestamp = new Date(firstLog.timestamp || firstLog.created_at);
-    const formattedDate = timestamp.toLocaleDateString();
-    const formattedTime = timestamp.toLocaleTimeString();
+    const formattedDateTime = timestamp.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
     // Combine all items from the batch
     const itemAndQty = batchLogs
@@ -1299,7 +1303,7 @@ function renderUsageLogs(logs) {
 
     allRows.push(`
       <tr>
-        <td>${formattedDate} ${formattedTime}</td>
+        <td>${formattedDateTime}</td>
         <td>${itemAndQty}</td>
         <td>${formatReason(reason)}</td>
         <td>${notes}</td>
@@ -1319,8 +1323,12 @@ function renderUsageLogs(logs) {
     if (!log) return;
 
     const timestamp = new Date(log.timestamp || log.created_at);
-    const formattedDate = timestamp.toLocaleDateString();
-    const formattedTime = timestamp.toLocaleTimeString();
+    const formattedDateTime = timestamp.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
     const item = appState.inventory?.find((i) => i.id === log.inventoryItemId);
     const itemName = item ? item.name : `Item #${log.inventoryItemId}`;
@@ -1345,7 +1353,7 @@ function renderUsageLogs(logs) {
 
     allRows.push(`
       <tr>
-        <td>${formattedDate} ${formattedTime}</td>
+        <td>${formattedDateTime}</td>
         <td>${itemAndQty}</td>
         <td>${formatReason(reason)}</td>
         <td>${notes}</td>

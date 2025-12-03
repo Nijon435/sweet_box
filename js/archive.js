@@ -846,7 +846,6 @@ function renderArchivedUsageLogs() {
         displayDate = parsedDate.toLocaleString("en-US", {
           month: "short",
           day: "numeric",
-          year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         });
@@ -913,7 +912,6 @@ function renderArchivedUsageLogs() {
         displayDate = parsedDate.toLocaleString("en-US", {
           month: "short",
           day: "numeric",
-          year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         });
