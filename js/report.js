@@ -803,14 +803,7 @@ function exportStaffAttendanceWord(staffId, monthValue) {
 }
 
 // ========== Utility Functions ==========
-
-function todayKey() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+// Note: todayKey() is defined in common.js and used here
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["report"] = renderReports;
