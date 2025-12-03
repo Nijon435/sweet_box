@@ -839,7 +839,7 @@ function renderArchivedUsageLogs() {
 
     // Parse the date properly - handle both ISO strings and locale strings
     let displayDate = "N/A";
-    const dateValue = firstLog.created_at || firstLog.timestamp;
+    const dateValue = firstLog.createdAt || firstLog.created_at || firstLog.timestamp;
     if (dateValue) {
       const parsedDate = new Date(dateValue);
       if (!isNaN(parsedDate.getTime())) {
@@ -905,7 +905,7 @@ function renderArchivedUsageLogs() {
 
     // Parse the date properly - handle both ISO strings and locale strings
     let displayDate = "N/A";
-    const dateValue = log.created_at || log.timestamp;
+    const dateValue = log.createdAt || log.created_at || log.timestamp;
     if (dateValue) {
       const parsedDate = new Date(dateValue);
       if (!isNaN(parsedDate.getTime())) {
