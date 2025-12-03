@@ -362,7 +362,10 @@ function exportOrdersReport() {
     let itemsText = "No items";
     if (Array.isArray(items) && items.length > 0) {
       itemsText = items
-        .map((i) => `${i.name || "Unknown"} (x${i.quantity || 0})`)
+        .map(
+          (i) =>
+            `${i.name || "Unknown"} (x${i.quantity || i.qty || i.count || 1})`
+        )
         .join(", ");
     } else if (typeof items === "string") {
       // If items is a JSON string, parse it
@@ -370,7 +373,12 @@ function exportOrdersReport() {
         const parsed = JSON.parse(items);
         if (Array.isArray(parsed)) {
           itemsText = parsed
-            .map((i) => `${i.name || "Unknown"} (x${i.quantity || 0})`)
+            .map(
+              (i) =>
+                `${i.name || "Unknown"} (x${
+                  i.quantity || i.qty || i.count || 1
+                })`
+            )
             .join(", ");
         }
       } catch (e) {
@@ -821,14 +829,14 @@ function exportStaffAttendanceWord(staffId, monthValue) {
           font-size: 10pt;
         }
         .tables-wrapper {
-          display: table;
           width: 100%;
-          border-spacing: 15px 0;
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
         }
         .table-column {
-          display: table-cell;
+          flex: 1;
           width: 48%;
-          vertical-align: top;
         }
         table { 
           width: 100%;
@@ -874,8 +882,8 @@ function exportStaffAttendanceWord(staffId, monthValue) {
             <div class="header-left"><strong>Role:</strong> ${
               employee.permission || "Staff"
             }</div>
-            <div class="header-right"><strong>Department:</strong> ${
-              employee.department || "N/A"
+            <div class="header-right"><strong>Access:</strong> ${
+              employee.permission || "Staff"
             }</div>
           </div>
         </div>
