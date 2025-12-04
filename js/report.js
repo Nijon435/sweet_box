@@ -115,7 +115,7 @@ function exportReport(type) {
     getAppState() || (typeof appState !== "undefined" ? appState : null);
 
   if (!currentState) {
-    alert("Data not loaded yet. Please wait a moment and try again.");
+    showNotification("Data not loaded yet. Please wait a moment and try again.", "error");
     console.error("appState is not available");
     return;
   }
@@ -135,12 +135,12 @@ function exportReport(type) {
     const monthValue = document.getElementById("attendance-month")?.value;
 
     if (!staffId) {
-      alert("Please select a staff member");
+      showNotification("Please select a staff member", "error");
       return;
     }
 
     if (!monthValue) {
-      alert("Please select a month");
+      showNotification("Please select a month", "error");
       return;
     }
 
@@ -154,7 +154,7 @@ function exportReport(type) {
         }
       } catch (error) {
         console.error("Error exporting staff attendance:", error);
-        alert(`Error exporting report: ${error.message}`);
+        showNotification(`Error exporting report: ${error.message}`, "error");
       }
     })();
     return;
@@ -163,8 +163,8 @@ function exportReport(type) {
   // Check if XLSX library is loaded for Excel exports
   if (typeof XLSX === "undefined") {
     console.error("SheetJS library not loaded!");
-    alert(
-      "Excel export library (SheetJS) is not loaded. Please refresh the page."
+    showNotification(
+      "Excel export library (SheetJS) is not loaded. Please refresh the page.", "error"
     );
     return;
   }
@@ -201,11 +201,11 @@ function exportReport(type) {
           break;
         default:
           console.error(`Unknown report type: ${type}`);
-          alert(`Report type "${type}" not implemented yet`);
+          showNotification(`Report type "${type}" not implemented yet`, "error");
       }
     } catch (error) {
       console.error(`Error exporting ${type}:`, error);
-      alert(`Error exporting report: ${error.message}`);
+      showNotification(`Error exporting report: ${error.message}`, "error");
     }
   })();
 }
@@ -558,7 +558,7 @@ async function exportAttendanceReport() {
 // Export Staff Attendance Report as Excel (Daily Time Record format)
 async function exportStaffAttendanceExcel(staffId, monthValue) {
   if (typeof XLSX === "undefined") {
-    alert("SheetJS is required for Excel export");
+    showNotification("SheetJS is required for Excel export", "error");
     return;
   }
 
@@ -566,7 +566,7 @@ async function exportStaffAttendanceExcel(staffId, monthValue) {
   const users = await fetchExportData("users");
   const employee = users.find((e) => e.id === staffId);
   if (!employee) {
-    alert("Employee not found");
+    showNotification("Employee not found", "error");
     return;
   }
 
@@ -583,7 +583,7 @@ async function exportStaffAttendanceExcel(staffId, monthValue) {
     `${API_BASE_URL}/api/export/attendance?employee_id=${staffId}&month=${monthValue}`
   );
   if (!response.ok) {
-    alert("Failed to fetch attendance data");
+    showNotification("Failed to fetch attendance data", "error");
     return;
   }
   const monthLogs = await response.json();
@@ -706,7 +706,7 @@ async function exportStaffAttendanceWord(staffId, monthValue) {
   const users = await fetchExportData("users");
   const employee = users.find((e) => e.id === staffId);
   if (!employee) {
-    alert("Employee not found");
+    showNotification("Employee not found", "error");
     return;
   }
 
@@ -723,7 +723,7 @@ async function exportStaffAttendanceWord(staffId, monthValue) {
     `${API_BASE_URL}/api/export/attendance?employee_id=${staffId}&month=${monthValue}`
   );
   if (!response.ok) {
-    alert("Failed to fetch attendance data");
+    showNotification("Failed to fetch attendance data", "error");
     return;
   }
   const monthLogs = await response.json();

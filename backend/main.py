@@ -792,14 +792,14 @@ async def export_attendance(employee_id: str = None, month: str = None):
             year, month_num = map(int, month.split('-'))
             last_day = calendar.monthrange(year, month_num)[1]
             
-            # Use simple date strings that PostgreSQL can handle
-            start_date = f"{year}-{month_num:02d}-01"
-            end_date = f"{year}-{month_num:02d}-{last_day:02d}"
+            # Use timestamp comparison with full datetime range
+            start_timestamp = f"{year}-{month_num:02d}-01 00:00:00"
+            end_timestamp = f"{year}-{month_num:02d}-{last_day:02d} 23:59:59.999999"
             
-            # Compare using date extraction from timestamp
-            query += f" AND DATE(timestamp) >= ${param_count}::date AND DATE(timestamp) <= ${param_count + 1}::date"
-            params.append(start_date)
-            params.append(end_date)
+            # Direct timestamp comparison
+            query += f" AND timestamp >= ${param_count}::timestamp AND timestamp <= ${param_count + 1}::timestamp"
+            params.append(start_timestamp)
+            params.append(end_timestamp)
             param_count += 2
         
         query += " ORDER BY timestamp DESC"
