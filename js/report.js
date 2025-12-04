@@ -115,7 +115,10 @@ function exportReport(type) {
     getAppState() || (typeof appState !== "undefined" ? appState : null);
 
   if (!currentState) {
-    showNotification("Data not loaded yet. Please wait a moment and try again.", "error");
+    showNotification(
+      "Data not loaded yet. Please wait a moment and try again.",
+      "error"
+    );
     console.error("appState is not available");
     return;
   }
@@ -164,7 +167,8 @@ function exportReport(type) {
   if (typeof XLSX === "undefined") {
     console.error("SheetJS library not loaded!");
     showNotification(
-      "Excel export library (SheetJS) is not loaded. Please refresh the page.", "error"
+      "Excel export library (SheetJS) is not loaded. Please refresh the page.",
+      "error"
     );
     return;
   }
@@ -201,7 +205,10 @@ function exportReport(type) {
           break;
         default:
           console.error(`Unknown report type: ${type}`);
-          showNotification(`Report type "${type}" not implemented yet`, "error");
+          showNotification(
+            `Report type "${type}" not implemented yet`,
+            "error"
+          );
       }
     } catch (error) {
       console.error(`Error exporting ${type}:`, error);

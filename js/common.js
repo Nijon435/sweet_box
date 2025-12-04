@@ -2201,3 +2201,66 @@ function migrateExistingUsageData() {
 }
 
 window.migrateExistingUsageData = migrateExistingUsageData;
+
+// ========== NOTIFICATION SYSTEM ==========
+
+/**
+ * Show a styled notification message
+ * @param {string} message - The message to display
+ * @param {string} type - Type of notification: 'success', 'error', 'warning', 'info'
+ */
+function showNotification(message, type = "info") {
+  const modal = document.createElement("div");
+  modal.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+
+  const icons = {
+    success: "✓",
+    warning: "⚠",
+    error: "✕",
+    info: "ℹ",
+  };
+
+  const colors = {
+    success: "#10b981",
+    warning: "#f59e0b",
+    error: "#ef4444",
+    info: "#3b82f6",
+  };
+
+  const titles = {
+    success: "Success",
+    warning: "Warning",
+    error: "Error",
+    info: "Information",
+  };
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: ${colors[type]}; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px ${colors[type]}40;">
+          <span style="color: white; font-size: 2.5rem; font-weight: bold;">${icons[type]}</span>
+        </div>
+        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">${titles[type]}</h3>
+        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">${message}</p>
+      </div>
+      <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="width: 100%; padding: 0.875rem; background: linear-gradient(135deg, ${colors[type]} 0%, ${colors[type]}dd 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px ${colors[type]}40; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Got it</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Add animation styles if not already present
+  if (!document.getElementById("notification-animations")) {
+    const style = document.createElement("style");
+    style.id = "notification-animations";
+    style.textContent = `
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// Make it globally available
+window.showNotification = showNotification;
