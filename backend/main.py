@@ -792,14 +792,10 @@ async def export_attendance(employee_id: str = None, month: str = None):
             year, month_num = map(int, month.split('-'))
             last_day = calendar.monthrange(year, month_num)[1]
             
-            # Use timestamp comparison with full datetime range
-            start_timestamp = f"{year}-{month_num:02d}-01 00:00:00"
-            end_timestamp = f"{year}-{month_num:02d}-{last_day:02d} 23:59:59.999999"
-            
-            # Direct timestamp comparison
-            query += f" AND timestamp >= ${param_count}::timestamp AND timestamp <= ${param_count + 1}::timestamp"
-            params.append(start_timestamp)
-            params.append(end_timestamp)
+            # Use EXTRACT to compare year and month from timestamp
+            query += f" AND EXTRACT(YEAR FROM timestamp) = ${param_count} AND EXTRACT(MONTH FROM timestamp) = ${param_count + 1}"
+            params.append(year)
+            params.append(month_num)
             param_count += 2
         
         query += " ORDER BY timestamp DESC"
