@@ -738,14 +738,15 @@ function setupRecordUsageButton() {
         }
       };
     } else {
-      // Volume/Weight: 4 buttons (-1, -0.1, +0.1, +1) in a wrapped layout
+      // Volume/Weight: 4 buttons with unit labels
+      const unitLabel = item.unit || "units";
       controlsContainer.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%; justify-content: center;">
           <button type="button" class="btn btn-outline" id="qty-decrease-1" 
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">-1</button>
           <button type="button" class="btn btn-outline" id="qty-decrease-decimal" 
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">-0.1</button>
-          <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="0.1" readonly
+          <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="1.2" readonly
             style="width: 90px; text-align: center; font-size: 1.25rem; font-weight: 600; cursor: default;" />
           <button type="button" class="btn btn-outline" id="qty-increase-decimal" 
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">+0.1</button>
@@ -764,21 +765,34 @@ function setupRecordUsageButton() {
       );
       const increase1Btn = document.getElementById("qty-increase-1");
 
+      // Update button labels with unit
+      decrease1Btn.textContent = `-1 ${unitLabel}`;
+      decreaseDecimalBtn.textContent = `-0.1 ${unitLabel}`;
+      increaseDecimalBtn.textContent = `+0.1 ${unitLabel}`;
+      increase1Btn.textContent = `+1 ${unitLabel}`;
+
+      // Adjust button widths to accommodate unit labels
+      [decrease1Btn, decreaseDecimalBtn, increaseDecimalBtn, increase1Btn].forEach(btn => {
+        btn.style.width = "auto";
+        btn.style.minWidth = "70px";
+        btn.style.padding = "0 0.5rem";
+      });
+
       decrease1Btn.onclick = () => {
         const currentValue = parseFloat(input.value) || 0.1;
-        input.value = Math.max(0.1, currentValue - 1).toFixed(1);
+        input.value = Math.max(0.1, currentValue - 1).toFixed(2);
       };
 
       decreaseDecimalBtn.onclick = () => {
         const currentValue = parseFloat(input.value) || 0.1;
-        input.value = Math.max(0.1, currentValue - 0.1).toFixed(1);
+        input.value = Math.max(0.1, currentValue - 0.1).toFixed(2);
       };
 
       increaseDecimalBtn.onclick = () => {
         const currentValue = parseFloat(input.value) || 0.1;
         const newValue = currentValue + 0.1;
         if (newValue <= item.quantity) {
-          input.value = newValue.toFixed(1);
+          input.value = newValue.toFixed(2);
         }
       };
 
@@ -786,7 +800,7 @@ function setupRecordUsageButton() {
         const currentValue = parseFloat(input.value) || 0.1;
         const newValue = currentValue + 1;
         if (newValue <= item.quantity) {
-          input.value = newValue.toFixed(1);
+          input.value = newValue.toFixed(2);
         }
       };
     }

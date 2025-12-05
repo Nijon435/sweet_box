@@ -1,14 +1,12 @@
 # Database Setup Instructions
 
-This folder contains all the SQL files needed to set up and maintain the Sweet Box database.
+This folder contains the SQL files needed to set up and maintain the Sweet Box database.
 
 ## Files Overview
 
-- **schema.sql** - Complete database schema with all tables
+- **schema.sql** - Complete database schema with all tables (PostgreSQL)
 - **seeds.sql** - Sample data for testing and development
-- **add_unit_column.sql** - Migration to add unit column to existing databases
-- **run_migration.py** - Python script to run migrations automatically
-- **update_render_database.py** - Script to update production Render database
+- **queries.sql** - Example SQL queries for common operations
 
 ## Database Configuration
 
@@ -20,24 +18,18 @@ Set your DATABASE_URL in `.env`:
 DATABASE_URL=postgresql://username:password@hostname:port/database
 ```
 
-## Migration (Existing Database)
+## Initial Setup
 
-If you need to add the unit column to an existing database:
-
-### Using Python script
+### 1. Create the database schema
 
 ```bash
-# Make sure psycopg2 is installed
-pip install psycopg2-binary
-
-# Run the migration
-python sql/run_migration.py
+psql -U username -d database -f sql/schema.sql
 ```
 
-### Using psql directly
+### 2. (Optional) Insert sample data
 
 ```bash
-psql -U username -d database -f sql/add_unit_column.sql
+psql -U username -d database -f sql/seeds.sql
 ```
 
 ## Database Schema
@@ -48,6 +40,29 @@ psql -U username -d database -f sql/add_unit_column.sql
 2. **attendance_logs** - Clock in/out records
 3. **requests** - Leave and profile edit requests
 4. **inventory** - Inventory items with units and tracking
+5. **inventory_usage_logs** - Tracking usage of inventory items
+6. **orders** - Customer orders
+7. **sales_history** - Daily sales totals
+8. **inventory_trends** - Weekly usage metrics for analytics
+
+### Key Features
+
+- **Archive Support** - All main tables support soft deletion with archived flag
+- **Foreign Key Constraints** - Maintains data integrity
+- **JSONB Fields** - Used for flexible data storage (order items, profile changes)
+- **Timestamps** - Automatic timestamps for created_at fields
+- **Cascade Deletes** - Proper cleanup when parent records are removed
+
+## Common Queries
+
+See `queries.sql` for examples of:
+
+- Getting latest attendance per employee
+- Finding low stock items
+- Filtering orders by status
+- Generating sales reports
+- And more...
+
 5. **ingredient_usage_logs** - Detailed usage tracking (NEW)
 6. **orders** - Customer orders
 7. **sales_history** - Daily sales totals

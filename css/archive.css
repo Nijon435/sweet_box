@@ -257,44 +257,4 @@
   justify-content: flex-end;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .archive-tabs {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-  }
-
-  .archive-tab {
-    flex-shrink: 0;
-    padding: 0.625rem 1rem;
-    font-size: 0.9rem;
-  }
-
-  #archive-orders-table,
-  #archive-inventory-table,
-  #archive-users-table,
-  #archive-attendance-table,
-  #archive-usage-logs-table {
-    font-size: 0.875rem;
-  }
-
-  #archive-orders-table th,
-  #archive-inventory-table th,
-  #archive-users-table th,
-  #archive-orders-table td,
-  #archive-inventory-table td,
-  #archive-users-table td {
-    padding: 0.75rem 0.5rem;
-  }
-
-  .archive-actions {
-    flex-direction: column;
-  }
-
-  .btn-restore,
-  .btn-permanent-delete {
-    width: 100%;
-    padding: 0.5rem;
-    font-size: 0.875rem;
-  }
-}
+/* Responsive styles moved to responsive.css */
