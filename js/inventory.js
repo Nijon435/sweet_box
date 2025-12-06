@@ -738,7 +738,7 @@ function setupRecordUsageButton() {
         }
       };
     } else {
-      // Volume/Weight: 4 buttons with unit labels
+      // Volume/Weight: 4 buttons
       const unitLabel = item.unit || "units";
       controlsContainer.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%; justify-content: center;">
@@ -746,13 +746,23 @@ function setupRecordUsageButton() {
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">-1</button>
           <button type="button" class="btn btn-outline" id="qty-decrease-decimal" 
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">-0.1</button>
-          <input type="number" id="quantity-modal-input" min="0.1" step="0.1" value="1.2" readonly
-            style="width: 90px; text-align: center; font-size: 1.25rem; font-weight: 600; cursor: default;" />
+          <div style="display: flex; align-items: center; gap: 0.3rem;">
+            <input type="number" id="quantity-modal-input" min="0" step="0.01" value="0.00" readonly
+              style="width: 90px; text-align: center; font-size: 1.25rem; font-weight: 600; cursor: default; -moz-appearance: textfield;" />
+            <span style="font-size: 1rem; color: #6b7280; font-weight: 500;">${unitLabel}</span>
+          </div>
           <button type="button" class="btn btn-outline" id="qty-increase-decimal" 
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">+0.1</button>
           <button type="button" class="btn btn-outline" id="qty-increase-1" 
             style="width: 55px; height: 40px; padding: 0; font-size: 0.9rem;">+1</button>
         </div>
+        <style>
+          #quantity-modal-input::-webkit-outer-spin-button,
+          #quantity-modal-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+        </style>
       `;
 
       const input = document.getElementById("quantity-modal-input");
@@ -765,31 +775,18 @@ function setupRecordUsageButton() {
       );
       const increase1Btn = document.getElementById("qty-increase-1");
 
-      // Update button labels with unit
-      decrease1Btn.textContent = `-1 ${unitLabel}`;
-      decreaseDecimalBtn.textContent = `-0.1 ${unitLabel}`;
-      increaseDecimalBtn.textContent = `+0.1 ${unitLabel}`;
-      increase1Btn.textContent = `+1 ${unitLabel}`;
-
-      // Adjust button widths to accommodate unit labels
-      [decrease1Btn, decreaseDecimalBtn, increaseDecimalBtn, increase1Btn].forEach(btn => {
-        btn.style.width = "auto";
-        btn.style.minWidth = "70px";
-        btn.style.padding = "0 0.5rem";
-      });
-
       decrease1Btn.onclick = () => {
-        const currentValue = parseFloat(input.value) || 0.1;
-        input.value = Math.max(0.1, currentValue - 1).toFixed(2);
+        const currentValue = parseFloat(input.value) || 0;
+        input.value = Math.max(0, currentValue - 1).toFixed(2);
       };
 
       decreaseDecimalBtn.onclick = () => {
-        const currentValue = parseFloat(input.value) || 0.1;
-        input.value = Math.max(0.1, currentValue - 0.1).toFixed(2);
+        const currentValue = parseFloat(input.value) || 0;
+        input.value = Math.max(0, currentValue - 0.1).toFixed(2);
       };
 
       increaseDecimalBtn.onclick = () => {
-        const currentValue = parseFloat(input.value) || 0.1;
+        const currentValue = parseFloat(input.value) || 0;
         const newValue = currentValue + 0.1;
         if (newValue <= item.quantity) {
           input.value = newValue.toFixed(2);
@@ -797,7 +794,7 @@ function setupRecordUsageButton() {
       };
 
       increase1Btn.onclick = () => {
-        const currentValue = parseFloat(input.value) || 0.1;
+        const currentValue = parseFloat(input.value) || 0;
         const newValue = currentValue + 1;
         if (newValue <= item.quantity) {
           input.value = newValue.toFixed(2);

@@ -5,6 +5,7 @@ let currentTab = "orders";
 function initializeArchive() {
   setupTabs();
   setupRefreshButton();
+  setupDeleteAllButtons();
   renderArchive();
 }
 
@@ -48,6 +49,142 @@ function setupRefreshButton() {
     refreshBtn.addEventListener("click", () => {
       location.reload();
     });
+  }
+}
+
+function setupDeleteAllButtons() {
+  // Delete All Orders
+  const deleteAllOrdersBtn = document.getElementById("delete-all-orders");
+  if (deleteAllOrdersBtn) {
+    deleteAllOrdersBtn.addEventListener("click", async () => {
+      const archivedOrders = (appState.orders || []).filter((o) => o.archived);
+      if (archivedOrders.length === 0) {
+        showAlert("No archived orders to delete", "info");
+        return;
+      }
+      await deleteAllArchived("orders", archivedOrders);
+    });
+  }
+
+  // Delete All Inventory
+  const deleteAllInventoryBtn = document.getElementById("delete-all-inventory");
+  if (deleteAllInventoryBtn) {
+    deleteAllInventoryBtn.addEventListener("click", async () => {
+      const archivedInventory = (appState.inventory || []).filter(
+        (i) => i.archived
+      );
+      if (archivedInventory.length === 0) {
+        showAlert("No archived inventory to delete", "info");
+        return;
+      }
+      await deleteAllArchived("inventory", archivedInventory);
+    });
+  }
+
+  // Delete All Users
+  const deleteAllUsersBtn = document.getElementById("delete-all-users");
+  if (deleteAllUsersBtn) {
+    deleteAllUsersBtn.addEventListener("click", async () => {
+      const archivedUsers = (appState.users || []).filter((u) => u.archived);
+      if (archivedUsers.length === 0) {
+        showAlert("No archived users to delete", "info");
+        return;
+      }
+      await deleteAllArchived("users", archivedUsers);
+    });
+  }
+
+  // Delete All Attendance
+  const deleteAllAttendanceBtn = document.getElementById(
+    "delete-all-attendance"
+  );
+  if (deleteAllAttendanceBtn) {
+    deleteAllAttendanceBtn.addEventListener("click", async () => {
+      const archivedAttendance = (appState.attendanceLogs || []).filter(
+        (a) => a.archived
+      );
+      if (archivedAttendance.length === 0) {
+        showAlert("No archived attendance logs to delete", "info");
+        return;
+      }
+      await deleteAllArchived("attendance-logs", archivedAttendance);
+    });
+  }
+
+  // Delete All Usage Logs
+  const deleteAllUsageLogsBtn = document.getElementById(
+    "delete-all-usage-logs"
+  );
+  if (deleteAllUsageLogsBtn) {
+    deleteAllUsageLogsBtn.addEventListener("click", async () => {
+      const archivedUsageLogs = (appState.inventoryUsageLogs || []).filter(
+        (l) => l.archived
+      );
+      if (archivedUsageLogs.length === 0) {
+        showAlert("No archived usage logs to delete", "info");
+        return;
+      }
+      await deleteAllArchived("inventory-usage-logs", archivedUsageLogs);
+    });
+  }
+}
+
+async function deleteAllArchived(type, items) {
+  const confirmed = await showConfirmAlert(
+    `Delete All Archived ${type.charAt(0).toUpperCase() + type.slice(1)}?`,
+    `This will permanently delete ${items.length} archived item(s). This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  showLoading(`Deleting ${items.length} items...`);
+
+  try {
+    const deletePromises = items.map((item) =>
+      fetch(`${window.API_BASE_URL || ""}/api/${type}/${item.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+    );
+
+    const results = await Promise.all(deletePromises);
+    const successCount = results.filter((res) => res.ok).length;
+
+    hideLoading();
+
+    if (successCount === items.length) {
+      // Remove from appState
+      if (type === "orders") {
+        appState.orders = (appState.orders || []).filter((o) => !o.archived);
+      } else if (type === "inventory") {
+        appState.inventory = (appState.inventory || []).filter(
+          (i) => !i.archived
+        );
+      } else if (type === "users") {
+        appState.users = (appState.users || []).filter((u) => !u.archived);
+      } else if (type === "attendance-logs") {
+        appState.attendanceLogs = (appState.attendanceLogs || []).filter(
+          (a) => !a.archived
+        );
+      } else if (type === "inventory-usage-logs") {
+        appState.inventoryUsageLogs = (
+          appState.inventoryUsageLogs || []
+        ).filter((l) => !l.archived);
+      }
+
+      showAlert(`Successfully deleted ${successCount} item(s)`, "success");
+      renderArchive();
+    } else {
+      showAlert(
+        `Deleted ${successCount} of ${items.length} items. Some deletions failed.`,
+        "warning"
+      );
+      renderArchive();
+    }
+  } catch (error) {
+    hideLoading();
+    console.error("Error deleting all archived items:", error);
+    showAlert("Failed to delete archived items", "error");
   }
 }
 

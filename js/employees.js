@@ -1492,9 +1492,10 @@ window.checkAndLogAbsent = async function () {
   // Get today's date in YYYY-MM-DD format
   const today = now.toISOString().split("T")[0];
 
-  // Get all active employees
+  // Get all active employees (excluding admins)
   const activeEmployees = (appState.users || []).filter(
-    (user) => user.status === "active" && !user.archived
+    (user) =>
+      user.status === "active" && !user.archived && user.role !== "admin"
   );
 
   // Get today's attendance logs
