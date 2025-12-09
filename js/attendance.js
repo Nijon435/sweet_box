@@ -2,6 +2,36 @@
 let attendanceCurrentPage = 1;
 const attendanceItemsPerPage = 20;
 
+// Refresh attendance logs from server
+async function refreshAttendanceLogs() {
+  try {
+    let baseUrl = "";
+    if (typeof window !== "undefined" && window.APP_STATE_ENDPOINT) {
+      const urlObj = new URL(window.APP_STATE_ENDPOINT);
+      baseUrl = urlObj.origin;
+    }
+
+    const url = baseUrl + "/api/attendance-logs";
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const freshLogs = await response.json();
+      // Update appState with fresh data from server
+      appState.attendanceLogs = freshLogs;
+      console.log("Refreshed attendance logs from server:", freshLogs.length);
+    }
+  } catch (error) {
+    console.error("Error refreshing attendance logs:", error);
+    // Don't throw - continue with local data if refresh fails
+  }
+}
+
 // Save attendance log directly to database
 async function saveAttendanceLog(log) {
   try {
@@ -103,15 +133,15 @@ function renderAttendance() {
       const currentLastLog =
         freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
 
-      if (currentLastLog && currentLastLog.action === "out") {
-        showAlreadyClockedOutModal();
-        return;
-      }
-
+      // Prevent clocking in if already clocked in (last action was "in")
       if (currentLastLog && currentLastLog.action === "in") {
         showAlreadyClockedInModal();
         return;
       }
+
+      // Allow clock-in if:
+      // 1. No previous logs today (first time)
+      // 2. Last action was "out" (clocked out previously)
 
       const isLate = isUserLate(currentUser);
       let note = "";
@@ -166,6 +196,9 @@ function renderAttendance() {
       try {
         await saveAttendanceLog(newLog);
 
+        // Refresh data from server to ensure consistency
+        await refreshAttendanceLogs();
+
         // Show styled success message
         const toast = document.createElement("div");
         toast.style.cssText =
@@ -212,10 +245,15 @@ function renderAttendance() {
       const currentLastLog =
         freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
 
+      // Prevent clocking out if:
+      // 1. No logs today (haven't clocked in yet)
+      // 2. Last action was "out" (already clocked out)
       if (!currentLastLog || currentLastLog.action === "out") {
         showNeedToClockInModal();
         return;
       }
+
+      // Allow clock-out only if last action was "in"
 
       // Create attendance log with local timestamp
       const newLog = {
@@ -232,6 +270,9 @@ function renderAttendance() {
       // Save directly to database
       try {
         await saveAttendanceLog(newLog);
+
+        // Refresh data from server to ensure consistency
+        await refreshAttendanceLogs();
 
         // Show styled success message
         const toast = document.createElement("div");
