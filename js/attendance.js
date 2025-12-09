@@ -179,76 +179,90 @@ function renderAttendance() {
   if (clockInBtn && !clockInBtn.dataset.bound) {
     clockInBtn.dataset.bound = "true";
     clockInBtn.addEventListener("click", async () => {
-      // Recalculate lastLog with fresh data
-      const freshLogs = appState.attendanceLogs
-        .filter(
-          (log) =>
-            log.employeeId === currentUser.id &&
-            log.timestamp.startsWith(todayKey())
-        )
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      const currentLastLog =
-        freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+      // Disable button to prevent double-clicks
+      clockInBtn.disabled = true;
 
-      // Prevent clocking in if already clocked in (last action was "in")
-      if (currentLastLog && currentLastLog.action === "in") {
-        showAlreadyClockedInModal();
-        return;
-      }
-
-      // Allow clock-in if no previous logs OR if last action was "out"
-
-      const isLate = isUserLate(currentUser);
-      let note = "";
-
-      // Show note popup if late
-      if (isLate) {
-        note = await showLateNoteDialog();
-        if (note === null) return; // User cancelled
-      }
-
-      // Calculate late duration if late
-      let lateInfo = "";
-      if (isLate && currentUser.shiftStart) {
-        const now = new Date();
-        const [hours, minutes] = currentUser.shiftStart.split(":");
-        const shiftTime = new Date();
-        shiftTime.setHours(parseInt(hours), parseInt(minutes), 0);
-
-        const lateMinutes = Math.floor((now - shiftTime) / 60000);
-        if (lateMinutes >= 60) {
-          const lateHours = Math.floor(lateMinutes / 60);
-          const remainingMinutes = lateMinutes % 60;
-          lateInfo =
-            remainingMinutes > 0
-              ? `Late by ${lateHours}h ${remainingMinutes}m`
-              : `Late by ${lateHours}h`;
-        } else {
-          lateInfo = `Late by ${lateMinutes}m`;
-        }
-
-        // Combine late info with user's note
-        if (note) {
-          note = `${lateInfo} - ${note}`;
-        } else {
-          note = lateInfo;
-        }
-      }
-
-      // Create attendance log with local timestamp
-      const newLog = {
-        id: `att-${Date.now()}`,
-        employeeId: currentUser.id,
-        action: "in",
-        timestamp: getLocalTimestamp(),
-        note: note || null,
-      };
-
-      // Save to local state first
-      appState.attendanceLogs.push(newLog);
-
-      // Save directly to database
       try {
+        // Fetch fresh data from server BEFORE validation to prevent stale data issues
+        console.log("🔍 Fetching fresh data before clock-in validation...");
+        await refreshAttendanceLogs();
+
+        // NOW validate with fresh data from server
+        const freshLogs = appState.attendanceLogs
+          .filter(
+            (log) =>
+              log.employeeId === currentUser.id &&
+              log.timestamp.startsWith(todayKey())
+          )
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const currentLastLog =
+          freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+
+        console.log("📊 Clock-in validation - Last log:", currentLastLog);
+
+        // Prevent clocking in if already clocked in (last action was "in")
+        if (currentLastLog && currentLastLog.action === "in") {
+          console.log("⚠️ Already clocked in - showing modal");
+          showAlreadyClockedInModal();
+          clockInBtn.disabled = false;
+          return;
+        }
+
+        // Allow clock-in if no previous logs OR if last action was "out"
+
+        const isLate = isUserLate(currentUser);
+        let note = "";
+
+        // Show note popup if late
+        if (isLate) {
+          note = await showLateNoteDialog();
+          if (note === null) {
+            clockInBtn.disabled = false;
+            return; // User cancelled
+          }
+        }
+
+        // Calculate late duration if late
+        let lateInfo = "";
+        if (isLate && currentUser.shiftStart) {
+          const now = new Date();
+          const [hours, minutes] = currentUser.shiftStart.split(":");
+          const shiftTime = new Date();
+          shiftTime.setHours(parseInt(hours), parseInt(minutes), 0);
+
+          const lateMinutes = Math.floor((now - shiftTime) / 60000);
+          if (lateMinutes >= 60) {
+            const lateHours = Math.floor(lateMinutes / 60);
+            const remainingMinutes = lateMinutes % 60;
+            lateInfo =
+              remainingMinutes > 0
+                ? `Late by ${lateHours}h ${remainingMinutes}m`
+                : `Late by ${lateHours}h`;
+          } else {
+            lateInfo = `Late by ${lateMinutes}m`;
+          }
+
+          // Combine late info with user's note
+          if (note) {
+            note = `${lateInfo} - ${note}`;
+          } else {
+            note = lateInfo;
+          }
+        }
+
+        // Create attendance log with local timestamp
+        const newLog = {
+          id: `att-${Date.now()}`,
+          employeeId: currentUser.id,
+          action: "in",
+          timestamp: getLocalTimestamp(),
+          note: note || null,
+        };
+
+        // Save to local state first
+        appState.attendanceLogs.push(newLog);
+
+        // Save directly to database
         await saveAttendanceLog(newLog);
 
         // Refresh data from server to ensure consistency
@@ -273,12 +287,16 @@ function renderAttendance() {
 
         renderAttendance();
       } catch (error) {
-        // Remove from local state if save failed
-        const index = appState.attendanceLogs.findIndex(
-          (log) => log.id === newLog.id
-        );
-        if (index > -1) {
-          appState.attendanceLogs.splice(index, 1);
+        console.error("Clock-in error:", error);
+
+        // Remove from local state if save failed - use optional chaining for safety
+        if (typeof newLog !== "undefined") {
+          const index = appState.attendanceLogs.findIndex(
+            (log) => log.id === newLog.id
+          );
+          if (index > -1) {
+            appState.attendanceLogs.splice(index, 1);
+          }
         }
 
         // Show error message
@@ -288,6 +306,9 @@ function renderAttendance() {
         toast.textContent = "✗ Failed to clock in. Please try again.";
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+      } finally {
+        // Re-enable button
+        clockInBtn.disabled = false;
       }
     });
   }
@@ -296,41 +317,52 @@ function renderAttendance() {
   if (clockOutBtn && !clockOutBtn.dataset.bound) {
     clockOutBtn.dataset.bound = "true";
     clockOutBtn.addEventListener("click", async () => {
-      // Recalculate lastLog with fresh data
-      const freshLogs = appState.attendanceLogs
-        .filter(
-          (log) =>
-            log.employeeId === currentUser.id &&
-            log.timestamp.startsWith(todayKey())
-        )
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      const currentLastLog =
-        freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+      // Disable button to prevent double-clicks
+      clockOutBtn.disabled = true;
 
-      // Prevent clocking out if:
-      // 1. No logs today (haven't clocked in yet)
-      // 2. Last action was "out" (already clocked out)
-      if (!currentLastLog || currentLastLog.action === "out") {
-        showNeedToClockInModal();
-        return;
-      }
-
-      // Allow clock-out only if last action was "in"
-
-      // Create attendance log with local timestamp
-      const newLog = {
-        id: `att-${Date.now()}`,
-        employeeId: currentUser.id,
-        action: "out",
-        timestamp: getLocalTimestamp(),
-        note: null,
-      };
-
-      // Save to local state first
-      appState.attendanceLogs.push(newLog);
-
-      // Save directly to database
       try {
+        // Fetch fresh data from server BEFORE validation
+        console.log("🔍 Fetching fresh data before clock-out validation...");
+        await refreshAttendanceLogs();
+
+        // NOW validate with fresh data from server
+        const freshLogs = appState.attendanceLogs
+          .filter(
+            (log) =>
+              log.employeeId === currentUser.id &&
+              log.timestamp.startsWith(todayKey())
+          )
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const currentLastLog =
+          freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
+
+        console.log("📊 Clock-out validation - Last log:", currentLastLog);
+
+        // Prevent clocking out if:
+        // 1. No logs today (haven't clocked in yet)
+        // 2. Last action was "out" (already clocked out)
+        if (!currentLastLog || currentLastLog.action === "out") {
+          console.log("⚠️ Need to clock in first - showing modal");
+          showNeedToClockInModal();
+          clockOutBtn.disabled = false;
+          return;
+        }
+
+        // Allow clock-out only if last action was "in"
+
+        // Create attendance log with local timestamp
+        const newLog = {
+          id: `att-${Date.now()}`,
+          employeeId: currentUser.id,
+          action: "out",
+          timestamp: getLocalTimestamp(),
+          note: null,
+        };
+
+        // Save to local state first
+        appState.attendanceLogs.push(newLog);
+
+        // Save directly to database
         await saveAttendanceLog(newLog);
 
         // Refresh data from server to ensure consistency
@@ -354,9 +386,11 @@ function renderAttendance() {
           updateDashboardAttendance();
         }
       } catch (error) {
+        console.error("Clock-out error:", error);
+
         // Remove from local state if save failed
         const index = appState.attendanceLogs.findIndex(
-          (log) => log.id === newLog.id
+          (log) => log.id === newLog?.id
         );
         if (index > -1) {
           appState.attendanceLogs.splice(index, 1);
@@ -369,6 +403,9 @@ function renderAttendance() {
         toast.textContent = "✗ Failed to clock out. Please try again.";
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+      } finally {
+        // Re-enable button
+        clockOutBtn.disabled = false;
       }
     });
   }
