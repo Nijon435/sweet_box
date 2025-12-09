@@ -12,6 +12,8 @@ async function refreshAttendanceLogs() {
     }
 
     const url = baseUrl + "/api/attendance-logs";
+    console.log("🔄 Fetching attendance logs from:", url);
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -22,13 +24,68 @@ async function refreshAttendanceLogs() {
 
     if (response.ok) {
       const freshLogs = await response.json();
+      console.log("✅ Received", freshLogs.length, "logs from server");
+
+      // Log sample to verify structure
+      if (freshLogs.length > 0) {
+        console.log("📋 Sample log:", freshLogs[0]);
+        console.log("   - Has employeeId?", "employeeId" in freshLogs[0]);
+        console.log("   - Has employee_id?", "employee_id" in freshLogs[0]);
+      }
+
       // Update appState with fresh data from server
       appState.attendanceLogs = freshLogs;
-      console.log("Refreshed attendance logs from server:", freshLogs.length);
+      console.log(
+        "✅ Updated appState.attendanceLogs:",
+        appState.attendanceLogs.length
+      );
+    } else {
+      console.error(
+        "❌ Failed to fetch logs:",
+        response.status,
+        response.statusText
+      );
     }
   } catch (error) {
-    console.error("Error refreshing attendance logs:", error);
+    console.error("❌ Error refreshing attendance logs:", error);
     // Don't throw - continue with local data if refresh fails
+  }
+}
+
+// Refresh users from server (needed for employee names)
+async function refreshUsers() {
+  try {
+    let baseUrl = "";
+    if (typeof window !== "undefined" && window.APP_STATE_ENDPOINT) {
+      const urlObj = new URL(window.APP_STATE_ENDPOINT);
+      baseUrl = urlObj.origin;
+    }
+
+    const url = baseUrl + "/api/users";
+    console.log("🔄 Fetching users from:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const freshUsers = await response.json();
+      console.log("✅ Received", freshUsers.length, "users from server");
+      appState.users = freshUsers;
+      console.log("✅ Updated appState.users:", appState.users.length);
+    } else {
+      console.error(
+        "❌ Failed to fetch users:",
+        response.status,
+        response.statusText
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error refreshing users:", error);
   }
 }
 
@@ -195,7 +252,14 @@ function renderAttendance() {
         await saveAttendanceLog(newLog);
 
         // Refresh data from server to ensure consistency
-        await refreshAttendanceLogs();
+        console.log("🔄 Refreshing data after clock-in...");
+        await Promise.all([refreshAttendanceLogs(), refreshUsers()]);
+        console.log("✅ Data refresh complete");
+        console.log(
+          "   - appState.attendanceLogs:",
+          appState.attendanceLogs?.length
+        );
+        console.log("   - appState.users:", appState.users?.length);
 
         // Show styled success message
         const toast = document.createElement("div");
@@ -270,7 +334,9 @@ function renderAttendance() {
         await saveAttendanceLog(newLog);
 
         // Refresh data from server to ensure consistency
-        await refreshAttendanceLogs();
+        console.log("🔄 Refreshing data after clock-out...");
+        await Promise.all([refreshAttendanceLogs(), refreshUsers()]);
+        console.log("✅ Data refresh complete");
 
         // Show styled success message
         const toast = document.createElement("div");

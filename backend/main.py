@@ -832,6 +832,48 @@ async def export_attendance(employee_id: str = None, month: str = None):
 
 # ========== END EXPORT API ENDPOINTS ==========
 
+@app.get("/api/users")
+async def get_users():
+    """Get all users with camelCase transformation"""
+    try:
+        logger.info("Fetching all users")
+        conn = await asyncpg.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            ssl='require'
+        )
+        
+        rows = await conn.fetch("SELECT * FROM users ORDER BY created_at DESC")
+        await conn.close()
+        
+        # Transform snake_case to camelCase
+        users = []
+        for row in rows:
+            user = dict(row)
+            # Convert snake_case to camelCase
+            if 'hire_date' in user:
+                user['hireDate'] = user.pop('hire_date')
+            if 'shift_start' in user:
+                user['shiftStart'] = user.pop('shift_start')
+            if 'created_at' in user:
+                user['createdAt'] = user.pop('created_at')
+            if 'require_password_reset' in user:
+                user['requirePasswordReset'] = user.pop('require_password_reset')
+            if 'archived_at' in user:
+                user['archivedAt'] = user.pop('archived_at')
+            if 'archived_by' in user:
+                user['archivedBy'] = user.pop('archived_by')
+            users.append(user)
+        
+        logger.info(f"Successfully fetched {len(users)} users")
+        return users
+    except Exception as e:
+        logger.error(f"Error fetching users: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/attendance-logs")
 async def get_attendance_logs(start_date: str = None, end_date: str = None, limit: int = 1000):
     """Get attendance logs with optional date range filtering"""
