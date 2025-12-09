@@ -139,9 +139,7 @@ function renderAttendance() {
         return;
       }
 
-      // Allow clock-in if:
-      // 1. No previous logs today (first time)
-      // 2. Last action was "out" (clocked out previously)
+      // Allow clock-in if no previous logs OR if last action was "out"
 
       const isLate = isUserLate(currentUser);
       let note = "";

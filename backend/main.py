@@ -887,6 +887,7 @@ async def get_attendance_logs(start_date: str = None, end_date: str = None, limi
         await conn.close()
         
         # Serialize the rows properly, converting datetime objects to ISO strings
+        # Also convert snake_case to camelCase for frontend compatibility
         logs = []
         for row in rows:
             log = dict(row)
@@ -896,6 +897,15 @@ async def get_attendance_logs(start_date: str = None, end_date: str = None, limi
             # Convert archived_at to ISO string if it's a datetime object
             if log.get('archived_at') and isinstance(log['archived_at'], datetime):
                 log['archived_at'] = log['archived_at'].isoformat()
+            
+            # Convert snake_case to camelCase
+            if 'employee_id' in log:
+                log['employeeId'] = log.pop('employee_id')
+            if 'archived_at' in log:
+                log['archivedAt'] = log.pop('archived_at')
+            if 'archived_by' in log:
+                log['archivedBy'] = log.pop('archived_by')
+                
             logs.append(log)
         
         logger.info(f"Successfully fetched {len(logs)} attendance logs")
