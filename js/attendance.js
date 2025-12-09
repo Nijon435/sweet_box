@@ -188,6 +188,13 @@ function renderAttendance() {
         await refreshAttendanceLogs();
 
         // NOW validate with fresh data from server
+        console.log("🔍 Debug - currentUser.id:", currentUser.id);
+        console.log("🔍 Debug - todayKey():", todayKey());
+        console.log(
+          "🔍 Debug - Total logs in appState:",
+          appState.attendanceLogs.length
+        );
+
         const freshLogs = appState.attendanceLogs
           .filter(
             (log) =>
@@ -195,6 +202,15 @@ function renderAttendance() {
               log.timestamp.startsWith(todayKey())
           )
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        console.log(
+          "🔍 Debug - Filtered logs for current user today:",
+          freshLogs.length
+        );
+        if (freshLogs.length > 0) {
+          console.log("🔍 Debug - Sample filtered log:", freshLogs[0]);
+        }
+
         const currentLastLog =
           freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
 
@@ -326,6 +342,13 @@ function renderAttendance() {
         await refreshAttendanceLogs();
 
         // NOW validate with fresh data from server
+        console.log("🔍 Debug - currentUser.id:", currentUser.id);
+        console.log("🔍 Debug - todayKey():", todayKey());
+        console.log(
+          "🔍 Debug - Total logs in appState:",
+          appState.attendanceLogs.length
+        );
+
         const freshLogs = appState.attendanceLogs
           .filter(
             (log) =>
@@ -333,6 +356,15 @@ function renderAttendance() {
               log.timestamp.startsWith(todayKey())
           )
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        console.log(
+          "🔍 Debug - Filtered logs for current user today:",
+          freshLogs.length
+        );
+        if (freshLogs.length > 0) {
+          console.log("🔍 Debug - Sample filtered log:", freshLogs[0]);
+        }
+
         const currentLastLog =
           freshLogs.length > 0 ? freshLogs[freshLogs.length - 1] : null;
 
