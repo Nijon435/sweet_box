@@ -1,6 +1,5 @@
 /* Attendance Page Specific Styles */
 
-/* Archive Button in Attendance Log */
 .btn-archive {
   background: transparent;
   border: none;
@@ -20,7 +19,6 @@
   transform: scale(0.95);
 }
 
-/* Modal Content */
 .attendance-modal-content {
   padding: 1rem 0;
 }
@@ -53,7 +51,6 @@
   color: #888;
 }
 
-/* User Registry Section */
 .registry-header-row {
   display: flex;
   justify-content: space-between;

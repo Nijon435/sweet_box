@@ -98,6 +98,17 @@
   transition: transform 0.3s ease;
 }
 
+/* ===================================
+   MOBILE UTILITY CLASSES
+   =================================== */
+
+/* Hide refresh button on mobile (<768px) */
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
 /* Tablet and below (1200px) */
 @media (max-width: 1200px) {
   .layout {

@@ -1825,12 +1825,3 @@ window.deleteEmployee = function (userId) {
 
   createToast("Employee removed successfully!", "success");
 };
-
-// Add Access Modal has been removed - feature no longer used
-      );
-
-      // Optionally refresh the view
-      renderEmployees();
-    });
-  }
-});

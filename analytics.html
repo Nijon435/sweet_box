@@ -27,11 +27,6 @@
         <div class="brand">
           <img src="img/sweetbox_logo.png" alt="Sweet Box" class="brand-logo" />
         </div>
-        <div class="live-clock">
-          <div class="live-clock__label">Current Time</div>
-          <div class="live-clock__date" id="current-date">...</div>
-          <div class="live-clock__time" id="current-time">...</div>
-        </div>
         <div class="nav-toggle" id="nav-toggle">
           <span>Navigation</span>
           <span class="nav-toggle-icon">▼</span>
@@ -97,6 +92,11 @@
             Sign out
           </button>
         </div>
+        <div class="live-clock">
+          <div class="live-clock__label">Current Time</div>
+          <div class="live-clock__date" id="current-date">...</div>
+          <div class="live-clock__time" id="current-time">...</div>
+        </div>
       </aside>
 
       <main class="main-content">
@@ -106,7 +106,9 @@
             <h1>Advanced Analytics</h1>
           </div>
           <div class="actions">
-            <button class="btn btn-secondary" id="refresh-data">Refresh</button>
+            <button class="btn btn-secondary hide-on-mobile" id="refresh-data">
+              Refresh
+            </button>
           </div>
         </header>
 
@@ -184,7 +186,11 @@
           >
             <div class="section-heading">
               <h2>Peak Hour Efficiency</h2>
-              <span class="pill">Orders per hour</span>
+              <select id="peak-hour-range" class="filter-select">
+                <option value="7" selected>Last 7 days</option>
+                <option value="14">Last 14 days</option>
+                <option value="30">Last 30 days</option>
+              </select>
             </div>
             <canvas id="peakHourChart" height="200"></canvas>
             <div

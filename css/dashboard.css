@@ -129,3 +129,69 @@
 [data-page="dashboard"] div[style*="display: flex"] {
   /* Handled by specific classes above */
 }
+
+/* ===================================
+   MOBILE CHART LAYOUT (MATCH DESIGN)
+   =================================== */
+
+/* Mobile chart layout - Stack charts with rounded cards */
+@media (max-width: 768px) {
+  /* Chart cards with rounded corners and spacing */
+  .chart-card {
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Section headings inline with filters */
+  .section-heading,
+  .sales-trend-header,
+  .inventory-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-heading h2,
+  .sales-trend-header h2,
+  .inventory-status-header h2 {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  /* Filter selects inline with headers */
+  .filter-select,
+  .sales-trend-filter {
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: var(--white);
+  }
+
+  /* Compact KPI cards on mobile */
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .grid-4 .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .grid-4 .card h3 {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .grid-4 .card strong {
+    font-size: 20px;
+  }
+
+  .grid-4 .card small {
+    font-size: 11px;
+  }
+}

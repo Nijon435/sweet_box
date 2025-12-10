@@ -9,6 +9,11 @@ async function renderAnalytics() {
     kpiRangeSelect.dataset.bound = "true";
     kpiRangeSelect.addEventListener("change", renderAnalytics);
   }
+  const peakHourRangeSelect = document.getElementById("peak-hour-range");
+  if (peakHourRangeSelect && !peakHourRangeSelect.dataset.bound) {
+    peakHourRangeSelect.dataset.bound = "true";
+    peakHourRangeSelect.addEventListener("change", renderAnalytics);
+  }
   const categoryTabs = document.querySelectorAll(".chart-category-tab");
   const chartSections = document.querySelectorAll("[data-chart-category]");
 
@@ -112,8 +117,19 @@ async function renderAnalytics() {
     if (node) node.textContent = value;
   });
 
-  // Render Peak Hour Efficiency Chart
-  renderPeakHourChart(ordersInPeriod);
+  // Render Peak Hour Efficiency Chart with filter
+  const peakHourRange = Number(peakHourRangeSelect?.value || 7);
+  const peakHourCutoff = new Date();
+  peakHourCutoff.setHours(0, 0, 0, 0);
+  peakHourCutoff.setDate(peakHourCutoff.getDate() - (peakHourRange - 1));
+  const ordersForPeakHour = (appState.orders || []).filter((order) => {
+    if (order.timestamp) {
+      const orderDate = new Date(order.timestamp);
+      return orderDate >= peakHourCutoff;
+    }
+    return false;
+  });
+  renderPeakHourChart(ordersForPeakHour);
 
   // Calculate attendance trend from actual attendance logs
   const computeAttendanceTrend = () => {

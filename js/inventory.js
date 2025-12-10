@@ -369,10 +369,14 @@ function setupAddModal() {
   }
 
   // Click outside to close
-  if (addModal && !addModal.dataset.bound) {
-    addModal.dataset.bound = "true";
+  if (addModal && !addModal.dataset.backdropBound) {
+    addModal.dataset.backdropBound = "true";
     addModal.addEventListener("click", (e) => {
-      if (e.target === addModal) closeAddModal();
+      if (e.target === addModal) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAddModal();
+      }
     });
   }
 
