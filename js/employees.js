@@ -1826,78 +1826,7 @@ window.deleteEmployee = function (userId) {
   createToast("Employee removed successfully!", "success");
 };
 
-// Add Access Modal Handler
-document.addEventListener("DOMContentLoaded", () => {
-  const addAccessBtn = document.getElementById("add-access-btn");
-  const addAccessModal = document.getElementById("add-access-modal");
-  const addAccessForm = document.getElementById("add-access-form");
-  const addAccessClose = document.getElementById("add-access-close");
-  const addAccessCancel = document.getElementById("add-access-cancel");
-
-  if (addAccessBtn) {
-    addAccessBtn.addEventListener("click", () => {
-      if (!isAdmin()) {
-        alert("Only administrators can create new access levels.");
-        return;
-      }
-      addAccessModal.classList.add("active");
-    });
-  }
-
-  // Close button handler
-  if (addAccessClose) {
-    addAccessClose.addEventListener("click", () => {
-      addAccessModal.classList.remove("active");
-      addAccessForm.reset();
-    });
-  }
-
-  // Cancel button handler
-  if (addAccessCancel) {
-    addAccessCancel.addEventListener("click", () => {
-      addAccessModal.classList.remove("active");
-      addAccessForm.reset();
-    });
-  }
-
-  if (addAccessForm) {
-    addAccessForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const formData = new FormData(addAccessForm);
-
-      const accessName = formData.get("accessName").trim();
-      const description = formData.get("description").trim();
-      const selectedPages = formData.getAll("pages");
-
-      if (selectedPages.length === 0) {
-        alert("Please select at least one page for this access level.");
-        return;
-      }
-
-      // Store the new access level configuration
-      if (!appState.accessLevels) {
-        appState.accessLevels = [];
-      }
-
-      const newAccessLevel = {
-        id: `access-${Date.now()}`,
-        name: accessName,
-        description: description,
-        pages: selectedPages,
-        createdAt: getLocalTimestamp(),
-      };
-
-      appState.accessLevels.push(newAccessLevel);
-      saveState();
-
-      // Close modal and reset form
-      addAccessModal.classList.remove("active");
-      addAccessForm.reset();
-
-      // Show success message
-      createToast(
-        `Access level "${accessName}" created successfully!`,
-        "success"
+// Add Access Modal has been removed - feature no longer used
       );
 
       // Optionally refresh the view

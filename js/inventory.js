@@ -340,6 +340,11 @@ function setupAddModal() {
   const addClose = document.getElementById("inventory-add-close");
   const addCancel = document.getElementById("inventory-add-cancel");
 
+  // Ensure modal is closed on page load
+  if (addModal) {
+    addModal.classList.remove("active");
+  }
+
   // Add button click
   if (addBtn && !addBtn.dataset.bound) {
     addBtn.dataset.bound = "true";

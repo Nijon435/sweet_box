@@ -884,8 +884,8 @@ const mountLiveClock = () => {
 };
 
 const startLiveClock = () => {
-  const dateNode = document.getElementById("live-date");
-  const timeNode = document.getElementById("live-time");
+  const dateNode = document.getElementById("current-date");
+  const timeNode = document.getElementById("current-time");
   if (!dateNode || !timeNode) return;
   const update = () => {
     const now = new Date();
@@ -2306,8 +2306,11 @@ function initMobileNavigation() {
   const sidebar = document.getElementById("sidebar");
 
   // Navigation accordion toggle (tablet/mobile - keeps sidebar visible but collapses nav)
-  if (navToggle && nav) {
-    navToggle.addEventListener("click", () => {
+  if (navToggle && nav && !navToggle.dataset.bound) {
+    navToggle.dataset.bound = "true";
+    navToggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       nav.classList.toggle("expanded");
       const icon = navToggle.querySelector(".nav-toggle-icon");
       if (icon) {
@@ -2317,8 +2320,16 @@ function initMobileNavigation() {
   }
 
   // Mobile hamburger - opens sidebar from off-screen
-  if (mobileHamburger && sidebar && sidebarBackdrop) {
-    mobileHamburger.addEventListener("click", () => {
+  if (
+    mobileHamburger &&
+    sidebar &&
+    sidebarBackdrop &&
+    !mobileHamburger.dataset.bound
+  ) {
+    mobileHamburger.dataset.bound = "true";
+    mobileHamburger.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       document.body.classList.add("sidebar-open");
       sidebar.classList.add("mobile-visible");
       sidebarBackdrop.classList.add("active");
@@ -2326,12 +2337,18 @@ function initMobileNavigation() {
   }
 
   // Close sidebar button
-  if (closeSidebar) {
-    closeSidebar.addEventListener("click", closeMobileSidebar);
+  if (closeSidebar && !closeSidebar.dataset.bound) {
+    closeSidebar.dataset.bound = "true";
+    closeSidebar.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMobileSidebar();
+    });
   }
 
   // Backdrop click
-  if (sidebarBackdrop) {
+  if (sidebarBackdrop && !sidebarBackdrop.dataset.bound) {
+    sidebarBackdrop.dataset.bound = "true";
     sidebarBackdrop.addEventListener("click", closeMobileSidebar);
   }
 
@@ -2339,11 +2356,14 @@ function initMobileNavigation() {
   if (nav) {
     const navLinks = nav.querySelectorAll("a");
     navLinks.forEach((link) => {
-      link.addEventListener("click", () => {
-        if (window.innerWidth <= 768) {
-          closeMobileSidebar();
-        }
-      });
+      if (!link.dataset.closeBound) {
+        link.dataset.closeBound = "true";
+        link.addEventListener("click", () => {
+          if (window.innerWidth <= 768) {
+            closeMobileSidebar();
+          }
+        });
+      }
     });
   }
 }
@@ -2394,7 +2414,7 @@ function renderMobileTable(data, fields, container, onDetailClick) {
     // Find primary field (usually first field or one marked as primary)
     const primaryField = fields[0];
     const primaryValue = primaryField.format
-      ? primaryField.format(item[primaryField.key])
+      ? primaryField.format(item[primaryField.key], item)
       : item[primaryField.key];
 
     row.innerHTML = `
@@ -2403,7 +2423,9 @@ function renderMobileTable(data, fields, container, onDetailClick) {
     `;
 
     const detailBtn = row.querySelector(".mobile-detail-btn");
-    detailBtn.addEventListener("click", () => {
+    detailBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (onDetailClick) {
         onDetailClick(item);
       } else {
@@ -2444,7 +2466,7 @@ function showMobileDetailModal(item, fields) {
     fieldDiv.className = "mobile-detail-field";
 
     const value = field.format
-      ? field.format(item[field.key])
+      ? field.format(item[field.key], item)
       : item[field.key];
 
     fieldDiv.innerHTML = `
