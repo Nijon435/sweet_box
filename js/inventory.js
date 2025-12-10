@@ -493,10 +493,14 @@ function setupEditModal() {
     editCancel.addEventListener("click", closeEditModal);
   }
 
-  if (editModal && !editModal.dataset.bound) {
-    editModal.dataset.bound = "true";
+  if (editModal && !editModal.dataset.backdropBound) {
+    editModal.dataset.backdropBound = "true";
     editModal.addEventListener("click", (e) => {
-      if (e.target === editModal) closeEditModal();
+      if (e.target === editModal) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeEditModal();
+      }
     });
   }
 

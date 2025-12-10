@@ -14,6 +14,13 @@ async function renderAnalytics() {
     peakHourRangeSelect.dataset.bound = "true";
     peakHourRangeSelect.addEventListener("change", renderAnalytics);
   }
+  const analyticsSalesRangeSelect = document.getElementById(
+    "analytics-sales-range"
+  );
+  if (analyticsSalesRangeSelect && !analyticsSalesRangeSelect.dataset.bound) {
+    analyticsSalesRangeSelect.dataset.bound = "true";
+    analyticsSalesRangeSelect.addEventListener("change", renderAnalytics);
+  }
   const categoryTabs = document.querySelectorAll(".chart-category-tab");
   const chartSections = document.querySelectorAll("[data-chart-category]");
 
@@ -648,70 +655,202 @@ async function renderAnalytics() {
     },
   });
 
-  // Low Stock & Expiring Items
-  const lowStockList = lowStockItems();
-  const expiringItems = (appState.inventory || []).filter((item) => {
-    const expiryDate =
-      item.expiryDate || item.expiry_date || item.useByDate || item.use_by_date;
-    if (!expiryDate) return false;
-    const daysUntilExpiry = Math.floor(
-      (new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+  // Render Sales Trend Chart
+  renderAnalyticsSalesTrend();
+
+  // Render Inventory Status Chart
+  renderAnalyticsInventoryStatus();
+}
+
+// Render Sales Trend Chart for Analytics
+function renderAnalyticsSalesTrend() {
+  const analyticsSalesRangeSelect = document.getElementById(
+    "analytics-sales-range"
+  );
+  const salesRange = Number(analyticsSalesRangeSelect?.value || 14);
+
+  // Calculate sales from orders if sales_history is empty
+  let salesData = appState.salesHistory || [];
+  if (salesData.length === 0 && appState.orders && appState.orders.length > 0) {
+    // Group orders by date
+    const salesByDate = {};
+    appState.orders.forEach((order) => {
+      if (order.timestamp && order.total) {
+        const date = new Date(order.timestamp);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const dateKey = `${year}-${month}-${day}`;
+        if (!salesByDate[dateKey]) {
+          salesByDate[dateKey] = { date: dateKey, total: 0 };
+        }
+        salesByDate[dateKey].total += order.total;
+      }
+    });
+    salesData = Object.values(salesByDate).sort(
+      (a, b) => parseDateKey(a.date) - parseDateKey(b.date)
     );
-    return daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
-  });
+  }
 
-  const stockLabels = [];
-  const stockData = [];
-  const stockColors = [];
+  const salesWindow = salesData.slice(-salesRange);
 
-  lowStockList.slice(0, 5).forEach((item) => {
-    stockLabels.push(
-      item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name
-    );
-    stockData.push(item.quantity);
-    stockColors.push("#fbbf24");
-  });
-
-  expiringItems.slice(0, 3).forEach((item) => {
-    stockLabels.push(
-      item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name
-    );
-    stockData.push(item.quantity || 0);
-    stockColors.push("#ef4444");
-  });
-
-  ChartManager.plot("stockTrendsChart", {
-    type: "bar",
+  ChartManager.plot("analyticsSalesTrendChart", {
+    type: "line",
     data: {
-      labels: stockLabels.length > 0 ? stockLabels : ["No alerts"],
+      labels:
+        salesWindow.length > 0
+          ? salesWindow.map((entry) => formatDateShort(entry.date))
+          : ["No Data"],
       datasets: [
         {
-          label: "Quantity",
-          data: stockData.length > 0 ? stockData : [0],
-          backgroundColor: stockColors.length > 0 ? stockColors : ["#94a3b8"],
-          borderRadius: 8,
+          label: "Daily Sales",
+          data:
+            salesWindow.length > 0
+              ? salesWindow.map((entry) => entry.total || 0)
+              : [0],
+          borderColor: "#f6c343",
+          backgroundColor: "rgba(246,195,67,0.15)",
+          tension: 0.4,
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#f6c343",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: "#e0a10b",
+          pointHoverBorderColor: "#fff",
         },
       ],
     },
     options: {
-      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: true,
       plugins: {
         legend: { display: false },
         tooltip: {
+          backgroundColor: "rgba(92, 44, 6, 0.9)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          padding: 12,
+          displayColors: false,
           callbacks: {
             label: function (context) {
-              return `Quantity: ${context.parsed.x}`;
+              return (
+                "₱" +
+                context.parsed.y.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })
+              );
             },
           },
         },
       },
       scales: {
-        x: {
+        y: {
           beginAtZero: true,
+          suggestedMax:
+            salesWindow.length > 0
+              ? Math.max(...salesWindow.map((entry) => entry.total || 0), 100) *
+                1.2
+              : 100,
+          ticks: {
+            callback: function (value) {
+              return "₱" + value.toLocaleString();
+            },
+          },
+          grid: {
+            color: "rgba(92, 44, 6, 0.1)",
+          },
+        },
+        x: {
+          grid: {
+            display: false,
+          },
+        },
+      },
+      interaction: {
+        intersect: false,
+        mode: "index",
+      },
+    },
+  });
+}
+
+// Render Inventory Status Chart for Analytics
+function renderAnalyticsInventoryStatus() {
+  const metrics = inventoryStats();
+
+  ChartManager.plot("analyticsInventoryStatusChart", {
+    type: "doughnut",
+    data: {
+      labels: ["Safe", "Low", "Soon to Expire", "Expired", "No Stock"],
+      datasets: [
+        {
+          data: [
+            metrics.totalItems -
+              metrics.lowStock -
+              metrics.outOfStock -
+              metrics.soonToExpire -
+              metrics.expired,
+            metrics.lowStock,
+            metrics.soonToExpire || 0,
+            metrics.expired || 0,
+            metrics.outOfStock,
+          ],
+          backgroundColor: [
+            "#4ade80",
+            "#fbbf24",
+            "#fb923c",
+            "#ef4444",
+            "#94a3b8",
+          ],
+          borderColor: "#fff",
+          borderWidth: 3,
+          hoverOffset: 8,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: "65%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            font: { size: 10 },
+            padding: 8,
+            boxWidth: 12,
+            boxHeight: 12,
+            usePointStyle: true,
+            pointStyle: "circle",
+          },
+          align: "center",
+          display: true,
+          maxWidth: 600,
+        },
+        tooltip: {
+          backgroundColor: "rgba(92, 44, 6, 0.9)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          padding: 12,
+          displayColors: true,
+          callbacks: {
+            label: function (context) {
+              return `${context.label}: ${context.parsed}`;
+            },
+          },
         },
       },
     },
   });
+
+  // Update status note
+  const statusNote = document.getElementById("analytics-inventory-status-note");
+  if (statusNote) {
+    statusNote.textContent = `${metrics.lowStock} low stock alerts`;
+  }
 }
 
 // Render Peak Hour Efficiency Chart

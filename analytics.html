@@ -115,10 +115,10 @@
         <section class="card kpi-panel">
           <div class="section-heading">
             <h2>Operations KPIs</h2>
-            <select id="kpi-range" class="filter-select">
-              <option value="7" selected>Last 7 days</option>
-              <option value="14">Last 14 days</option>
-              <option value="30">Last 30 days</option>
+            <select id="kpi-range" class="filter-select kpi-filter">
+              <option value="7" selected>7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
             </select>
           </div>
           <div class="kpi-grid">
@@ -171,10 +171,10 @@
             </button>
             <button
               class="chart-category-tab active"
-              data-chart-filter="inventory"
+              data-chart-filter="trends"
               type="button"
             >
-              Low Stock & Expiring
+              Sales & Inventory Trends
             </button>
           </div>
         </section>
@@ -240,18 +240,31 @@
         </section>
 
         <section
-          class="chart-card section-mt-1-5"
-          data-chart-category="inventory"
+          class="split-65-35 section-mt-1-5"
+          data-chart-category="trends"
         >
-          <div class="section-heading">
-            <h2>Low Stock & Expiring Items</h2>
-            <span class="pill">Needs attention</span>
-          </div>
-          <canvas id="stockTrendsChart" height="180"></canvas>
-          <p class="meta section-mt-0-75">
-            Monitor inventory items that need restocking or are approaching
-            expiration dates.
-          </p>
+          <article class="chart-card">
+            <div class="section-heading">
+              <h2>Sales Trend</h2>
+              <select id="analytics-sales-range" class="filter-select">
+                <option value="7">7 days</option>
+                <option value="14" selected>14 days</option>
+                <option value="30">30 days</option>
+              </select>
+            </div>
+            <canvas id="analyticsSalesTrendChart" height="180"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="section-heading">
+              <h2>Inventory Status</h2>
+              <span class="pill" id="analytics-inventory-status-note"
+                >Stable</span
+              >
+            </div>
+            <div class="analytics-inventory-chart-wrapper">
+              <canvas id="analyticsInventoryStatusChart" height="200"></canvas>
+            </div>
+          </article>
         </section>
       </main>
     </div>

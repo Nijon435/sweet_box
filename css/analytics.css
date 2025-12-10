@@ -68,6 +68,21 @@
   color: var(--brown);
 }
 
+/* KPI Filter Styling */
+.kpi-filter {
+  font-size: 0.875rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 90px;
+}
+
+/* Analytics Inventory Chart */
+.analytics-inventory-chart-wrapper {
+  max-width: 280px;
+  margin: 0 auto;
+}
+
 /* Mobile Chart Layout (matching dashboard design) */
 @media (max-width: 768px) {
   .chart-card {
