@@ -863,31 +863,14 @@ async function saveToDatabase() {
   }
 }
 
-// Toast Notification
 function showToast(message, type = "success") {
   const toast = document.createElement("div");
-  const bgColor =
-    type === "success" ? "#4caf50" : type === "warning" ? "#ff9800" : "#f44336";
-
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${bgColor};
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 10000;
-    animation: slideInRight 0.3s ease-out;
-  `;
-
+  toast.className = `toast ${type}`;
   toast.textContent = message;
   document.body.appendChild(toast);
 
   setTimeout(() => {
-    toast.style.animation = "slideOutRight 0.3s ease-out";
-    setTimeout(() => toast.remove(), 300);
+    toast.remove();
   }, 3000);
 }
 

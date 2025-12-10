@@ -15,15 +15,28 @@
     <link rel="stylesheet" href="responsive.css" />
     <link rel="stylesheet" href="css/modal.css" />
     <link rel="stylesheet" href="css/employees.css" />
+    <link rel="stylesheet" href="css/dynamic-components.css" />
   </head>
 
   <body data-page="employees">
+    <button class="mobile-hamburger" id="mobile-hamburger">☰</button>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
     <div class="layout">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
+        <button class="close-mobile" id="close-sidebar">×</button>
         <div class="brand">
           <img src="img/sweetbox_logo.png" alt="Sweet Box" class="brand-logo" />
         </div>
-        <nav class="nav">
+        <div class="live-clock">
+          <div class="live-clock__label">Current Time</div>
+          <div class="live-clock__date" id="current-date">...</div>
+          <div class="live-clock__time" id="current-time">...</div>
+        </div>
+        <div class="nav-toggle" id="nav-toggle">
+          <span>Navigation</span>
+          <span class="nav-toggle-icon">▼</span>
+        </div>
+        <nav class="nav" id="nav">
           <a href="index.html" data-section="dashboard">Dashboard</a>
           <a href="attendance.html" data-section="attendance">Attendance</a>
           <a

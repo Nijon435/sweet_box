@@ -2,7 +2,7 @@
 -- PostgreSQL-compatible CREATE TABLE statements for Sweet Box
 -- Run this file first to create the database schema.
 
--- Users table (merged employees table into this)
+-- Users table 
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -36,11 +36,11 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
   FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Requests table (combined leave and profile edit requests)
+-- Requests table 
 CREATE TABLE IF NOT EXISTS requests (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   employee_id VARCHAR(64) NOT NULL,
-  request_type VARCHAR(32) NOT NULL, -- 'leave' or 'profile_edit'
+  request_type VARCHAR(32) NOT NULL, -- 
   
   -- Leave request fields
   start_date DATE,
@@ -82,15 +82,15 @@ CREATE TABLE IF NOT EXISTS inventory (
   FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Inventory Usage Logs (tracking usage of inventory items)
+-- Inventory Usage Logs 
 CREATE TABLE IF NOT EXISTS inventory_usage_logs (
   id SERIAL PRIMARY KEY,
   inventory_item_id VARCHAR(64) NOT NULL,
   quantity NUMERIC(12,2) NOT NULL,
-  reason VARCHAR(64) NOT NULL, -- 'order', 'waste', 'testing', 'staff_consumption', 'spoilage', 'production', 'other'
-  batch_id VARCHAR(64), -- Groups multiple items logged together
+  reason VARCHAR(64) NOT NULL,
+  batch_id VARCHAR(64), 
   notes TEXT,
-  created_by VARCHAR(64), -- User who created this log
+  created_by VARCHAR(64), 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   archived BOOLEAN DEFAULT FALSE,
   archived_at TIMESTAMP,
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS orders (
   FOREIGN KEY (archived_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Sales history (daily totals)
+-- Sales history 
 CREATE TABLE IF NOT EXISTS sales_history (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   date DATE NOT NULL,
@@ -122,11 +122,10 @@ CREATE TABLE IF NOT EXISTS sales_history (
   orders_count INT DEFAULT 0
 );
 
--- Inventory usage (simple table for weekly usage / metrics)
+-- Inventory usage 
 CREATE TABLE IF NOT EXISTS inventory_trends (
   id SERIAL PRIMARY KEY,
   label VARCHAR(255) NOT NULL UNIQUE,
   used INT DEFAULT 0
 );
 
--- End of schema

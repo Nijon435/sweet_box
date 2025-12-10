@@ -219,24 +219,22 @@ function removeFromCart(itemId) {
   renderCart();
 }
 
-// Show clear cart confirmation modal
 function showClearCartModal() {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width: 70px; height: 70px; background: #ef4444; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);">
-          <span style="color: white; font-size: 2.5rem; font-weight: bold;">🗑️</span>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon danger">
+          <span class="modal-icon-emoji">🗑️</span>
         </div>
-        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">Clear Cart?</h3>
-        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">This will remove all items from your cart. This action cannot be undone.</p>
+        <h3 class="modal-title">Clear Cart?</h3>
+        <p class="modal-message">This will remove all items from your cart. This action cannot be undone.</p>
       </div>
-      <div style="display: flex; gap: 0.75rem;">
-        <button id="cancel-clear-cart" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Cancel</button>
-        <button id="confirm-clear-cart" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Clear Cart</button>
+      <div class="modal-actions">
+        <button id="cancel-clear-cart" class="modal-btn cancel">Cancel</button>
+        <button id="confirm-clear-cart" class="modal-btn confirm">Clear Cart</button>
       </div>
     </div>
   `;
@@ -361,56 +359,45 @@ function completeOrder() {
 
 // Show styled alert/notification
 function showStyledAlert(title, message, type = "info") {
-  const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
-
-  const icons = {
+  const iconMap = {
     success: "✓",
     warning: "⚠",
     error: "✕",
     info: "ℹ",
   };
 
-  const colors = {
-    success: "#10b981",
-    warning: "#f59e0b",
-    error: "#ef4444",
-    info: "#3b82f6",
+  const iconTypeMap = {
+    success: "success",
+    warning: "warning",
+    error: "danger",
+    info: "info",
   };
 
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+
   modal.innerHTML = `
-    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width: 70px; height: 70px; background: ${colors[type]}; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px ${colors[type]}40;">
-          <span style="color: white; font-size: 2.5rem; font-weight: bold;">${icons[type]}</span>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon ${iconTypeMap[type]}">
+          <span class="modal-icon-emoji">${iconMap[type]}</span>
         </div>
-        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">${title}</h3>
-        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">${message}</p>
+        <h3 class="modal-title">${title}</h3>
+        <p class="modal-message">${message}</p>
       </div>
-      <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="width: 100%; padding: 0.875rem; background: linear-gradient(135deg, ${colors[type]} 0%, ${colors[type]}dd 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px ${colors[type]}40; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Got it</button>
+      <div class="modal-actions">
+        <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn primary">Got it</button>
+      </div>
     </div>
   `;
 
   document.body.appendChild(modal);
-
-  // Add animation styles
-  if (!document.getElementById("modal-animations")) {
-    const style = document.createElement("style");
-    style.id = "modal-animations";
-    style.textContent = `
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    `;
-    document.head.appendChild(style);
-  }
 }
 
 // Show complete order confirmation modal
 function showCompleteOrderModal(customer, orderType) {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   const total = posCart.reduce(
     (sum, item) => sum + item.qty * item.unitPrice,
@@ -462,8 +449,8 @@ function showCompleteOrderModal(customer, orderType) {
       </div>
       
       <div style="display: flex; gap: 0.75rem;">
-        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Cancel</button>
-        <button id="confirm-complete-order" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Confirm Order</button>
+        <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
+        <button id="confirm-complete-order" class="modal-btn primary">Confirm Order</button>
       </div>
     </div>
   `;
@@ -593,8 +580,7 @@ async function processOrder(customer, orderType) {
 // Show order receipt modal directly after order completion
 function showOrderReceiptModal(order) {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   let itemsArr = [];
   try {
@@ -677,8 +663,8 @@ function showOrderReceiptModal(order) {
       </div>
       
       <div style="display: flex; gap: 0.75rem;">
-        <button id="close-receipt-modal" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Close</button>
-        <button id="print-order-receipt" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🖨️ Print Receipt</button>
+        <button id="close-receipt-modal" class="modal-btn cancel">Close</button>
+        <button id="print-order-receipt" class="modal-btn primary">🖨️ Print Receipt</button>
       </div>
     </div>
   `;
@@ -722,21 +708,20 @@ function showOrderReceiptModal(order) {
 // Show order success modal with print option (legacy - kept for compatibility)
 function showOrderSuccessModal(order) {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width: 70px; height: 70px; background: #10b981; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);">
-          <span style="color: white; font-size: 2.5rem; font-weight: bold;">✓</span>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon success">
+          <span class="modal-icon-emoji">✓</span>
         </div>
-        <h3 style="margin: 0 0 0.75rem 0; font-size: 1.5rem; color: #1f2937;">Order Complete</h3>
-        <p style="margin: 0; color: #6b7280; font-size: 1rem; line-height: 1.5;">Order ${order.id} created successfully for ${order.customer}!</p>
+        <h3 class="modal-title">Order Complete</h3>
+        <p class="modal-message">Order ${order.id} created successfully for ${order.customer}!</p>
       </div>
-      <div style="display: flex; gap: 0.75rem;">
-        <button id="close-success-modal" style="flex: 1; padding: 0.875rem; border: 2px solid #e5e7eb; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">Close</button>
-        <button id="print-receipt-btn" style="flex: 1; padding: 0.875rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🖨️ Print Receipt</button>
+      <div class="modal-actions">
+        <button id="close-success-modal" class="modal-btn cancel">Close</button>
+        <button id="print-receipt-btn" class="modal-btn primary">🖨️ Print Receipt</button>
       </div>
     </div>
   `;

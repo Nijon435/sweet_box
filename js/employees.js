@@ -786,14 +786,13 @@ function openAddEmployeeModal() {
   }
 
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <div class="modal-content large" style="max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h3 style="margin: 0; font-size: 1.5rem; color: #333;">Add New Employee</h3>
-        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+        <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
       </div>
       <form id="add-employee-form">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -842,7 +841,7 @@ function openAddEmployeeModal() {
           </div>
         </div>
         <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
-          <button type="button" onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
+          <button type="button" onclick="this.closest('.modal-overlay').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
           <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Add Employee</button>
         </div>
       </form>
@@ -921,12 +920,7 @@ function openAddEmployeeModal() {
         modal.remove();
         renderEmployees();
 
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-        toast.textContent = "Employee added successfully!";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        createToast("Employee added successfully!", "success");
       } catch (error) {
         console.error("Error adding employee:", error);
         alert("Failed to add employee");
@@ -1239,13 +1233,7 @@ window.approveLeave = async function (leaveId) {
 
   renderEmployees();
 
-  // Show toast notification
-  const toast = document.createElement("div");
-  toast.style.cssText =
-    "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-  toast.textContent = "✓ Leave request approved successfully!";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  createToast("✓ Leave request approved successfully!", "success");
 };
 
 window.rejectLeave = function (leaveId) {
@@ -1279,21 +1267,7 @@ window.rejectLeave = function (leaveId) {
 
   renderEmployees();
 
-  // Show custom rejection popup
-  const popup = document.createElement("div");
-  popup.style.cssText =
-    "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
-  popup.innerHTML = `
-    <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
-    <h3 style="margin: 0 0 0.5rem 0; color: #333;">Request Rejected</h3>
-    <p style="margin: 0; color: #666;">The request has been rejected.</p>
-    <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
-  `;
-  document.body.appendChild(popup);
-  popup
-    .querySelector(".popup-close-btn")
-    .addEventListener("click", () => popup.remove());
-  setTimeout(() => popup.remove(), 3000);
+  createToast("Request rejected", "error");
 };
 
 window.approveProfileEdit = function (requestId) {
@@ -1377,21 +1351,10 @@ window.approveProfileEdit = function (requestId) {
       console.log("✅ Profile edit approved and saved to database");
       renderEmployees();
 
-      // Show custom success popup
-      const popup = document.createElement("div");
-      popup.style.cssText =
-        "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
-      popup.innerHTML = `
-        <div style="font-size: 3rem; color: #4caf50; margin-bottom: 1rem;">✓</div>
-        <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Approved!</h3>
-        <p style="margin: 0; color: #666;">Profile changes have been applied successfully.</p>
-        <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
-      `;
-      document.body.appendChild(popup);
-      popup
-        .querySelector(".popup-close-btn")
-        .addEventListener("click", () => popup.remove());
-      setTimeout(() => popup.remove(), 3000);
+      createToast(
+        "Profile edit approved! Changes have been applied.",
+        "success"
+      );
     })
     .catch((err) => {
       console.error("❌ Error saving to database:", err);
@@ -1435,21 +1398,7 @@ window.rejectProfileEdit = function (requestId) {
       console.log("✅ Profile edit rejected and saved to database");
       renderEmployees();
 
-      // Show custom rejection popup
-      const popup = document.createElement("div");
-      popup.style.cssText =
-        "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; text-align: center; min-width: 300px;";
-      popup.innerHTML = `
-        <div style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;">✗</div>
-        <h3 style="margin: 0 0 0.5rem 0; color: #333;">Profile Edit Rejected</h3>
-        <p style="margin: 0; color: #666;">The profile edit request has been rejected.</p>
-        <button class="popup-close-btn" style="margin-top: 1.5rem; padding: 0.5rem 2rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">OK</button>
-      `;
-      document.body.appendChild(popup);
-      popup
-        .querySelector(".popup-close-btn")
-        .addEventListener("click", () => popup.remove());
-      setTimeout(() => popup.remove(), 3000);
+      createToast("Profile edit request rejected", "error");
     })
     .catch((err) => {
       console.error("❌ Error saving to database:", err);
@@ -1619,8 +1568,7 @@ window.openEditEmployeeModal = function (userId) {
   if (!user) return;
 
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
     <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
@@ -1712,7 +1660,7 @@ window.openEditEmployeeModal = function (userId) {
           </div>
         </div>
         <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
-          <button type="button" onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
+          <button type="button" onclick="this.closest('.modal-overlay').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
           <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Save Changes</button>
         </div>
       </form>
@@ -1786,12 +1734,7 @@ window.openEditEmployeeModal = function (userId) {
     modal.remove();
     renderEmployees();
 
-    const toast = document.createElement("div");
-    toast.style.cssText =
-      "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-    toast.textContent = "Employee updated successfully!";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    createToast("Employee updated successfully!", "success");
   });
 };
 
@@ -1801,21 +1744,20 @@ window.confirmArchiveEmployee = async function (userId) {
   if (!user) return;
 
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width: 60px; height: 60px; background: #fff3e0; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
-          <span style="color: #ff9800; font-size: 2rem;">📦</span>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon warning">
+          <span class="modal-icon-emoji">📦</span>
         </div>
-        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Archive Employee?</h3>
-        <p style="margin: 0; color: #666; font-size: 1rem;">Archive <strong>${user.name}</strong>? This will move them to the archive. They can be restored or permanently deleted from there.</p>
+        <h3 class="modal-title">Archive Employee?</h3>
+        <p class="modal-message">Archive <strong>${user.name}</strong>? This will move them to the archive. They can be restored or permanently deleted from there.</p>
       </div>
-      <div style="display: flex; gap: 0.75rem; justify-content: center;">
-        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem; min-width: 100px;">Cancel</button>
-        <button onclick="archiveEmployee('${userId}')" style="padding: 0.625rem 1.5rem; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem; min-width: 100px;">Archive</button>
+      <div class="modal-actions">
+        <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
+        <button onclick="archiveEmployee('${userId}')" class="modal-btn confirm">Archive</button>
       </div>
     </div>
   `;
@@ -1866,12 +1808,7 @@ window.archiveEmployee = async function (userId) {
   modals.forEach((m) => m.remove());
   renderEmployees();
 
-  const toast = document.createElement("div");
-  toast.style.cssText =
-    "position: fixed; top: 20px; right: 20px; background: #ff9800; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-  toast.textContent = "Employee archived successfully";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  createToast("Employee archived successfully", "warning");
 };
 
 // Legacy delete function (kept for backward compatibility)
@@ -1886,12 +1823,7 @@ window.deleteEmployee = function (userId) {
   modals.forEach((m) => m.remove());
   renderEmployees();
 
-  const toast = document.createElement("div");
-  toast.style.cssText =
-    "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-  toast.textContent = "Employee removed successfully!";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  createToast("Employee removed successfully!", "success");
 };
 
 // Add Access Modal Handler
@@ -1963,12 +1895,10 @@ document.addEventListener("DOMContentLoaded", () => {
       addAccessForm.reset();
 
       // Show success message
-      const toast = document.createElement("div");
-      toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-      toast.textContent = `Access level "${accessName}" created successfully!`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      createToast(
+        `Access level "${accessName}" created successfully!`,
+        "success"
+      );
 
       // Optionally refresh the view
       renderEmployees();

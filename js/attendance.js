@@ -291,15 +291,10 @@ function renderAttendance() {
         );
         console.log("   - appState.users:", appState.users?.length);
 
-        // Show styled success message
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-        toast.textContent = isLate
-          ? "✓ Clocked in (Late)"
-          : "✓ Clocked in successfully!";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        createToast(
+          isLate ? "✓ Clocked in (Late)" : "✓ Clocked in successfully!",
+          "success"
+        );
 
         renderAttendance();
       } catch (error) {
@@ -315,13 +310,7 @@ function renderAttendance() {
           }
         }
 
-        // Show error message
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #f44336; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-        toast.textContent = "✗ Failed to clock in. Please try again.";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        createToast("✗ Failed to clock in. Please try again.", "error");
       } finally {
         // Re-enable button
         clockInBtn.disabled = false;
@@ -402,13 +391,7 @@ function renderAttendance() {
         await Promise.all([refreshAttendanceLogs(), refreshUsers()]);
         console.log("✅ Data refresh complete");
 
-        // Show styled success message
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-        toast.textContent = "✓ Clocked out successfully!";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        createToast("✓ Clocked out successfully!", "success");
 
         // Force refresh attendance display
         renderAttendance();
@@ -428,13 +411,7 @@ function renderAttendance() {
           appState.attendanceLogs.splice(index, 1);
         }
 
-        // Show error message
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #f44336; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-        toast.textContent = "✗ Failed to clock out. Please try again.";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        createToast("✗ Failed to clock out. Please try again.", "error");
       } finally {
         // Re-enable button
         clockOutBtn.disabled = false;
@@ -445,23 +422,22 @@ function renderAttendance() {
   // Show need to clock in modal
   function showNeedToClockInModal() {
     const modal = document.createElement("div");
-    modal.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+    modal.className = "modal-overlay";
 
     modal.innerHTML = `
-      <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
-            <span style="color: white; font-size: 2rem;">⚠️</span>
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-icon warning">
+            <span class="modal-icon-emoji">⚠️</span>
           </div>
-          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Not Clocked In</h3>
-          <p style="margin: 0; color: #666; font-size: 0.95rem;">You need to clock in first before clocking out.</p>
-          <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-radius: 8px;">
-            <div style="font-size: 0.875rem; color: #92400e;">Please use the Clock In button first.</div>
+          <h3 class="modal-title">Not Clocked In</h3>
+          <p class="modal-message">You need to clock in first before clocking out.</p>
+          <div class="modal-info-box">
+            <div class="modal-info-value">Please use the Clock In button first.</div>
           </div>
         </div>
-        <div style="display: flex; justify-content: center;">
-          <button id="got-it-need-clock-in-btn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+        <div class="modal-actions">
+          <button id="got-it-need-clock-in-btn" class="modal-btn primary">Got it</button>
         </div>
       </div>
     `;
@@ -476,23 +452,22 @@ function renderAttendance() {
   // Show already clocked out modal
   function showAlreadyClockedOutModal() {
     const modal = document.createElement("div");
-    modal.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+    modal.className = "modal-overlay";
 
     modal.innerHTML = `
-      <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);">
-            <span style="color: white; font-size: 2rem;">✓</span>
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-icon success">
+            <span class="modal-icon-emoji">✓</span>
           </div>
-          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Already Clocked Out</h3>
-          <p style="margin: 0; color: #666; font-size: 0.95rem;">You've already clocked out for the day.</p>
-          <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 8px;">
-            <div style="font-size: 0.875rem; color: #6b7280;">Your shift has ended. See you tomorrow!</div>
+          <h3 class="modal-title">Already Clocked Out</h3>
+          <p class="modal-message">You've already clocked out for the day.</p>
+          <div class="modal-info-box">
+            <div class="modal-info-value">Your shift has ended. See you tomorrow!</div>
           </div>
         </div>
-        <div style="display: flex; justify-content: center;">
-          <button id="got-it-clocked-out-btn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+        <div class="modal-actions">
+          <button id="got-it-clocked-out-btn" class="modal-btn primary">Got it</button>
         </div>
       </div>
     `;
@@ -507,23 +482,22 @@ function renderAttendance() {
   // Show already clocked in modal
   function showAlreadyClockedInModal() {
     const modal = document.createElement("div");
-    modal.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+    modal.className = "modal-overlay";
 
     modal.innerHTML = `
-      <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
-            <span style="color: white; font-size: 2rem;">ℹ️</span>
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-icon info">
+            <span class="modal-icon-emoji">ℹ️</span>
           </div>
-          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Already Clocked In</h3>
-          <p style="margin: 0; color: #666; font-size: 0.95rem;">You've already clocked in today.</p>
-          <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 8px;">
-            <div style="font-size: 0.875rem; color: #6b7280;">Please clock out before clocking in again.</div>
+          <h3 class="modal-title">Already Clocked In</h3>
+          <p class="modal-message">You've already clocked in today.</p>
+          <div class="modal-info-box">
+            <div class="modal-info-value">Please clock out before clocking in again.</div>
           </div>
         </div>
-        <div style="display: flex; justify-content: center;">
-          <button id="got-it-clocked-in-btn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Got it</button>
+        <div class="modal-actions">
+          <button id="got-it-clocked-in-btn" class="modal-btn primary">Got it</button>
         </div>
       </div>
     `;
@@ -539,23 +513,22 @@ function renderAttendance() {
   function showLateNoteDialog() {
     return new Promise((resolve) => {
       const modal = document.createElement("div");
-      modal.style.cssText =
-        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+      modal.className = "modal-overlay";
 
       modal.innerHTML = `
-        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
-          <div style="text-align: center; margin-bottom: 1.5rem;">
-            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);">
-              <span style="color: white; font-size: 2rem;">⚠️</span>
+        <div class="modal-content medium">
+          <div class="modal-header">
+            <div class="modal-icon warning">
+              <span class="modal-icon-emoji">⚠️</span>
             </div>
-            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Late Arrival</h3>
-            <p style="margin: 0; color: #666; font-size: 0.95rem;">You're arriving late. Please provide a reason.</p>
+            <h3 class="modal-title">Late Arrival</h3>
+            <p class="modal-message">You're arriving late. Please provide a reason.</p>
           </div>
           <textarea id="late-note-input" placeholder="Reason for late arrival..." style="width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 100px; margin-bottom: 1.5rem; font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f6c343'"></textarea>
-          <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-            <button id="cancel-late-btn" style="padding: 0.75rem 1.5rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #6b7280;">Cancel</button>
-            <button id="skip-note-btn" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Skip Note</button>
-            <button id="submit-note-btn" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Clock In</button>
+          <div class="modal-actions" style="justify-content: flex-end;">
+            <button id="cancel-late-btn" class="modal-btn cancel">Cancel</button>
+            <button id="skip-note-btn" class="modal-btn cancel" style="background: #6b7280; color: white;">Skip Note</button>
+            <button id="submit-note-btn" class="modal-btn primary">Clock In</button>
           </div>
         </div>
       `;
@@ -646,21 +619,57 @@ function renderAttendance() {
 
   const boardBody = document.querySelector("#attendance-status-table tbody");
   if (boardBody) {
-    boardBody.innerHTML = "";
-    employeeSnapshots.forEach(
-      ({ employee, status, timestamp, latestAction }) => {
-        const row = document.createElement("tr");
-        let displayLabel = "";
-        if (latestAction === "in") {
-          displayLabel = "Clocked in";
-          if (status === "late") displayLabel += " — Late";
-        } else if (latestAction === "out") {
-          displayLabel = "Clocked out";
-        } else {
-          displayLabel = status.charAt(0).toUpperCase() + status.slice(1);
-        }
-        const cssClass = status || "absent";
-        row.innerHTML = `
+    // Check if mobile view
+    if (window.isMobileView && window.isMobileView()) {
+      // Render mobile-friendly version
+      const container = boardBody.closest("table").parentElement;
+      container.innerHTML = '<div id="mobile-attendance-board"></div>';
+      const mobileContainer = document.getElementById(
+        "mobile-attendance-board"
+      );
+
+      const fields = [
+        { key: "employee", label: "Employee", format: (emp) => emp.name },
+        {
+          key: "status",
+          label: "Status",
+          format: (status, item) => {
+            let displayLabel = "";
+            if (item.latestAction === "in") {
+              displayLabel = "Clocked in";
+              if (status === "late") displayLabel += " — Late";
+            } else if (item.latestAction === "out") {
+              displayLabel = "Clocked out";
+            } else {
+              displayLabel = status.charAt(0).toUpperCase() + status.slice(1);
+            }
+            return displayLabel;
+          },
+        },
+        { key: "employee", label: "Role", format: (emp) => emp.role },
+        { key: "timestamp", label: "Time", format: (ts) => ts },
+      ];
+
+      if (window.renderMobileTable) {
+        window.renderMobileTable(employeeSnapshots, fields, mobileContainer);
+      }
+    } else {
+      // Desktop table rendering
+      boardBody.innerHTML = "";
+      employeeSnapshots.forEach(
+        ({ employee, status, timestamp, latestAction }) => {
+          const row = document.createElement("tr");
+          let displayLabel = "";
+          if (latestAction === "in") {
+            displayLabel = "Clocked in";
+            if (status === "late") displayLabel += " — Late";
+          } else if (latestAction === "out") {
+            displayLabel = "Clocked out";
+          } else {
+            displayLabel = status.charAt(0).toUpperCase() + status.slice(1);
+          }
+          const cssClass = status || "absent";
+          row.innerHTML = `
         <td>
           <strong>${employee.name}</strong>
           <small>${employee.role}</small>
@@ -668,9 +677,10 @@ function renderAttendance() {
         <td><span class="status ${cssClass}">${displayLabel}</span></td>
         <td>${timestamp}</td>
       `;
-        boardBody.appendChild(row);
-      }
-    );
+          boardBody.appendChild(row);
+        }
+      );
+    }
   }
 
   const logBody = document.querySelector("#attendance-log-table tbody");
@@ -700,49 +710,109 @@ function renderAttendance() {
     // Update pagination UI
     updateAttendancePaginationControls(totalPages);
 
-    pageLogs.forEach((log) => {
-      const employee = getEmployee(log.employeeId);
-      const actionMeta = getAttendanceActionMeta(log.action);
-      const row = document.createElement("tr");
-      // Show note if available
-      const detailsText = log.note || "";
+    // Check if current user is admin or manager
+    const currentUser = getCurrentUser();
+    const canArchive =
+      currentUser &&
+      (currentUser.permission === "admin" ||
+        currentUser.permission === "manager");
 
-      // Check if current user is admin or manager
-      const currentUser = getCurrentUser();
-      const canArchive =
-        currentUser &&
-        (currentUser.permission === "admin" ||
-          currentUser.permission === "manager");
+    // Check if mobile view
+    if (window.isMobileView && window.isMobileView()) {
+      // Render mobile-friendly version
+      const container = logBody.closest("table").parentElement;
+      container.innerHTML = '<div id="mobile-attendance-logs"></div>';
+      const mobileContainer = document.getElementById("mobile-attendance-logs");
 
-      row.innerHTML = `
-        <td>${employee?.name || "Unknown"}</td>
-        <td><span class="status ${actionMeta.badge}">${
-        actionMeta.label
-      }</span></td>
-        <td>${formatTime(log.timestamp)}</td>
-        <td>${detailsText || ""}</td>
-        ${
-          canArchive
-            ? `<td style="text-align: center;">
-                <button class="btn btn-warning btn-sm" data-archive-log="${log.id}" title="Archive this log">Archive</button>
-              </td>`
-            : ""
-        }
-      `;
-      logBody.appendChild(row);
-    });
-    if (!logBody.children.length) {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="4" class="empty-state">No logs recorded for today yet.</td>`;
-      logBody.appendChild(row);
-    }
+      const fields = [
+        {
+          key: "employeeName",
+          label: "Employee",
+          format: (name) => name || "Unknown",
+        },
+        {
+          key: "action",
+          label: "Action",
+          format: (action) => {
+            const meta = getAttendanceActionMeta(action);
+            return meta.label;
+          },
+        },
+        { key: "timestamp", label: "Time", format: (ts) => formatTime(ts) },
+        { key: "note", label: "Details", format: (note) => note || "N/A" },
+      ];
 
-    // Attach archive button event listeners
-    document.querySelectorAll("[data-archive-log]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        archiveAttendanceLog(btn.dataset.archiveLog);
+      // Add employee name to each log for easier rendering
+      const logsWithNames = pageLogs.map((log) => ({
+        ...log,
+        employeeName: getEmployee(log.employeeId)?.name || "Unknown",
+      }));
+
+      if (window.renderMobileTable) {
+        window.renderMobileTable(
+          logsWithNames,
+          fields,
+          mobileContainer,
+          (item) => {
+            // Custom detail modal with archive button
+            const meta = getAttendanceActionMeta(item.action);
+            const modalFields = [
+              ...fields,
+              ...(canArchive
+                ? [
+                    {
+                      key: "id",
+                      label: "Actions",
+                      format: (id) =>
+                        `<button class="btn btn-warning btn-sm" onclick="archiveAttendanceLog('${id}')">Archive Log</button>`,
+                    },
+                  ]
+                : []),
+            ];
+            window.showMobileDetailModal(item, modalFields);
+          }
+        );
+      }
+    } else {
+      // Desktop table rendering
+      pageLogs.forEach((log) => {
+        const employee = getEmployee(log.employeeId);
+        const actionMeta = getAttendanceActionMeta(log.action);
+        const row = document.createElement("tr");
+        // Show note if available
+        const detailsText = log.note || "";
+
+        row.innerHTML = `
+          <td>${employee?.name || "Unknown"}</td>
+          <td><span class="status ${actionMeta.badge}">${
+          actionMeta.label
+        }</span></td>
+          <td>${formatTime(log.timestamp)}</td>
+          <td>${detailsText || ""}</td>
+          ${
+            canArchive
+              ? `<td style="text-align: center;">
+                  <button class="btn btn-warning btn-sm" data-archive-log="${log.id}" title="Archive this log">Archive</button>
+                </td>`
+              : ""
+          }
+        `;
+        logBody.appendChild(row);
       });
-    });
+
+      if (!logBody.children.length) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="4" class="empty-state">No logs recorded for today yet.</td>`;
+        logBody.appendChild(row);
+      }
+
+      // Attach archive button event listeners
+      document.querySelectorAll("[data-archive-log]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          archiveAttendanceLog(btn.dataset.archiveLog);
+        });
+      });
+    }
   }
 
   const alerts = document.getElementById("attendance-alerts");
@@ -814,13 +884,12 @@ function renderAttendance() {
 
 function openRequestLeaveModal(user) {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+  modal.className = "modal-overlay";
 
   const today = new Date().toISOString().split("T")[0];
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <div class="modal-content medium">
       <h3 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; color: #333;">Request Leave</h3>
       <form id="leave-request-form">
         <div style="margin-bottom: 1rem;">
@@ -835,9 +904,9 @@ function openRequestLeaveModal(user) {
           <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Reason</label>
           <textarea id="leave-reason" rows="3" placeholder="Enter reason for leave..." style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: inherit; resize: vertical;"></textarea>
         </div>
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-          <button type="button" onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
-          <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Submit Request</button>
+        <div class="modal-actions" style="justify-content: flex-end;">
+          <button type="button" onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
+          <button type="submit" class="modal-btn primary">Submit Request</button>
         </div>
       </form>
     </div>
@@ -903,14 +972,11 @@ function openRequestLeaveModal(user) {
         saveState();
         modal.remove();
 
-        // Show success toast
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-        toast.textContent =
-          "✓ Leave request submitted successfully! Awaiting admin approval.";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
+        createToast(
+          "✓ Leave request submitted successfully! Awaiting admin approval.",
+          "success",
+          4000
+        );
       })
       .catch((error) => {
         console.error("Error saving request:", error);
@@ -1044,3 +1110,17 @@ function archiveAttendanceLog(logId) {
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["attendance"] = renderAttendance;
+
+// Make archiveAttendanceLog globally accessible for mobile modals
+window.archiveAttendanceLog = archiveAttendanceLog;
+
+// Re-render on window resize to handle mobile/desktop switch
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (document.body.dataset.page === "attendance") {
+      renderAttendance();
+    }
+  }, 250);
+});

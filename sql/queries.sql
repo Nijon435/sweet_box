@@ -3,13 +3,13 @@
 -- Use these as prepared queries or to build API endpoints.
 
 -- 1) Get latest attendance per employee
-SELECT e.id, e.name, al.action, al.timestamp
-FROM employees e
-LEFT JOIN attendance_logs al ON al.employee_id = e.id
+SELECT u.id, u.name, al.action, al.timestamp
+FROM users u
+LEFT JOIN attendance_logs al ON al.employee_id = u.id
   AND al.timestamp = (
-    SELECT MAX(timestamp) FROM attendance_logs WHERE employee_id = e.id
+    SELECT MAX(timestamp) FROM attendance_logs WHERE employee_id = u.id
   )
-ORDER BY e.name;
+ORDER BY u.name;
 
 -- 2) Low stock items (quantity <= reorder_point)
 SELECT id, category, name, quantity, unit, reorder_point
@@ -17,11 +17,12 @@ FROM inventory
 WHERE quantity <= reorder_point
 ORDER BY quantity ASC;
 
--- 3) Orders by status (replace 'pending' as needed)
-SELECT id, customer, items, total, status, type, timestamp
+-- 3) Recent orders (last 100)
+SELECT id, customer, items_json, total, type, timestamp
 FROM orders
-WHERE status = 'pending'
-ORDER BY timestamp DESC;
+WHERE archived = false
+ORDER BY timestamp DESC
+LIMIT 100;
 
 -- 4) Total sales in a date range
 SELECT SUM(total) AS total_sales
@@ -33,10 +34,10 @@ SELECT (SUM(o.total) / GREATEST(COUNT(o.id),1)) AS avg_ticket
 FROM orders o
 WHERE o.timestamp >= NOW() - INTERVAL '30 days';
 
--- 6) Mark an order served (update status and served_at)
+-- 6) Archive an order
 UPDATE orders
-SET status = 'served', served_at = NOW()
-WHERE id = $1; -- parameterize order id
+SET archived = true, archived_at = NOW(), archived_by = $1
+WHERE id = $2; -- $1 = user_id, $2 = order_id
 
 -- 7) Decrease inventory based on usage (example)
 UPDATE inventory
@@ -47,11 +48,11 @@ WHERE id = $2 AND quantity > 0; -- $1 = qty used, $2 = inventory id
 INSERT INTO attendance_logs (id, employee_id, action, timestamp, note)
 VALUES ('att-' || FLOOR(EXTRACT(EPOCH FROM NOW()))::bigint, $1, $2, NOW(), $3);
 
--- 9) Performance leaderboard
-SELECT p.employee_id, e.name, p.rating, p.completed_orders
-FROM performance_scores p
-JOIN employees e ON e.id = p.employee_id
-ORDER BY p.rating DESC, p.completed_orders DESC;
+-- 9) Active employees list
+SELECT id, name, email, role, permission, status, hire_date
+FROM users
+WHERE archived = false AND status = 'active'
+ORDER BY name;
 
 -- 10) Inventory value summary
 SELECT SUM(quantity * cost) AS inventory_value FROM inventory;

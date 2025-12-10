@@ -43,6 +43,77 @@ window.formatAccountLabel = function (account) {
   return name ? `${name} - ${role}` : role;
 };
 
+function createModal(content, type = "info") {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+
+  const modalContent = document.createElement("div");
+  modalContent.className = "modal-content";
+  modalContent.innerHTML = content;
+
+  overlay.appendChild(modalContent);
+  return overlay;
+}
+
+function createToast(message, type = "success", duration = 3000) {
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  if (duration > 0) {
+    setTimeout(() => toast.remove(), duration);
+  }
+
+  return toast;
+}
+
+window.createToast = createToast;
+
+function createConfirmModal(options) {
+  const {
+    title,
+    message,
+    icon = "⚠️",
+    iconType = "warning",
+    confirmText = "Confirm",
+    cancelText = "Cancel",
+    onConfirm,
+    onCancel,
+  } = options;
+
+  const modal = createModal(`
+    <div class="modal-header">
+      <div class="modal-icon ${iconType}">
+        <span class="modal-icon-emoji">${icon}</span>
+      </div>
+      <h3 class="modal-title">${title}</h3>
+      <p class="modal-message">${message}</p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="modal-cancel">${cancelText}</button>
+      <button class="modal-btn confirm" id="modal-confirm">${confirmText}</button>
+    </div>
+  `);
+
+  document.body.appendChild(modal);
+
+  const cancelBtn = modal.querySelector("#modal-cancel");
+  const confirmBtn = modal.querySelector("#modal-confirm");
+
+  cancelBtn.addEventListener("click", () => {
+    modal.remove();
+    if (onCancel) onCancel();
+  });
+
+  confirmBtn.addEventListener("click", () => {
+    modal.remove();
+    if (onConfirm) onConfirm();
+  });
+
+  return modal;
+}
+
 const getDefaultData = () => getEmptyData();
 
 const getEmptyData = () => ({
@@ -1181,8 +1252,7 @@ function initApp() {
 
 function showClockInPromptModal(user, page) {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);";
+  modal.className = "modal-overlay";
 
   const now = new Date();
   const currentHour = now.getHours();
@@ -1193,28 +1263,27 @@ function showClockInPromptModal(user, page) {
   });
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
-          <span style="color: white; font-size: 2.5rem;">🕒</span>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon warning">
+          <span class="modal-icon-emoji">🕒</span>
         </div>
-        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Ready to Clock In?</h3>
-        <p style="margin: 0; color: #666; font-size: 0.95rem;">You haven't clocked in today yet.</p>
-        <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 8px;">
-          <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Current Time</div>
-          <div style="font-size: 1.25rem; font-weight: 600; color: #333;">${timeStr}</div>
+        <h3 class="modal-title">Ready to Clock In?</h3>
+        <p class="modal-message">You haven't clocked in today yet.</p>
+        <div class="modal-info-box">
+          <div class="modal-info-label">Current Time</div>
+          <div class="modal-info-value">${timeStr}</div>
         </div>
       </div>
-      <div style="display: flex; gap: 0.75rem; justify-content: center;">
-        <button id="later-clock-in-btn" style="padding: 0.75rem 1.75rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-size: 1rem; min-width: 120px; font-weight: 500; color: #6b7280; transition: all 0.2s;">Later</button>
-        <button id="confirm-clock-in-btn" style="padding: 0.75rem 1.75rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; min-width: 120px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.2s;">Clock In</button>
+      <div class="modal-actions">
+        <button id="later-clock-in-btn" class="modal-btn cancel">Later</button>
+        <button id="confirm-clock-in-btn" class="modal-btn primary">Clock In</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
 
-  // Add event listener for Later button
   const laterBtn = document.getElementById("later-clock-in-btn");
   laterBtn.addEventListener("click", () => {
     modal.remove();
@@ -1225,7 +1294,6 @@ function showClockInPromptModal(user, page) {
     const shift =
       currentHour < 12 ? "Morning (7AM–12PM)" : "Afternoon (12PM–5PM)";
 
-    // Check if user is late (>15 min past shift start)
     const shiftStart = user.shift_start || user.shiftStart;
     let isLate = false;
     let lateNote = null;
@@ -1241,7 +1309,7 @@ function showClockInPromptModal(user, page) {
         modal.remove();
         lateNote = await showLateNoteDialog();
         if (lateNote === null) {
-          return; // User cancelled
+          return;
         }
       }
     }
@@ -1255,27 +1323,19 @@ function showClockInPromptModal(user, page) {
       note: isLate && lateNote ? `Late: ${lateNote}` : null,
     };
 
-    // Save to local state first
     appState.attendanceLogs = appState.attendanceLogs || [];
     appState.attendanceLogs.push(newLog);
 
-    // Save directly to database
     try {
       await saveAttendanceLog(newLog);
 
       modal.remove();
 
-      // Show success toast
-      const toast = document.createElement("div");
-      toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-      toast.textContent = isLate
-        ? "✓ Clocked in (Late)"
-        : "✓ Successfully clocked in!";
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      createToast(
+        isLate ? "✓ Clocked in (Late)" : "✓ Successfully clocked in!",
+        "success"
+      );
     } catch (error) {
-      // Remove from local state if save failed
       const index = appState.attendanceLogs.findIndex(
         (log) => log.id === newLog.id
       );
@@ -1285,16 +1345,9 @@ function showClockInPromptModal(user, page) {
 
       modal.remove();
 
-      // Show error toast
-      const toast = document.createElement("div");
-      toast.style.cssText =
-        "position: fixed; top: 20px; right: 20px; background: #f44336; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 500;";
-      toast.textContent = "✗ Failed to clock in. Please try again.";
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      createToast("✗ Failed to clock in. Please try again.", "error");
     }
 
-    // Refresh page to update attendance display
     if (
       typeof window.pageRenderers === "object" &&
       typeof window.pageRenderers[page] === "function"
@@ -1307,23 +1360,22 @@ function showClockInPromptModal(user, page) {
 function showLateNoteDialog() {
   return new Promise((resolve) => {
     const modal = document.createElement("div");
-    modal.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);";
+    modal.className = "modal-overlay";
 
     modal.innerHTML = `
-      <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out;">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);">
-            <span style="color: white; font-size: 2rem;">⚠️</span>
+      <div class="modal-content medium">
+        <div class="modal-header">
+          <div class="modal-icon warning">
+            <span class="modal-icon-emoji">⚠️</span>
           </div>
-          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #333;">Late Arrival</h3>
-          <p style="margin: 0; color: #666; font-size: 0.95rem;">You're arriving late. Please provide a reason.</p>
+          <h3 class="modal-title">Late Arrival</h3>
+          <p class="modal-message">You're arriving late. Please provide a reason.</p>
         </div>
         <textarea id="late-note-input" placeholder="Reason for late arrival..." style="width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 100px; margin-bottom: 1.5rem; font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f6c343'"></textarea>
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-          <button id="cancel-late-btn" style="padding: 0.75rem 1.5rem; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: #6b7280;">Cancel</button>
-          <button id="skip-note-btn" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Skip Note</button>
-          <button id="submit-note-btn" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #f6c343 0%, #f59e0b 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Submit</button>
+        <div class="modal-actions" style="justify-content: flex-end;">
+          <button id="cancel-late-btn" class="modal-btn cancel">Cancel</button>
+          <button id="skip-note-btn" class="modal-btn cancel" style="background: #6b7280; color: white;">Skip Note</button>
+          <button id="submit-note-btn" class="modal-btn primary">Submit</button>
         </div>
       </div>
     `;
@@ -1358,26 +1410,8 @@ function showLoadingScreen() {
   if (!loader) {
     loader = document.createElement("div");
     loader.id = "app-loading-screen";
-    loader.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; align-items: center; justify-content: center; z-index: 9999;";
-    loader.innerHTML = `
-      <div class="loader"></div>
-      <style>
-        .loader {
-          width: 50px;
-          aspect-ratio: 1;
-          border-radius: 50%;
-          background: 
-            radial-gradient(farthest-side,#ffa516 94%,#0000) top/8px 8px no-repeat,
-            conic-gradient(#0000 30%,#ffa516);
-          -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 8px),#000 0);
-          animation: l13 1s infinite linear;
-        }
-        @keyframes l13{ 
-          100%{transform: rotate(1turn)}
-        }
-      </style>
-    `;
+    loader.className = "loading-screen";
+    loader.innerHTML = `<div class="loader"></div>`;
     document.body.appendChild(loader);
   }
   loader.style.display = "flex";
@@ -1517,8 +1551,7 @@ function hideLoading() {
 // Custom success alert with modern design
 function showCustomSuccessAlert(title, message) {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
     <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; transform-origin: center;">
@@ -1581,8 +1614,7 @@ function showAlert(message, type = "info") {
   const config = colors[type] || colors.info;
 
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
     <div style="background: white; border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
@@ -1631,8 +1663,7 @@ function showAlert(message, type = "info") {
 function showConfirmAlert(title, message) {
   return new Promise((resolve) => {
     const modal = document.createElement("div");
-    modal.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+    modal.className = "modal-overlay";
 
     modal.innerHTML = `
       <div style="background: white; border-radius: 12px; padding: 1.5rem; max-width: 420px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
@@ -1702,14 +1733,13 @@ function openEditProfileModal() {
   }
 
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;";
+  modal.className = "modal-overlay";
 
   modal.innerHTML = `
-    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <div class="modal-content large" style="max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h3 style="margin: 0; font-size: 1.5rem; color: #333;">Edit Profile</h3>
-        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+        <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
       </div>
       <form id="edit-profile-form">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -1798,12 +1828,7 @@ function openEditProfileModal() {
         // Update UI
         updateUserSessionUI();
 
-        const toast = document.createElement("div");
-        toast.style.cssText =
-          "position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-        toast.textContent = "Profile updated successfully!";
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        createToast("Profile updated successfully!", "success");
       }
     } else {
       // Regular user - create a profile edit request
@@ -1848,12 +1873,7 @@ function openEditProfileModal() {
           saveState();
           modal.remove();
 
-          const toast = document.createElement("div");
-          toast.style.cssText =
-            "position: fixed; top: 20px; right: 20px; background: #2196F3; color: white; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000;";
-          toast.textContent = "Request has been sent to admin for approval!";
-          document.body.appendChild(toast);
-          setTimeout(() => toast.remove(), 3000);
+          createToast("Request has been sent to admin for approval!", "info");
         })
         .catch((error) => {
           console.error("Error saving request:", error);
@@ -2218,8 +2238,7 @@ window.migrateExistingUsageData = migrateExistingUsageData;
  */
 function showNotification(message, type = "info") {
   const modal = document.createElement("div");
-  modal.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out;";
+  modal.className = "modal-overlay";
 
   const icons = {
     success: "✓",
@@ -2271,3 +2290,202 @@ function showNotification(message, type = "info") {
 
 // Make it globally available
 window.showNotification = showNotification;
+
+// ==================== Mobile Navigation & Sidebar ====================
+
+/**
+ * Initialize mobile navigation and sidebar toggles
+ * Should be called on DOMContentLoaded for all pages
+ */
+function initMobileNavigation() {
+  const navToggle = document.getElementById("nav-toggle");
+  const nav = document.getElementById("nav");
+  const mobileHamburger = document.getElementById("mobile-hamburger");
+  const closeSidebar = document.getElementById("close-sidebar");
+  const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+  const sidebar = document.getElementById("sidebar");
+
+  // Navigation accordion toggle (tablet/mobile - keeps sidebar visible but collapses nav)
+  if (navToggle && nav) {
+    navToggle.addEventListener("click", () => {
+      nav.classList.toggle("expanded");
+      const icon = navToggle.querySelector(".nav-toggle-icon");
+      if (icon) {
+        icon.textContent = nav.classList.contains("expanded") ? "▲" : "▼";
+      }
+    });
+  }
+
+  // Mobile hamburger - opens sidebar from off-screen
+  if (mobileHamburger && sidebar && sidebarBackdrop) {
+    mobileHamburger.addEventListener("click", () => {
+      document.body.classList.add("sidebar-open");
+      sidebar.classList.add("mobile-visible");
+      sidebarBackdrop.classList.add("active");
+    });
+  }
+
+  // Close sidebar button
+  if (closeSidebar) {
+    closeSidebar.addEventListener("click", closeMobileSidebar);
+  }
+
+  // Backdrop click
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+  }
+
+  // Close sidebar when navigation link is clicked on mobile
+  if (nav) {
+    const navLinks = nav.querySelectorAll("a");
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => {
+        if (window.innerWidth <= 768) {
+          closeMobileSidebar();
+        }
+      });
+    });
+  }
+}
+
+/**
+ * Close mobile sidebar
+ */
+function closeMobileSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+
+  document.body.classList.remove("sidebar-open");
+  if (sidebar) sidebar.classList.remove("mobile-visible");
+  if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+}
+
+// ==================== Mobile Table Rendering ====================
+
+/**
+ * Detect if current view is mobile
+ */
+function isMobileView() {
+  return window.innerWidth <= 768;
+}
+
+/**
+ * Render a mobile-friendly table with detail buttons
+ * @param {Array} data - Array of data objects
+ * @param {Array} fields - Array of field configurations: [{key: 'name', label: 'Name', format: (val) => val}]
+ * @param {HTMLElement} container - Container element to render into
+ * @param {Function} onDetailClick - Callback when detail button is clicked (receives item)
+ */
+function renderMobileTable(data, fields, container, onDetailClick) {
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    container.innerHTML =
+      '<div class="mobile-table-row"><div class="mobile-table-primary">No data available</div></div>';
+    return;
+  }
+
+  data.forEach((item, index) => {
+    const row = document.createElement("div");
+    row.className = "mobile-table-row";
+
+    // Find primary field (usually first field or one marked as primary)
+    const primaryField = fields[0];
+    const primaryValue = primaryField.format
+      ? primaryField.format(item[primaryField.key])
+      : item[primaryField.key];
+
+    row.innerHTML = `
+      <div class="mobile-table-primary">${primaryValue || "N/A"}</div>
+      <button class="mobile-detail-btn" data-index="${index}">Details</button>
+    `;
+
+    const detailBtn = row.querySelector(".mobile-detail-btn");
+    detailBtn.addEventListener("click", () => {
+      if (onDetailClick) {
+        onDetailClick(item);
+      } else {
+        showMobileDetailModal(item, fields);
+      }
+    });
+
+    container.appendChild(row);
+  });
+}
+
+/**
+ * Show mobile detail modal with full item information
+ * @param {Object} item - Data item to display
+ * @param {Array} fields - Array of field configurations
+ */
+function showMobileDetailModal(item, fields) {
+  const modal = document.createElement("div");
+  modal.className = "mobile-detail-modal";
+
+  const content = document.createElement("div");
+  content.className = "mobile-detail-content";
+
+  // Header
+  const header = document.createElement("div");
+  header.className = "mobile-detail-header";
+  header.innerHTML = `
+    <h3>Details</h3>
+    <button class="mobile-detail-close">&times;</button>
+  `;
+
+  // Body
+  const body = document.createElement("div");
+  body.className = "mobile-detail-body";
+
+  fields.forEach((field) => {
+    const fieldDiv = document.createElement("div");
+    fieldDiv.className = "mobile-detail-field";
+
+    const value = field.format
+      ? field.format(item[field.key])
+      : item[field.key];
+
+    fieldDiv.innerHTML = `
+      <strong>${field.label}:</strong>
+      <span>${value !== null && value !== undefined ? value : "N/A"}</span>
+    `;
+
+    body.appendChild(fieldDiv);
+  });
+
+  content.appendChild(header);
+  content.appendChild(body);
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+
+  // Show modal
+  setTimeout(() => modal.classList.add("active"), 10);
+
+  // Close handlers
+  const closeBtn = header.querySelector(".mobile-detail-close");
+  const closeModal = () => {
+    modal.classList.remove("active");
+    setTimeout(() => modal.remove(), 300);
+  };
+
+  closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+}
+
+// Export functions globally
+window.initMobileNavigation = initMobileNavigation;
+window.closeMobileSidebar = closeMobileSidebar;
+window.isMobileView = isMobileView;
+window.renderMobileTable = renderMobileTable;
+window.showMobileDetailModal = showMobileDetailModal;
+
+// Auto-initialize mobile navigation on DOMContentLoaded
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initMobileNavigation);
+} else {
+  initMobileNavigation();
+}

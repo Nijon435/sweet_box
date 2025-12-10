@@ -1,8 +1,6 @@
 -- seeds.sql
--- Sample INSERT statements (pre-made data). Run this after `schema.sql`.
--- 1 week simulation for small bakery business
+-- Sample INSERT statements (pre-made data). Used for testing and initial setup.
 
--- Users (merged with employees) - with email, password, phone, and permission
 INSERT INTO users (id, name, email, password, phone, role, permission, shift_start, hire_date, status, created_at) VALUES
   ('user-1', 'John Paul Arvesu', 'arvesujohnpaul@gmail.com', 'april435', '0992 867 0457', 'manager', 'admin', NULL, NOW()::DATE, 'active', NOW()),
   ('user-2', 'Sofia Morales', 'admin@sweetbox.com', 'admin123', '0917 123 4567', 'manager', 'admin', NULL, NOW()::DATE, 'active', NOW()),
@@ -26,10 +24,8 @@ ON CONFLICT (id) DO UPDATE SET
   hire_date = EXCLUDED.hire_date,
   status = EXCLUDED.status;
 
--- Inventory (small business - 4 categories: cakes & pastries, beverages, ingredients, supplies)
--- Updated with date_purchased, use_by_date, reorder_point, last_restocked, total_used, and unit
 INSERT INTO inventory (id, category, name, quantity, unit, cost, date_purchased, use_by_date, reorder_point, last_restocked, total_used, created_at) VALUES
-  -- Cakes & Pastries (ready to sell items)
+
   ('inv-1', 'cakes & pastries', 'Chocolate Mousse Slice', 15, 'slices', 120.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '3 days', 5, CURRENT_DATE - INTERVAL '2 days', 18, NOW()),
   ('inv-2', 'cakes & pastries', 'Classic Cheesecake (whole)', 3, 'whole', 850.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '5 days', 2, CURRENT_DATE - INTERVAL '1 day', 4, NOW()),
   ('inv-3', 'cakes & pastries', 'Butter Croissant', 30, 'pieces', 35.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 days', 10, CURRENT_DATE, 32, NOW()),
@@ -41,14 +37,14 @@ INSERT INTO inventory (id, category, name, quantity, unit, cost, date_purchased,
   ('inv-9', 'cakes & pastries', 'Strawberry Shortcake (whole)', 4, 'whole', 780.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '4 days', 2, CURRENT_DATE - INTERVAL '1 day', 3, NOW()),
   ('inv-10', 'cakes & pastries', 'Chocolate Chip Cookie', 45, 'pieces', 25.00, CURRENT_DATE, CURRENT_DATE + INTERVAL '5 days', 15, CURRENT_DATE, 38, NOW()),
   
-  -- Beverages (only bottled/canned - ready to serve)
+
   ('inv-11', 'beverages', 'Bottled Water 500ml', 8, 'bottles', 15.00, CURRENT_DATE - INTERVAL '5 days', CURRENT_DATE + INTERVAL '180 days', 20, CURRENT_DATE - INTERVAL '5 days', 25, NOW()),
   ('inv-12', 'beverages', 'Iced Tea 350ml', 36, 'bottles', 45.00, CURRENT_DATE - INTERVAL '4 days', CURRENT_DATE + INTERVAL '90 days', 15, CURRENT_DATE - INTERVAL '4 days', 18, NOW()),
   ('inv-13', 'beverages', 'Canned Soda 330ml', 42, 'cans', 30.00, CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE + INTERVAL '120 days', 20, CURRENT_DATE - INTERVAL '6 days', 12, NOW()),
   ('inv-14', 'beverages', 'Orange Juice 250ml', 30, 'bottles', 40.00, CURRENT_DATE - INTERVAL '3 days', CURRENT_DATE + INTERVAL '60 days', 12, CURRENT_DATE - INTERVAL '3 days', 8, NOW()),
   ('inv-15', 'beverages', 'Canned Coffee 240ml', 24, 'cans', 55.00, CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE + INTERVAL '150 days', 10, CURRENT_DATE - INTERVAL '7 days', 5, NOW()),
   
-  -- Ingredients (baking supplies)
+
   ('inv-16', 'ingredients', 'All-purpose Flour', 25.00, 'kg', 40.00, CURRENT_DATE - INTERVAL '10 days', CURRENT_DATE + INTERVAL '90 days', 10, CURRENT_DATE - INTERVAL '10 days', 12.50, NOW()),
   ('inv-17', 'ingredients', 'Granulated Sugar', 8.00, 'kg', 35.00, CURRENT_DATE - INTERVAL '8 days', CURRENT_DATE + INTERVAL '180 days', 10, CURRENT_DATE - INTERVAL '8 days', 6.50, NOW()),
   ('inv-18', 'ingredients', 'Unsalted Butter', 4.00, 'kg', 180.00, CURRENT_DATE - INTERVAL '3 days', CURRENT_DATE + INTERVAL '14 days', 5, CURRENT_DATE - INTERVAL '3 days', 3.20, NOW()),
@@ -60,7 +56,7 @@ INSERT INTO inventory (id, category, name, quantity, unit, cost, date_purchased,
   ('inv-24', 'ingredients', 'Fresh Strawberries', 3.50, 'kg', 180.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '3 days', 2, CURRENT_DATE - INTERVAL '1 day', 2.80, NOW()),
   ('inv-25', 'ingredients', 'Blueberries', 4.00, 'kg', 200.00, CURRENT_DATE - INTERVAL '2 days', CURRENT_DATE + INTERVAL '5 days', 2, CURRENT_DATE - INTERVAL '2 days', 1.50, NOW()),
   
-  -- Supplies (packaging & serving materials)
+
   ('inv-26', 'supplies', 'Cake Box (small)', 18, 'pieces', 8.00, CURRENT_DATE - INTERVAL '14 days', NULL, 20, CURRENT_DATE - INTERVAL '14 days', 15, NOW()),
   ('inv-27', 'supplies', 'Cake Box (medium)', 40, 'pieces', 12.00, CURRENT_DATE - INTERVAL '14 days', NULL, 15, CURRENT_DATE - INTERVAL '14 days', 8, NOW()),
   ('inv-28', 'supplies', 'Cake Box (large)', 30, 'pieces', 18.00, CURRENT_DATE - INTERVAL '14 days', NULL, 10, CURRENT_DATE - INTERVAL '14 days', 5, NOW()),
@@ -73,55 +69,52 @@ INSERT INTO inventory (id, category, name, quantity, unit, cost, date_purchased,
   ('inv-35', 'supplies', 'Aluminum Foil Roll', 5, 'rolls', 120.00, CURRENT_DATE - INTERVAL '20 days', NULL, 2, CURRENT_DATE - INTERVAL '20 days', 1, NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- Orders (1 week simulation - small bakery business)
+
 INSERT INTO orders (id, customer, items, total, status, type, timestamp, served_at) VALUES
-  -- Day 1 (7 days ago)
+
   ('ord-100', 'Walk-in Customer', '[{"name":"Butter Croissant","qty":2},{"name":"Bottled Water 500ml","qty":1}]', 85.00, 'served', 'takeaway', NOW() - INTERVAL '7 days' + INTERVAL '8 hours', NOW() - INTERVAL '7 days' + INTERVAL '8 hours 5 minutes'),
   ('ord-101', 'Maria Santos', '[{"name":"Classic Cheesecake (whole)","qty":1}]', 850.00, 'served', 'pickup', NOW() - INTERVAL '7 days' + INTERVAL '10 hours', NOW() - INTERVAL '7 days' + INTERVAL '10 hours 15 minutes'),
   ('ord-102', 'Table 2', '[{"name":"Chocolate Mousse Slice","qty":2},{"name":"Iced Tea 350ml","qty":2}]', 330.00, 'served', 'dine-in', NOW() - INTERVAL '7 days' + INTERVAL '14 hours', NOW() - INTERVAL '7 days' + INTERVAL '14 hours 20 minutes'),
   ('ord-103', 'Delivery #101', '[{"name":"Assorted Macarons (box of 6)","qty":2},{"name":"Cinnamon Roll","qty":4}]', 640.00, 'served', 'delivery', NOW() - INTERVAL '7 days' + INTERVAL '16 hours', NOW() - INTERVAL '7 days' + INTERVAL '17 hours'),
-  
-  -- Day 2 (6 days ago)
+
   ('ord-104', 'Walk-in Customer', '[{"name":"Almond Danish","qty":3},{"name":"Canned Coffee 240ml","qty":2}]', 245.00, 'served', 'takeaway', NOW() - INTERVAL '6 days' + INTERVAL '9 hours', NOW() - INTERVAL '6 days' + INTERVAL '9 hours 8 minutes'),
   ('ord-105', 'Table 5', '[{"name":"Red Velvet Slice","qty":2},{"name":"Canned Soda 330ml","qty":2}]', 280.00, 'served', 'dine-in', NOW() - INTERVAL '6 days' + INTERVAL '12 hours', NOW() - INTERVAL '6 days' + INTERVAL '12 hours 18 minutes'),
   ('ord-106', 'John Reyes', '[{"name":"Blueberry Muffin","qty":6}]', 330.00, 'served', 'pickup', NOW() - INTERVAL '6 days' + INTERVAL '15 hours', NOW() - INTERVAL '6 days' + INTERVAL '15 hours 10 minutes'),
   
-  -- Day 3 (5 days ago)
+
   ('ord-107', 'Table 8', '[{"name":"Chocolate Mousse Slice","qty":1},{"name":"Butter Croissant","qty":2}]', 190.00, 'served', 'dine-in', NOW() - INTERVAL '5 days' + INTERVAL '11 hours', NOW() - INTERVAL '5 days' + INTERVAL '11 hours 12 minutes'),
   ('ord-108', 'Walk-in Customer', '[{"name":"Cinnamon Roll","qty":3},{"name":"Orange Juice 250ml","qty":2}]', 230.00, 'served', 'takeaway', NOW() - INTERVAL '5 days' + INTERVAL '13 hours', NOW() - INTERVAL '5 days' + INTERVAL '13 hours 7 minutes'),
   ('ord-109', 'Delivery #102', '[{"name":"Classic Cheesecake (whole)","qty":1},{"name":"Assorted Macarons (box of 6)","qty":1}]', 1070.00, 'served', 'delivery', NOW() - INTERVAL '5 days' + INTERVAL '15 hours', NOW() - INTERVAL '5 days' + INTERVAL '16 hours'),
-  
-  -- Day 4 (4 days ago)
+
   ('ord-110', 'Walk-in Customer', '[{"name":"Almond Danish","qty":2},{"name":"Iced Tea 350ml","qty":1}]', 135.00, 'served', 'takeaway', NOW() - INTERVAL '4 days' + INTERVAL '8 hours', NOW() - INTERVAL '4 days' + INTERVAL '8 hours 6 minutes'),
   ('ord-111', 'Table 3', '[{"name":"Red Velvet Slice","qty":3},{"name":"Bottled Water 500ml","qty":3}]', 375.00, 'served', 'dine-in', NOW() - INTERVAL '4 days' + INTERVAL '12 hours', NOW() - INTERVAL '4 days' + INTERVAL '12 hours 25 minutes'),
   ('ord-112', 'Peter Tan', '[{"name":"Blueberry Muffin","qty":12}]', 660.00, 'served', 'pickup', NOW() - INTERVAL '4 days' + INTERVAL '16 hours', NOW() - INTERVAL '4 days' + INTERVAL '16 hours 10 minutes'),
   ('ord-113', 'Walk-in Customer', '[{"name":"Butter Croissant","qty":4}]', 140.00, 'served', 'takeaway', NOW() - INTERVAL '4 days' + INTERVAL '17 hours', NOW() - INTERVAL '4 days' + INTERVAL '17 hours 5 minutes'),
   
-  -- Day 5 (3 days ago)
+
   ('ord-114', 'Delivery #103', '[{"name":"Assorted Macarons (box of 6)","qty":3}]', 660.00, 'served', 'delivery', NOW() - INTERVAL '3 days' + INTERVAL '10 hours', NOW() - INTERVAL '3 days' + INTERVAL '11 hours'),
   ('ord-115', 'Table 6', '[{"name":"Chocolate Mousse Slice","qty":2},{"name":"Canned Coffee 240ml","qty":2}]', 350.00, 'served', 'dine-in', NOW() - INTERVAL '3 days' + INTERVAL '13 hours', NOW() - INTERVAL '3 days' + INTERVAL '13 hours 15 minutes'),
   ('ord-116', 'Walk-in Customer', '[{"name":"Cinnamon Roll","qty":2},{"name":"Canned Soda 330ml","qty":2}]', 160.00, 'served', 'takeaway', NOW() - INTERVAL '3 days' + INTERVAL '14 hours', NOW() - INTERVAL '3 days' + INTERVAL '14 hours 8 minutes'),
   ('ord-117', 'Anna Cruz', '[{"name":"Classic Cheesecake (whole)","qty":1}]', 850.00, 'served', 'pickup', NOW() - INTERVAL '3 days' + INTERVAL '16 hours', NOW() - INTERVAL '3 days' + INTERVAL '16 hours 12 minutes'),
-  
-  -- Day 6 (2 days ago)
+
   ('ord-118', 'Walk-in Customer', '[{"name":"Almond Danish","qty":3},{"name":"Orange Juice 250ml","qty":2}]', 215.00, 'served', 'takeaway', NOW() - INTERVAL '2 days' + INTERVAL '9 hours', NOW() - INTERVAL '2 days' + INTERVAL '9 hours 7 minutes'),
   ('ord-119', 'Table 1', '[{"name":"Red Velvet Slice","qty":2},{"name":"Iced Tea 350ml","qty":2}]', 310.00, 'served', 'dine-in', NOW() - INTERVAL '2 days' + INTERVAL '11 hours', NOW() - INTERVAL '2 days' + INTERVAL '11 hours 18 minutes'),
   ('ord-120', 'Walk-in Customer', '[{"name":"Butter Croissant","qty":5}]', 175.00, 'served', 'takeaway', NOW() - INTERVAL '2 days' + INTERVAL '15 hours', NOW() - INTERVAL '2 days' + INTERVAL '15 hours 6 minutes'),
   ('ord-121', 'Delivery #104', '[{"name":"Blueberry Muffin","qty":10}]', 550.00, 'served', 'delivery', NOW() - INTERVAL '2 days' + INTERVAL '16 hours', NOW() - INTERVAL '2 days' + INTERVAL '17 hours'),
   
-  -- Day 7 (yesterday)
+
   ('ord-122', 'Table 4', '[{"name":"Chocolate Mousse Slice","qty":3},{"name":"Bottled Water 500ml","qty":3}]', 405.00, 'served', 'dine-in', NOW() - INTERVAL '1 day' + INTERVAL '10 hours', NOW() - INTERVAL '1 day' + INTERVAL '10 hours 22 minutes'),
   ('ord-123', 'Walk-in Customer', '[{"name":"Cinnamon Roll","qty":4},{"name":"Canned Coffee 240ml","qty":2}]', 310.00, 'served', 'takeaway', NOW() - INTERVAL '1 day' + INTERVAL '12 hours', NOW() - INTERVAL '1 day' + INTERVAL '12 hours 8 minutes'),
   ('ord-124', 'Mike Johnson', '[{"name":"Assorted Macarons (box of 6)","qty":2}]', 440.00, 'served', 'pickup', NOW() - INTERVAL '1 day' + INTERVAL '14 hours', NOW() - INTERVAL '1 day' + INTERVAL '14 hours 10 minutes'),
   ('ord-125', 'Table 7', '[{"name":"Red Velvet Slice","qty":1},{"name":"Almond Danish","qty":2},{"name":"Iced Tea 350ml","qty":2}]', 290.00, 'served', 'dine-in', NOW() - INTERVAL '1 day' + INTERVAL '16 hours', NOW() - INTERVAL '1 day' + INTERVAL '16 hours 20 minutes'),
   ('ord-126', 'Walk-in Customer', '[{"name":"Blueberry Muffin","qty":4}]', 220.00, 'served', 'takeaway', NOW() - INTERVAL '1 day' + INTERVAL '17 hours', NOW() - INTERVAL '1 day' + INTERVAL '17 hours 6 minutes'),
   
-  -- Today (pending orders)
+
   ('ord-127', 'Table 2', '[{"name":"Chocolate Mousse Slice","qty":2},{"name":"Canned Soda 330ml","qty":2}]', 300.00, 'pending', 'dine-in', NOW() - INTERVAL '30 minutes', NULL),
   ('ord-128', 'Walk-in Customer', '[{"name":"Butter Croissant","qty":3}]', 105.00, 'preparing', 'takeaway', NOW() - INTERVAL '15 minutes', NULL)
 ON CONFLICT (id) DO NOTHING;
 
--- Sales history (daily totals for past week)
+
 INSERT INTO sales_history (id, date, total, orders_count) VALUES
   ('sh-1', CURRENT_DATE - INTERVAL '7 days', 1905.00, 4),
   ('sh-2', CURRENT_DATE - INTERVAL '6 days', 855.00, 3),
@@ -133,8 +126,6 @@ INSERT INTO sales_history (id, date, total, orders_count) VALUES
   ('sh-8', CURRENT_DATE, 405.00, 2)
 ON CONFLICT (id) DO NOTHING;
 
--- Attendance logs (7 days, 31 entries)
--- Attendance logs (exclude admin users - only track non-admin staff)
 INSERT INTO attendance_logs (id, employee_id, action, timestamp, shift, note) VALUES
   ('att-1', 'user-3', 'in', NOW() - INTERVAL '7 days' + INTERVAL '9 hours', 'morning', NULL),
   ('att-2', 'user-4', 'in', NOW() - INTERVAL '7 days' + INTERVAL '6 hours', 'morning', NULL),
@@ -167,7 +158,6 @@ INSERT INTO attendance_logs (id, employee_id, action, timestamp, shift, note) VA
   ('att-29', 'user-5', 'in', NOW() - INTERVAL '5 hours', 'morning', NULL)
 ON CONFLICT (id) DO NOTHING;
 
--- Inventory usage (sample weekly metrics)
 INSERT INTO inventory_trends (label, used) VALUES
   ('Chocolate Mousse Slice', 18),
   ('Butter Croissant', 32),
@@ -181,4 +171,4 @@ INSERT INTO inventory_trends (label, used) VALUES
   ('Iced Tea 350ml', 18)
 ON CONFLICT (label) DO NOTHING;
 
--- End of seeds
+
