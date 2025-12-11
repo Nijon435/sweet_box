@@ -106,6 +106,11 @@
             <h1>Advanced Analytics</h1>
           </div>
           <div class="actions">
+            <select id="universal-range" class="filter-select universal-filter">
+              <option value="7" selected>7d</option>
+              <option value="14">14d</option>
+              <option value="30">30d</option>
+            </select>
             <button class="btn btn-secondary hide-on-mobile" id="refresh-data">
               Refresh
             </button>
@@ -115,11 +120,6 @@
         <section class="card kpi-panel">
           <div class="section-heading">
             <h2>Operations KPIs</h2>
-            <select id="kpi-range" class="filter-select kpi-filter">
-              <option value="7" selected>7 days</option>
-              <option value="14">14 days</option>
-              <option value="30">30 days</option>
-            </select>
           </div>
           <div class="kpi-grid">
             <article>
@@ -127,12 +127,8 @@
               <strong id="kpi-sales">₱0.00</strong>
             </article>
             <article>
-              <p>Total attendance logs</p>
-              <strong id="kpi-attendance">0 logs</strong>
-            </article>
-            <article>
-              <p>Stock usage patterns</p>
-              <strong id="kpi-stock">0 units</strong>
+              <p>Total orders</p>
+              <strong id="kpi-orders">0 orders</strong>
             </article>
             <article>
               <p>Inventory Turnover</p>
@@ -142,55 +138,13 @@
               <p>Average Ticket</p>
               <strong id="analytics-ticket">₱0.00</strong>
             </article>
-            <article>
-              <p>Productivity</p>
-              <strong id="analytics-productivity">0 orders</strong>
-            </article>
-          </div>
-        </section>
-
-        <section class="card card-compact analytics-filter-panel">
-          <div class="section-heading">
-            <h2>Toggle Charts</h2>
-            <span class="pill">Show/Hide</span>
-          </div>
-          <div class="chart-category-tabs" role="group">
-            <button
-              class="chart-category-tab active"
-              data-chart-filter="sales"
-              type="button"
-            >
-              Peak Hour & Revenue
-            </button>
-            <button
-              class="chart-category-tab active"
-              data-chart-filter="people"
-              type="button"
-            >
-              Attendance Trend & Order Types
-            </button>
-            <button
-              class="chart-category-tab active"
-              data-chart-filter="trends"
-              type="button"
-            >
-              Sales & Inventory Trends
-            </button>
           </div>
         </section>
 
         <section class="chart-flex analytics-compact-row section-mt-2">
-          <article
-            class="chart-card chart-card--compact"
-            data-chart-category="sales"
-          >
+          <article class="chart-card chart-card--compact">
             <div class="section-heading">
               <h2>Peak Hour Efficiency</h2>
-              <select id="peak-hour-range" class="filter-select">
-                <option value="7" selected>Last 7 days</option>
-                <option value="14">Last 14 days</option>
-                <option value="30">Last 30 days</option>
-              </select>
             </div>
             <canvas id="peakHourChart" height="200"></canvas>
             <div
@@ -206,10 +160,7 @@
               <!-- Peak hour insights will be inserted here -->
             </div>
           </article>
-          <article
-            class="chart-card chart-card--compact"
-            data-chart-category="sales"
-          >
+          <article class="chart-card chart-card--compact">
             <div class="section-heading">
               <h2>Revenue by Day of Week</h2>
               <span class="pill">Pattern analysis</span>
@@ -219,51 +170,18 @@
         </section>
 
         <section class="chart-flex section-mt-1-5">
-          <article class="chart-card" data-chart-category="people">
+          <article class="chart-card">
             <div class="section-heading">
               <h2>Attendance Trend</h2>
-              <select id="attendance-range" class="filter-select">
-                <option value="7" selected>Last 7 days</option>
-                <option value="14">Last 14 days</option>
-                <option value="30">Last 30 days</option>
-              </select>
             </div>
             <canvas id="attendanceTrendChart" height="220"></canvas>
           </article>
-          <article class="chart-card" data-chart-category="sales">
+          <article class="chart-card">
             <div class="section-heading">
               <h2>Order Type Distribution</h2>
               <span class="pill">Dine-in vs Pickup vs Delivery</span>
             </div>
             <canvas id="performanceChart" height="220"></canvas>
-          </article>
-        </section>
-
-        <section
-          class="split-65-35 section-mt-1-5"
-          data-chart-category="trends"
-        >
-          <article class="chart-card">
-            <div class="section-heading">
-              <h2>Sales Trend</h2>
-              <select id="analytics-sales-range" class="filter-select">
-                <option value="7">7 days</option>
-                <option value="14" selected>14 days</option>
-                <option value="30">30 days</option>
-              </select>
-            </div>
-            <canvas id="analyticsSalesTrendChart" height="180"></canvas>
-          </article>
-          <article class="chart-card">
-            <div class="section-heading">
-              <h2>Inventory Status</h2>
-              <span class="pill" id="analytics-inventory-status-note"
-                >Stable</span
-              >
-            </div>
-            <div class="analytics-inventory-chart-wrapper">
-              <canvas id="analyticsInventoryStatusChart" height="200"></canvas>
-            </div>
           </article>
         </section>
       </main>

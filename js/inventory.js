@@ -588,7 +588,7 @@ function setupEditModal() {
 function openEditModal(item) {
   const editModal = document.getElementById("inventory-edit-modal");
   const editForm = document.getElementById("inventory-edit-form");
-  if (!editModal || !editForm) return;
+  if (!editModal || !editForm || !item) return;
 
   editForm.dataset.itemId = item.id;
 

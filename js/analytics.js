@@ -1,62 +1,14 @@
 async function renderAnalytics() {
-  const attendanceRangeSelect = document.getElementById("attendance-range");
-  if (attendanceRangeSelect && !attendanceRangeSelect.dataset.bound) {
-    attendanceRangeSelect.dataset.bound = "true";
-    attendanceRangeSelect.addEventListener("change", renderAnalytics);
+  const universalRangeSelect = document.getElementById("universal-range");
+  if (universalRangeSelect && !universalRangeSelect.dataset.bound) {
+    universalRangeSelect.dataset.bound = "true";
+    universalRangeSelect.addEventListener("change", renderAnalytics);
   }
-  const kpiRangeSelect = document.getElementById("kpi-range");
-  if (kpiRangeSelect && !kpiRangeSelect.dataset.bound) {
-    kpiRangeSelect.dataset.bound = "true";
-    kpiRangeSelect.addEventListener("change", renderAnalytics);
-  }
-  const peakHourRangeSelect = document.getElementById("peak-hour-range");
-  if (peakHourRangeSelect && !peakHourRangeSelect.dataset.bound) {
-    peakHourRangeSelect.dataset.bound = "true";
-    peakHourRangeSelect.addEventListener("change", renderAnalytics);
-  }
-  const analyticsSalesRangeSelect = document.getElementById(
-    "analytics-sales-range"
-  );
-  if (analyticsSalesRangeSelect && !analyticsSalesRangeSelect.dataset.bound) {
-    analyticsSalesRangeSelect.dataset.bound = "true";
-    analyticsSalesRangeSelect.addEventListener("change", renderAnalytics);
-  }
-  const categoryTabs = document.querySelectorAll(".chart-category-tab");
-  const chartSections = document.querySelectorAll("[data-chart-category]");
 
-  // Initialize: show all chart sections that have active toggles
-  const updateChartVisibility = () => {
-    const activeFilters = Array.from(categoryTabs)
-      .filter((tab) => tab.classList.contains("active"))
-      .map((tab) => tab.dataset.chartFilter);
-
-    chartSections.forEach((section) => {
-      const categories = (section.dataset.chartCategory || "")
-        .split(",")
-        .map((cat) => cat.trim());
-      const shouldShow = activeFilters.some((filter) =>
-        categories.includes(filter)
-      );
-      section.classList.toggle("hidden-category", !shouldShow);
-    });
-  };
-
-  updateChartVisibility();
-
-  categoryTabs.forEach((tab) => {
-    if (tab.dataset.bound) return;
-    tab.dataset.bound = "true";
-    tab.addEventListener("click", () => {
-      // Toggle the active state
-      tab.classList.toggle("active");
-      updateChartVisibility();
-    });
-  });
-  const attendanceRange = Number(attendanceRangeSelect?.value || 7);
-  const kpiRangeDays = Number(kpiRangeSelect?.value || 7);
+  const universalRange = Number(universalRangeSelect?.value || 7);
   const kpiCutoff = new Date();
   kpiCutoff.setHours(0, 0, 0, 0);
-  kpiCutoff.setDate(kpiCutoff.getDate() - (kpiRangeDays - 1));
+  kpiCutoff.setDate(kpiCutoff.getDate() - (universalRange - 1));
 
   let totalSalesKpi = (appState.salesHistory || [])
     .filter((entry) => parseDateKey(entry.date) >= kpiCutoff)
@@ -98,7 +50,7 @@ async function renderAnalytics() {
 
   const totalOrders = ordersInPeriod.length;
 
-  // Calculate metrics for moved cards
+  // Calculate metrics for KPIs
   const inventoryItems = appState.inventory || [];
   const inventoryValue = inventoryItems.reduce((sum, item) => {
     return sum + (item.quantity || 0) * (item.cost || 0);
@@ -106,33 +58,23 @@ async function renderAnalytics() {
   const inventoryTurnover =
     inventoryValue > 0 ? (totalSalesKpi / inventoryValue).toFixed(1) : "0.0";
   const avgTicket = totalOrders > 0 ? totalSalesKpi / totalOrders : 0;
-  const productivity =
-    totalAttendanceKpi > 0
-      ? (totalOrders / totalAttendanceKpi).toFixed(1)
-      : "0.0";
 
   const kpiMap = {
     "kpi-sales": formatCurrency(totalSalesKpi),
-    "kpi-attendance": `${totalAttendanceKpi} logs`,
-    "kpi-stock": `${usageEstimate} units`,
+    "kpi-orders": `${totalOrders} orders`,
     "analytics-turnover": `${inventoryTurnover}x`,
     "analytics-ticket": formatCurrency(avgTicket),
-    "analytics-productivity": `${productivity} orders`,
   };
   Object.entries(kpiMap).forEach(([id, value]) => {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
   });
 
-  // Render Peak Hour Efficiency Chart with filter
-  const peakHourRange = Number(peakHourRangeSelect?.value || 7);
-  const peakHourCutoff = new Date();
-  peakHourCutoff.setHours(0, 0, 0, 0);
-  peakHourCutoff.setDate(peakHourCutoff.getDate() - (peakHourRange - 1));
+  // Render Peak Hour Efficiency Chart using universal filter
   const ordersForPeakHour = (appState.orders || []).filter((order) => {
     if (order.timestamp) {
       const orderDate = new Date(order.timestamp);
-      return orderDate >= peakHourCutoff;
+      return orderDate >= kpiCutoff;
     }
     return false;
   });
@@ -141,7 +83,7 @@ async function renderAnalytics() {
   // Calculate attendance trend from actual attendance logs
   const computeAttendanceTrend = () => {
     const trend = [];
-    const daysToShow = 30; // Show last 30 days
+    const daysToShow = universalRange;
     const today = new Date();
 
     for (let i = daysToShow - 1; i >= 0; i--) {
@@ -175,7 +117,7 @@ async function renderAnalytics() {
   };
 
   const attendanceTrendData = computeAttendanceTrend();
-  const attendanceWindow = attendanceTrendData.slice(-attendanceRange);
+  const attendanceWindow = attendanceTrendData;
 
   console.log("Attendance Trend Data:", {
     total: attendanceTrendData.length,
@@ -654,203 +596,6 @@ async function renderAnalytics() {
       },
     },
   });
-
-  // Render Sales Trend Chart
-  renderAnalyticsSalesTrend();
-
-  // Render Inventory Status Chart
-  renderAnalyticsInventoryStatus();
-}
-
-// Render Sales Trend Chart for Analytics
-function renderAnalyticsSalesTrend() {
-  const analyticsSalesRangeSelect = document.getElementById(
-    "analytics-sales-range"
-  );
-  const salesRange = Number(analyticsSalesRangeSelect?.value || 14);
-
-  // Calculate sales from orders if sales_history is empty
-  let salesData = appState.salesHistory || [];
-  if (salesData.length === 0 && appState.orders && appState.orders.length > 0) {
-    // Group orders by date
-    const salesByDate = {};
-    appState.orders.forEach((order) => {
-      if (order.timestamp && order.total) {
-        const date = new Date(order.timestamp);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const dateKey = `${year}-${month}-${day}`;
-        if (!salesByDate[dateKey]) {
-          salesByDate[dateKey] = { date: dateKey, total: 0 };
-        }
-        salesByDate[dateKey].total += order.total;
-      }
-    });
-    salesData = Object.values(salesByDate).sort(
-      (a, b) => parseDateKey(a.date) - parseDateKey(b.date)
-    );
-  }
-
-  const salesWindow = salesData.slice(-salesRange);
-
-  ChartManager.plot("analyticsSalesTrendChart", {
-    type: "line",
-    data: {
-      labels:
-        salesWindow.length > 0
-          ? salesWindow.map((entry) => formatDateShort(entry.date))
-          : ["No Data"],
-      datasets: [
-        {
-          label: "Daily Sales",
-          data:
-            salesWindow.length > 0
-              ? salesWindow.map((entry) => entry.total || 0)
-              : [0],
-          borderColor: "#f6c343",
-          backgroundColor: "rgba(246,195,67,0.15)",
-          tension: 0.4,
-          fill: true,
-          borderWidth: 3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: "#f6c343",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointHoverBackgroundColor: "#e0a10b",
-          pointHoverBorderColor: "#fff",
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: "rgba(92, 44, 6, 0.9)",
-          titleColor: "#fff",
-          bodyColor: "#fff",
-          padding: 12,
-          displayColors: false,
-          callbacks: {
-            label: function (context) {
-              return (
-                "₱" +
-                context.parsed.y.toLocaleString("en-PH", {
-                  minimumFractionDigits: 2,
-                })
-              );
-            },
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          suggestedMax:
-            salesWindow.length > 0
-              ? Math.max(...salesWindow.map((entry) => entry.total || 0), 100) *
-                1.2
-              : 100,
-          ticks: {
-            callback: function (value) {
-              return "₱" + value.toLocaleString();
-            },
-          },
-          grid: {
-            color: "rgba(92, 44, 6, 0.1)",
-          },
-        },
-        x: {
-          grid: {
-            display: false,
-          },
-        },
-      },
-      interaction: {
-        intersect: false,
-        mode: "index",
-      },
-    },
-  });
-}
-
-// Render Inventory Status Chart for Analytics
-function renderAnalyticsInventoryStatus() {
-  const metrics = inventoryStats();
-
-  ChartManager.plot("analyticsInventoryStatusChart", {
-    type: "doughnut",
-    data: {
-      labels: ["Safe", "Low", "Soon to Expire", "Expired", "No Stock"],
-      datasets: [
-        {
-          data: [
-            metrics.totalItems -
-              metrics.lowStock -
-              metrics.outOfStock -
-              metrics.soonToExpire -
-              metrics.expired,
-            metrics.lowStock,
-            metrics.soonToExpire || 0,
-            metrics.expired || 0,
-            metrics.outOfStock,
-          ],
-          backgroundColor: [
-            "#4ade80",
-            "#fbbf24",
-            "#fb923c",
-            "#ef4444",
-            "#94a3b8",
-          ],
-          borderColor: "#fff",
-          borderWidth: 3,
-          hoverOffset: 8,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      cutout: "65%",
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: {
-            font: { size: 10 },
-            padding: 8,
-            boxWidth: 12,
-            boxHeight: 12,
-            usePointStyle: true,
-            pointStyle: "circle",
-          },
-          align: "center",
-          display: true,
-          maxWidth: 600,
-        },
-        tooltip: {
-          backgroundColor: "rgba(92, 44, 6, 0.9)",
-          titleColor: "#fff",
-          bodyColor: "#fff",
-          padding: 12,
-          displayColors: true,
-          callbacks: {
-            label: function (context) {
-              return `${context.label}: ${context.parsed}`;
-            },
-          },
-        },
-      },
-    },
-  });
-
-  // Update status note
-  const statusNote = document.getElementById("analytics-inventory-status-note");
-  if (statusNote) {
-    statusNote.textContent = `${metrics.lowStock} low stock alerts`;
-  }
 }
 
 // Render Peak Hour Efficiency Chart

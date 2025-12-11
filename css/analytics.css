@@ -77,6 +77,16 @@
   min-width: 90px;
 }
 
+/* Universal Filter in Header */
+.universal-filter {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 60px;
+  margin-right: 0.5rem;
+}
+
 /* Analytics Inventory Chart */
 .analytics-inventory-chart-wrapper {
   max-width: 280px;
