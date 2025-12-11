@@ -624,6 +624,15 @@ async function renderAnalytics() {
   });
 
   // Category Distribution pie chart
+  // Build a map of item names to their categories from inventory
+  const itemCategoryMap = {};
+  (appState.inventory || []).forEach((inventoryItem) => {
+    if (inventoryItem.name && inventoryItem.category) {
+      itemCategoryMap[inventoryItem.name.toLowerCase()] =
+        inventoryItem.category;
+    }
+  });
+
   const categoryCount = {};
   (appState.orders || []).forEach((order) => {
     // Parse itemsJson if it's a string
@@ -638,7 +647,10 @@ async function renderAnalytics() {
 
     if (Array.isArray(items)) {
       items.forEach((item) => {
-        const category = item.category || "Other";
+        // Look up category from inventory
+        const itemNameLower = (item.name || "").toLowerCase();
+        const category =
+          itemCategoryMap[itemNameLower] || item.category || "Other";
         const quantity = parseInt(item.quantity) || 1;
         categoryCount[category] = (categoryCount[category] || 0) + quantity;
       });
@@ -728,6 +740,16 @@ function renderBestProductsChart(filterCategory = "all") {
     }
   });
 
+  // Normalize category for comparison (handle plural/singular)
+  const normalizeCategory = (cat) => {
+    if (!cat) return "other";
+    const lower = cat.toLowerCase();
+    if (lower.includes("cake") || lower.includes("pastries")) return "cake";
+    if (lower === "bread") return "bread";
+    if (lower === "beverages") return "beverages";
+    return "other";
+  };
+
   // Aggregate product sales
   const productSales = {};
   (appState.orders || []).forEach((order) => {
@@ -745,17 +767,27 @@ function renderBestProductsChart(filterCategory = "all") {
       items.forEach((item) => {
         // Look up category from inventory
         const itemNameLower = (item.name || "").toLowerCase();
-        const category =
+        const inventoryCategory =
           itemCategoryMap[itemNameLower] || item.category || "other";
+
+        // Normalize both the inventory category and filter for comparison
+        const normalizedInventoryCategory =
+          normalizeCategory(inventoryCategory);
+        const normalizedFilter =
+          filterCategory === "all" ? "all" : normalizeCategory(filterCategory);
 
         // Apply filter
         if (
-          filterCategory === "all" ||
-          category.toLowerCase() === filterCategory.toLowerCase()
+          normalizedFilter === "all" ||
+          normalizedInventoryCategory === normalizedFilter
         ) {
           const key = item.name;
           if (!productSales[key]) {
-            productSales[key] = { quantity: 0, revenue: 0, category: category };
+            productSales[key] = {
+              quantity: 0,
+              revenue: 0,
+              category: inventoryCategory,
+            };
           }
           const quantity = parseInt(item.quantity) || 1;
           const price = parseFloat(item.price) || 0;
