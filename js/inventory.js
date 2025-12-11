@@ -483,6 +483,11 @@ function setupEditModal() {
   const editClose = document.getElementById("inventory-edit-close");
   const editCancel = document.getElementById("inventory-edit-cancel");
 
+  // Ensure modal is closed on page load
+  if (editModal) {
+    editModal.classList.remove("active");
+  }
+
   if (editClose && !editClose.dataset.bound) {
     editClose.dataset.bound = "true";
     editClose.addEventListener("click", closeEditModal);

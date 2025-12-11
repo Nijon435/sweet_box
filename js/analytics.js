@@ -33,11 +33,6 @@ async function renderAnalytics() {
       new Date(log.timestamp) >= kpiCutoff &&
       !log.archived
   ).length;
-  const weeklyUsage = (appState.inventoryTrends || []).reduce(
-    (sum, item) => sum + (item.used || 0),
-    0
-  );
-  const usageEstimate = Math.round(weeklyUsage * (kpiRangeDays / 7));
 
   // Calculate additional KPIs
   const ordersInPeriod = (appState.orders || []).filter((order) => {
