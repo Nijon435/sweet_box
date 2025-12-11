@@ -690,7 +690,14 @@ const computeEmployeeStatus = (employee) => {
 };
 
 const categorizeInventory = () => {
-  const groups = { cakes: [], ingredients: [], supplies: [], beverages: [] };
+  const groups = {
+    cake: [],
+    bread: [],
+    pastries: [],
+    ingredients: [],
+    supplies: [],
+    beverages: [],
+  };
   appState.inventory.forEach((item) => {
     if (!groups[item.category]) groups[item.category] = [];
     groups[item.category].push(item);

@@ -72,12 +72,6 @@ function getCategories() {
     if (item.category && item.category.toLowerCase() !== "ingredients") {
       // Show all categories except ingredients
       let normalizedCategory = item.category.toLowerCase();
-      if (
-        normalizedCategory.includes("cake") ||
-        normalizedCategory.includes("pastries")
-      ) {
-        normalizedCategory = "cakes";
-      }
       categories.add(normalizedCategory);
     }
   });
@@ -120,10 +114,6 @@ function renderProductsGrid() {
   if (currentCategory !== "all") {
     products = products.filter((item) => {
       let itemCategory = item.category.toLowerCase();
-      // Normalize category for comparison
-      if (itemCategory.includes("cake") || itemCategory.includes("pastries")) {
-        itemCategory = "cakes";
-      }
       return itemCategory === currentCategory.toLowerCase();
     });
   }
