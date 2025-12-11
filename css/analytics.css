@@ -93,6 +93,11 @@
   margin: 0 auto;
 }
 
+/* Ensure all charts fit on screen */
+canvas {
+  max-height: 350px;
+}
+
 /* Mobile Chart Layout (matching dashboard design) */
 @media (max-width: 768px) {
   .chart-card {
