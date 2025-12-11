@@ -606,9 +606,17 @@ async function renderAnalytics() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
       plugins: {
         legend: {
-          position: "bottom",
+          position: "right",
+          align: "start",
+          labels: {
+            boxWidth: 15,
+            boxHeight: 15,
+            padding: 10,
+            usePointStyle: false,
+          },
         },
         tooltip: {
           callbacks: {
@@ -685,9 +693,17 @@ async function renderAnalytics() {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: true,
         plugins: {
           legend: {
-            position: "bottom",
+            position: "right",
+            align: "start",
+            labels: {
+              boxWidth: 15,
+              boxHeight: 15,
+              padding: 10,
+              usePointStyle: false,
+            },
           },
           tooltip: {
             callbacks: {

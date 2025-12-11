@@ -106,9 +106,9 @@ canvas {
   max-height: 280px;
 }
 
-/* Left side: KPI metrics in 2x2 grid (50%) */
+/* Left side: KPI metrics in 2x2 grid (40%) */
 .left-kpi-grid {
-  flex: 0 0 50%;
+  flex: 0 0 40%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
@@ -122,9 +122,9 @@ canvas {
   padding: 1rem;
 }
 
-/* Right side: Pie charts side by side (50%) */
+/* Right side: Pie charts side by side (60%) */
 .right-pie-charts {
-  flex: 0 0 50%;
+  flex: 0 0 60%;
   display: flex;
   gap: 0.75rem;
 }
