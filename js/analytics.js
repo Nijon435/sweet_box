@@ -628,14 +628,14 @@ async function renderAnalytics() {
   (appState.orders || []).forEach((order) => {
     // Parse itemsJson if it's a string
     let items = order.itemsJson;
-    if (typeof items === 'string') {
+    if (typeof items === "string") {
       try {
         items = JSON.parse(items);
       } catch (e) {
         items = [];
       }
     }
-    
+
     if (Array.isArray(items)) {
       items.forEach((item) => {
         const category = item.category || "Other";
@@ -691,14 +691,14 @@ async function renderAnalytics() {
     });
   } else {
     // Show empty state
-    const canvas = document.getElementById('categoryDistributionChart');
+    const canvas = document.getElementById("categoryDistributionChart");
     if (canvas) {
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = '14px Arial';
-      ctx.fillStyle = '#999';
-      ctx.textAlign = 'center';
-      ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+      ctx.font = "14px Arial";
+      ctx.fillStyle = "#999";
+      ctx.textAlign = "center";
+      ctx.fillText("No data available", canvas.width / 2, canvas.height / 2);
     }
   }
 
@@ -719,22 +719,36 @@ function renderBestProductsChart(filterCategory = "all") {
     });
   }
 
+  // Build a map of item names to their categories from inventory
+  const itemCategoryMap = {};
+  (appState.inventory || []).forEach((inventoryItem) => {
+    if (inventoryItem.name && inventoryItem.category) {
+      itemCategoryMap[inventoryItem.name.toLowerCase()] =
+        inventoryItem.category;
+    }
+  });
+
   // Aggregate product sales
   const productSales = {};
   (appState.orders || []).forEach((order) => {
     // Parse itemsJson if it's a string
     let items = order.itemsJson;
-    if (typeof items === 'string') {
+    if (typeof items === "string") {
       try {
         items = JSON.parse(items);
       } catch (e) {
         items = [];
       }
     }
-    
+
     if (Array.isArray(items)) {
       items.forEach((item) => {
-        const category = item.category || "other";
+        // Look up category from inventory
+        const itemNameLower = (item.name || "").toLowerCase();
+        const category =
+          itemCategoryMap[itemNameLower] || item.category || "other";
+
+        // Apply filter
         if (
           filterCategory === "all" ||
           category.toLowerCase() === filterCategory.toLowerCase()
