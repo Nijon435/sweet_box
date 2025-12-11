@@ -375,7 +375,7 @@ async function renderAnalytics() {
 
   // Attendance Trend - Multi-line chart showing daily frequency of each status
   // Fetch attendance data directly from database with date range
-  const attendanceDays = attendanceRange;
+  const attendanceDays = universalRange;
   const attendanceLabels = [];
   const presentData = [];
   const lateData = [];

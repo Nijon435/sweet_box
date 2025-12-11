@@ -16,11 +16,11 @@ const usageLogsItemsPerPage = 20;
 
 function renderInventory() {
   renderMetrics();
-  setupForms();
   renderUnifiedTable();
   setupFilters();
   setupRecordUsageButton();
   updateAlert();
+  setupForms(); // Call this last to ensure modals are closed after everything else is initialized
 }
 
 // Check if user can manage inventory (admin, manager, or employee)
@@ -331,6 +331,12 @@ function setupFilters() {
 function setupForms() {
   setupAddModal();
   setupEditModal();
+
+  // Explicitly ensure both modals are closed after setup
+  const addModal = document.getElementById("inventory-add-modal");
+  const editModal = document.getElementById("inventory-edit-modal");
+  if (addModal) addModal.classList.remove("active");
+  if (editModal) editModal.classList.remove("active");
 }
 
 function setupAddModal() {
