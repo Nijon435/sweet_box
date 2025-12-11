@@ -756,16 +756,6 @@ function renderBestProductsChart(filterCategory = "all") {
     }
   });
 
-  // Normalize category for comparison (handle plural/singular)
-  const normalizeCategory = (cat) => {
-    if (!cat) return "other";
-    const lower = cat.toLowerCase();
-    if (lower.includes("cake") || lower.includes("pastries")) return "cake";
-    if (lower === "bread") return "bread";
-    if (lower === "beverages") return "beverages";
-    return "other";
-  };
-
   // Aggregate product sales
   const productSales = {};
   (appState.orders || []).forEach((order) => {
@@ -786,16 +776,10 @@ function renderBestProductsChart(filterCategory = "all") {
         const inventoryCategory =
           itemCategoryMap[itemNameLower] || item.category || "other";
 
-        // Normalize both the inventory category and filter for comparison
-        const normalizedInventoryCategory =
-          normalizeCategory(inventoryCategory);
-        const normalizedFilter =
-          filterCategory === "all" ? "all" : normalizeCategory(filterCategory);
-
-        // Apply filter
+        // Apply filter - direct comparison
         if (
-          normalizedFilter === "all" ||
-          normalizedInventoryCategory === normalizedFilter
+          filterCategory === "all" ||
+          inventoryCategory.toLowerCase() === filterCategory.toLowerCase()
         ) {
           const key = item.name;
           if (!productSales[key]) {

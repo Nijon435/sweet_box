@@ -692,7 +692,6 @@ const computeEmployeeStatus = (employee) => {
 const categorizeInventory = () => {
   const groups = {
     cake: [],
-    bread: [],
     pastries: [],
     ingredients: [],
     supplies: [],
