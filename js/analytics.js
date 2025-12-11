@@ -626,11 +626,21 @@ async function renderAnalytics() {
   // Category Distribution pie chart
   const categoryCount = {};
   (appState.orders || []).forEach((order) => {
-    if (order.itemsJson && Array.isArray(order.itemsJson)) {
-      order.itemsJson.forEach((item) => {
+    // Parse itemsJson if it's a string
+    let items = order.itemsJson;
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (e) {
+        items = [];
+      }
+    }
+    
+    if (Array.isArray(items)) {
+      items.forEach((item) => {
         const category = item.category || "Other";
-        categoryCount[category] =
-          (categoryCount[category] || 0) + item.quantity;
+        const quantity = parseInt(item.quantity) || 1;
+        categoryCount[category] = (categoryCount[category] || 0) + quantity;
       });
     }
   });
@@ -646,37 +656,51 @@ async function renderAnalytics() {
     "#fdba74",
   ];
 
-  ChartManager.plot("categoryDistributionChart", {
-    type: "doughnut",
-    data: {
-      labels: categoryLabels,
-      datasets: [
-        {
-          data: categoryData,
-          backgroundColor: categoryColors.slice(0, categoryLabels.length),
-          borderColor: "#fff",
-          borderWidth: 3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "bottom",
-        },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((context.parsed / total) * 100).toFixed(1);
-              return `${context.label}: ${context.parsed} items (${percentage}%)`;
+  // Only plot if we have data
+  if (categoryLabels.length > 0 && categoryData.length > 0) {
+    ChartManager.plot("categoryDistributionChart", {
+      type: "doughnut",
+      data: {
+        labels: categoryLabels,
+        datasets: [
+          {
+            data: categoryData,
+            backgroundColor: categoryColors.slice(0, categoryLabels.length),
+            borderColor: "#fff",
+            borderWidth: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: "bottom",
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                return `${context.label}: ${context.parsed} items (${percentage}%)`;
+              },
             },
           },
         },
       },
-    },
-  });
+    });
+  } else {
+    // Show empty state
+    const canvas = document.getElementById('categoryDistributionChart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#999';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+    }
+  }
 
   // Render Best Products Chart
   renderBestProductsChart();
@@ -698,8 +722,18 @@ function renderBestProductsChart(filterCategory = "all") {
   // Aggregate product sales
   const productSales = {};
   (appState.orders || []).forEach((order) => {
-    if (order.itemsJson && Array.isArray(order.itemsJson)) {
-      order.itemsJson.forEach((item) => {
+    // Parse itemsJson if it's a string
+    let items = order.itemsJson;
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (e) {
+        items = [];
+      }
+    }
+    
+    if (Array.isArray(items)) {
+      items.forEach((item) => {
         const category = item.category || "other";
         if (
           filterCategory === "all" ||
@@ -709,8 +743,10 @@ function renderBestProductsChart(filterCategory = "all") {
           if (!productSales[key]) {
             productSales[key] = { quantity: 0, revenue: 0, category: category };
           }
-          productSales[key].quantity += item.quantity || 0;
-          productSales[key].revenue += (item.quantity || 0) * (item.price || 0);
+          const quantity = parseInt(item.quantity) || 1;
+          const price = parseFloat(item.price) || 0;
+          productSales[key].quantity += quantity;
+          productSales[key].revenue += quantity * price;
         }
       });
     }

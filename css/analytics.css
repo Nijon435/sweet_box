@@ -105,10 +105,26 @@ canvas {
   margin-bottom: 2rem;
 }
 
-.left-pie-charts {
+/* Left side: KPI metrics in 2x2 grid (50%) */
+.left-kpi-grid {
   flex: 0 0 50%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.left-kpi-grid .card {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* Right side: Pie charts side by side (50%) */
+.right-pie-charts {
+  flex: 0 0 50%;
+  display: flex;
   gap: 1rem;
 }
 
@@ -120,21 +136,6 @@ canvas {
 
 .pie-chart-card canvas {
   max-height: 200px !important;
-}
-
-.right-kpi-grid {
-  flex: 0 0 50%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.right-kpi-grid .card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 1.5rem;
 }
 
 /* Category filter styling */
@@ -153,14 +154,18 @@ canvas {
     flex-direction: column;
   }
 
-  .left-pie-charts,
-  .right-kpi-grid {
+  .left-kpi-grid,
+  .right-pie-charts {
     flex: 1 1 100%;
   }
 
-  .right-kpi-grid {
+  .left-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.875rem;
+  }
+
+  .right-pie-charts {
+    flex-direction: column;
   }
 
   .chart-card {

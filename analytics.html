@@ -118,24 +118,8 @@
         </header>
 
         <div class="metrics-charts-row section-mt-2">
-          <!-- Left side: Pie charts (50%) -->
-          <div class="left-pie-charts">
-            <article class="chart-card pie-chart-card">
-              <div class="section-heading">
-                <h2>Order Type Distribution</h2>
-              </div>
-              <canvas id="orderTypeChart" height="200"></canvas>
-            </article>
-            <article class="chart-card pie-chart-card">
-              <div class="section-heading">
-                <h2>Category Distribution</h2>
-              </div>
-              <canvas id="categoryDistributionChart" height="200"></canvas>
-            </article>
-          </div>
-
-          <!-- Right side: KPI metrics in 2x2 grid (50%) -->
-          <div class="right-kpi-grid">
+          <!-- Left side: KPI metrics in 2x2 grid (50%) -->
+          <div class="left-kpi-grid">
             <article class="card">
               <p>Total sales</p>
               <strong id="kpi-sales">₱0.00</strong>
@@ -151,6 +135,22 @@
             <article class="card">
               <p>Average Ticket</p>
               <strong id="analytics-ticket">₱0.00</strong>
+            </article>
+          </div>
+
+          <!-- Right side: Pie charts side by side (50%) -->
+          <div class="right-pie-charts">
+            <article class="chart-card pie-chart-card">
+              <div class="section-heading">
+                <h2>Order Type</h2>
+              </div>
+              <canvas id="orderTypeChart" height="200"></canvas>
+            </article>
+            <article class="chart-card pie-chart-card">
+              <div class="section-heading">
+                <h2>Category</h2>
+              </div>
+              <canvas id="categoryDistributionChart" height="200"></canvas>
             </article>
           </div>
         </div>
