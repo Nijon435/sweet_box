@@ -313,7 +313,7 @@ async function renderAnalytics() {
     },
   });
 
-  // Revenue by day of week
+  // Revenue by day of week - filtered by universal range
   const dayNames = [
     "Sunday",
     "Monday",
@@ -323,30 +323,61 @@ async function renderAnalytics() {
     "Friday",
     "Saturday",
   ];
-  const revenueByDay = [0, 0, 0, 0, 0, 0, 0];
+
+  // Calculate cutoff date based on universal range
+  const revenueCutoff = new Date();
+  revenueCutoff.setHours(0, 0, 0, 0);
+  revenueCutoff.setDate(revenueCutoff.getDate() - (universalRange - 1));
+
+  // Determine number of weeks to display based on filter
+  let weeksToShow = 1;
+  if (universalRange === 14) weeksToShow = 2;
+  else if (universalRange === 30) weeksToShow = 4;
+
+  // Create arrays for each week
+  const weeklyData = [];
+  for (let week = 0; week < weeksToShow; week++) {
+    weeklyData.push([0, 0, 0, 0, 0, 0, 0]);
+  }
+
+  // Filter orders by date range and group by week and day
   (appState.orders || []).forEach((order) => {
     if (order.timestamp) {
-      const dayIndex = new Date(order.timestamp).getDay();
-      revenueByDay[dayIndex] += order.total || 0;
+      const orderDate = new Date(order.timestamp);
+      if (orderDate >= revenueCutoff) {
+        const dayIndex = orderDate.getDay();
+        const daysAgo = Math.floor(
+          (new Date() - orderDate) / (1000 * 60 * 60 * 24)
+        );
+        const weekIndex = Math.floor(daysAgo / 7);
+        if (weekIndex < weeksToShow) {
+          weeklyData[weekIndex][dayIndex] += order.total || 0;
+        }
+      }
     }
   });
+
+  // Create datasets for each week
+  const datasets = [];
+  const weekColors = ["#f6c343", "#f97316", "#fb923c", "#fbbf24"];
+  for (let week = 0; week < weeksToShow; week++) {
+    datasets.push({
+      label: weeksToShow === 1 ? "This Week" : `Week ${weeksToShow - week}`,
+      data: weeklyData[week],
+      backgroundColor: weekColors[week],
+      borderRadius: 8,
+    });
+  }
 
   ChartManager.plot("inventoryUsageChart", {
     type: "bar",
     data: {
       labels: dayNames,
-      datasets: [
-        {
-          label: "Revenue",
-          data: revenueByDay,
-          backgroundColor: "#f6c343",
-          borderRadius: 8,
-        },
-      ],
+      datasets: datasets,
     },
     options: {
       plugins: {
-        legend: { display: false },
+        legend: { display: weeksToShow > 1 },
         tooltip: {
           callbacks: {
             label: function (context) {
@@ -547,7 +578,7 @@ async function renderAnalytics() {
     },
   });
 
-  // Order Type Distribution (Dine-in vs Pickup vs Delivery)
+  // Order Type Distribution pie chart (in top row)
   const orderTypes = { "dine-in": 0, pickup: 0, delivery: 0 };
   (appState.orders || []).forEach((order) => {
     const type = (order.orderType || order.type || "dine-in").toLowerCase();
@@ -556,7 +587,7 @@ async function renderAnalytics() {
     }
   });
 
-  ChartManager.plot("performanceChart", {
+  ChartManager.plot("orderTypeChart", {
     type: "doughnut",
     data: {
       labels: ["Dine-in", "Pickup", "Delivery"],
@@ -591,6 +622,134 @@ async function renderAnalytics() {
       },
     },
   });
+
+  // Category Distribution pie chart
+  const categoryCount = {};
+  (appState.orders || []).forEach((order) => {
+    if (order.itemsJson && Array.isArray(order.itemsJson)) {
+      order.itemsJson.forEach((item) => {
+        const category = item.category || "Other";
+        categoryCount[category] =
+          (categoryCount[category] || 0) + item.quantity;
+      });
+    }
+  });
+
+  const categoryLabels = Object.keys(categoryCount);
+  const categoryData = Object.values(categoryCount);
+  const categoryColors = [
+    "#f6c343",
+    "#f97316",
+    "#5c2c06",
+    "#fb923c",
+    "#fbbf24",
+    "#fdba74",
+  ];
+
+  ChartManager.plot("categoryDistributionChart", {
+    type: "doughnut",
+    data: {
+      labels: categoryLabels,
+      datasets: [
+        {
+          data: categoryData,
+          backgroundColor: categoryColors.slice(0, categoryLabels.length),
+          borderColor: "#fff",
+          borderWidth: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "bottom",
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((context.parsed / total) * 100).toFixed(1);
+              return `${context.label}: ${context.parsed} items (${percentage}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Render Best Products Chart
+  renderBestProductsChart();
+}
+
+// Best Products Chart with category filter (progress bars)
+function renderBestProductsChart(filterCategory = "all") {
+  // Setup filter event listener
+  const categoryFilter = document.getElementById(
+    "best-products-category-filter"
+  );
+  if (categoryFilter && !categoryFilter.dataset.bound) {
+    categoryFilter.dataset.bound = "true";
+    categoryFilter.addEventListener("change", (e) => {
+      renderBestProductsChart(e.target.value);
+    });
+  }
+
+  // Aggregate product sales
+  const productSales = {};
+  (appState.orders || []).forEach((order) => {
+    if (order.itemsJson && Array.isArray(order.itemsJson)) {
+      order.itemsJson.forEach((item) => {
+        const category = item.category || "other";
+        if (
+          filterCategory === "all" ||
+          category.toLowerCase() === filterCategory.toLowerCase()
+        ) {
+          const key = item.name;
+          if (!productSales[key]) {
+            productSales[key] = { quantity: 0, revenue: 0, category: category };
+          }
+          productSales[key].quantity += item.quantity || 0;
+          productSales[key].revenue += (item.quantity || 0) * (item.price || 0);
+        }
+      });
+    }
+  });
+
+  // Sort by quantity and get top 5
+  const topProducts = Object.entries(productSales)
+    .map(([name, data]) => ({ name, ...data }))
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  const container = document.getElementById("best-products-chart-container");
+  if (!container) return;
+
+  if (topProducts.length === 0) {
+    container.innerHTML =
+      '<p style="text-align: center; color: #999; padding: 2rem;">No product data available</p>';
+    return;
+  }
+
+  const maxQuantity = topProducts[0].quantity;
+
+  container.innerHTML = topProducts
+    .map((product, index) => {
+      const percentage = (product.quantity / maxQuantity) * 100;
+      const barColors = ["#f6c343", "#f97316", "#fb923c", "#fbbf24", "#fdba74"];
+      return `
+      <div style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+          <span style="font-weight: 600; font-size: 0.9rem;">${product.name}</span>
+          <span style="font-size: 0.85rem; color: #666;">${product.quantity} sold</span>
+        </div>
+        <div style="background: #f3f4f6; border-radius: 8px; height: 24px; overflow: hidden;">
+          <div style="background: ${barColors[index]}; height: 100%; width: ${percentage}%; transition: width 0.3s ease; border-radius: 8px;"></div>
+        </div>
+      </div>
+    `;
+    })
+    .join("");
 }
 
 // Render Peak Hour Efficiency Chart

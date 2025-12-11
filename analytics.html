@@ -117,23 +117,42 @@
           </div>
         </header>
 
-        <div class="kpi-grid section-mt-2">
-          <article class="card">
-            <p>Total sales</p>
-            <strong id="kpi-sales">₱0.00</strong>
-          </article>
-          <article class="card">
-            <p>Total orders</p>
-            <strong id="kpi-orders">0 orders</strong>
-          </article>
-          <article class="card">
-            <p>Inventory Turnover</p>
-            <strong id="analytics-turnover">0x</strong>
-          </article>
-          <article class="card">
-            <p>Average Ticket</p>
-            <strong id="analytics-ticket">₱0.00</strong>
-          </article>
+        <div class="metrics-charts-row section-mt-2">
+          <!-- Left side: Pie charts (50%) -->
+          <div class="left-pie-charts">
+            <article class="chart-card pie-chart-card">
+              <div class="section-heading">
+                <h2>Order Type Distribution</h2>
+              </div>
+              <canvas id="orderTypeChart" height="200"></canvas>
+            </article>
+            <article class="chart-card pie-chart-card">
+              <div class="section-heading">
+                <h2>Category Distribution</h2>
+              </div>
+              <canvas id="categoryDistributionChart" height="200"></canvas>
+            </article>
+          </div>
+
+          <!-- Right side: KPI metrics in 2x2 grid (50%) -->
+          <div class="right-kpi-grid">
+            <article class="card">
+              <p>Total sales</p>
+              <strong id="kpi-sales">₱0.00</strong>
+            </article>
+            <article class="card">
+              <p>Total orders</p>
+              <strong id="kpi-orders">0 orders</strong>
+            </article>
+            <article class="card">
+              <p>Inventory Turnover</p>
+              <strong id="analytics-turnover">0x</strong>
+            </article>
+            <article class="card">
+              <p>Average Ticket</p>
+              <strong id="analytics-ticket">₱0.00</strong>
+            </article>
+          </div>
         </div>
 
         <section class="chart-flex analytics-compact-row section-mt-2">
@@ -173,10 +192,22 @@
           </article>
           <article class="chart-card">
             <div class="section-heading">
-              <h2>Order Type Distribution</h2>
-              <span class="pill">Dine-in vs Pickup vs Delivery</span>
+              <h2>Best Products</h2>
+              <select
+                id="best-products-category-filter"
+                class="category-filter"
+              >
+                <option value="all">All Categories</option>
+                <option value="cake">Cake</option>
+                <option value="pastry">Pastry</option>
+                <option value="bread">Bread</option>
+                <option value="beverages">Beverages</option>
+                <option value="other">Other</option>
+              </select>
             </div>
-            <canvas id="performanceChart" height="160"></canvas>
+            <div id="best-products-chart-container" style="padding: 1rem 0">
+              <!-- Progress bars will be inserted here -->
+            </div>
           </article>
         </section>
       </main>
