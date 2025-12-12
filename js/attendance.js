@@ -132,6 +132,9 @@ async function saveAttendanceLog(log) {
 
 // Show need to clock in modal
 function showNeedToClockInModal() {
+  // Remove any existing modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
 
@@ -162,6 +165,9 @@ function showNeedToClockInModal() {
 
 // Show already clocked out modal
 function showAlreadyClockedOutModal() {
+  // Remove any existing modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
 
@@ -192,6 +198,9 @@ function showAlreadyClockedOutModal() {
 
 // Show already clocked in modal
 function showAlreadyClockedInModal() {
+  // Remove any existing modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
 
@@ -223,6 +232,9 @@ function showAlreadyClockedInModal() {
 // Show late note dialog
 function showLateNoteDialog() {
   return new Promise((resolve) => {
+    // Remove any existing modals first
+    document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
     const modal = document.createElement("div");
     modal.className = "modal-overlay";
 
@@ -885,6 +897,9 @@ function renderAttendance() {
 }
 
 function openRequestLeaveModal(user) {
+  // Remove any existing modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
 

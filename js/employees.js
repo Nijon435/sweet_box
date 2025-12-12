@@ -215,8 +215,15 @@ window.saveUserRole = function (userId) {
 
 // Define edit modal function globally so it's always available
 window.openEditEmployeeModal = function (userId) {
+  console.log("openEditEmployeeModal called with userId:", userId);
   const user = appState.users.find((u) => u.id === userId);
-  if (!user) return;
+  if (!user) {
+    console.error("User not found:", userId);
+    return;
+  }
+
+  // Remove any existing edit modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
 
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
@@ -226,7 +233,7 @@ window.openEditEmployeeModal = function (userId) {
         <h3>Edit Employee: ${user.name}</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
       </div>
-      <form id="edit-employee-form">
+      <form id="edit-employee-form-${userId}">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
             <label for="edit-name-${userId}">Name</label>
@@ -307,7 +314,7 @@ window.openEditEmployeeModal = function (userId) {
 
   document.body.appendChild(modal);
 
-  const form = modal.querySelector("#edit-employee-form");
+  const form = modal.querySelector(`#edit-employee-form-${userId}`);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
@@ -358,6 +365,9 @@ window.confirmArchiveEmployee = async function (userId) {
     alert("Employee not found");
     return;
   }
+
+  // Remove any existing modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
 
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
@@ -870,6 +880,9 @@ function openAddEmployeeModal() {
     alert("Only administrators and managers can add employees.");
     return;
   }
+
+  // Remove any existing modals first
+  document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
 
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
@@ -1494,6 +1507,14 @@ window.rejectProfileEdit = function (requestId) {
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers["employees"] = renderEmployees;
+
+// Verify global functions are registered
+console.log("✅ Employee functions registered:", {
+  openEditEmployeeModal: typeof window.openEditEmployeeModal,
+  confirmArchiveEmployee: typeof window.confirmArchiveEmployee,
+  archiveEmployee: typeof window.archiveEmployee,
+  openAddEmployeeModal: typeof openAddEmployeeModal,
+});
 
 // Auto-absent logging system
 // Checks if employees haven't clocked in and marks them absent at 10 PM
