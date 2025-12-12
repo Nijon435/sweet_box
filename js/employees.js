@@ -213,225 +213,219 @@ window.saveUserRole = function (userId) {
   alert(`Permission updated to ${newPermission.replace("_", " ")}`);
 };
 
-function renderEmployees() {
-  // Define window functions FIRST before they are used in HTML templates
-  // Define a function that creates and shows the edit modal
-  const showEditModal = (userId) => {
-    const user = appState.users.find((u) => u.id === userId);
-    if (!user) return;
+// Define edit modal function globally so it's always available
+window.openEditEmployeeModal = function (userId) {
+  const user = appState.users.find((u) => u.id === userId);
+  if (!user) return;
 
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-    modal.innerHTML = `
-      <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-          <h3>Edit Employee: ${user.name}</h3>
-          <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-        </div>
-        <form id="edit-employee-form">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div>
-              <label for="edit-name-${userId}">Name</label>
-              <input type="text" id="edit-name-${userId}" name="name" autocomplete="name" value="${
-      user.name
-    }" required>
-            </div>
-            <div>
-              <label for="edit-email-${userId}">Email</label>
-              <input type="email" id="edit-email-${userId}" name="email" autocomplete="email" value="${
-      user.email
-    }" required>
-            </div>
-            <div>
-              <label for="edit-phone-${userId}">Phone</label>
-              <input type="tel" id="edit-phone-${userId}" name="phone" autocomplete="tel" value="${
-      user.phone || ""
-    }">
-            </div>
-            <div>
-              <label for="edit-role-${userId}">Role</label>
-              <input type="text" id="edit-role-${userId}" name="role" autocomplete="organization-title" value="${
-      user.role
-    }" required>
-            </div>
-            <div>
-              <label for="edit-permission-${userId}">Access</label>
-              <select id="edit-permission-${userId}" name="permission" autocomplete="off" required>
-                <option value="admin" ${
-                  user.permission === "admin" ? "selected" : ""
-                }>Admin - Full Access</option>
-                <option value="manager" ${
-                  user.permission === "manager" ? "selected" : ""
-                }>Manager</option>
-                <option value="kitchen_staff" ${
-                  user.permission === "kitchen_staff" ? "selected" : ""
-                }>Kitchen Staff</option>
-                <option value="staff" ${
-                  user.permission === "staff" ||
-                  user.permission === "front_staff" ||
-                  user.permission === "delivery_staff"
-                    ? "selected"
-                    : ""
-                }>Staff</option>
-              </select>
-            </div>
-            <div>
-              <label for="edit-shiftStart-${userId}">Shift Start</label>
-              <input type="time" id="edit-shiftStart-${userId}" name="shiftStart" autocomplete="off" value="${
-      user.shiftStart || ""
-    }">
-            </div>
-            <div>
-              <label for="edit-hireDate-${userId}">Hire Date</label>
-              <input type="date" id="edit-hireDate-${userId}" name="hireDate" autocomplete="off" value="${
-      user.hireDate ? new Date(user.hireDate).toISOString().split("T")[0] : ""
-    }">
-            </div>
-            <div>
-              <label for="edit-status-${userId}">Status</label>
-              <select id="edit-status-${userId}" name="status" autocomplete="off" required>
-                <option value="active" ${
-                  user.status === "active" ? "selected" : ""
-                }>Active</option>
-                <option value="inactive" ${
-                  user.status === "inactive" ? "selected" : ""
-                }>Inactive</option>
-              </select>
-            </div>
-          </div>
-          <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-          </div>
-        </form>
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>Edit Employee: ${user.name}</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
       </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const form = modal.querySelector("#edit-employee-form");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-
-      user.name = formData.get("name");
-      user.email = formData.get("email");
-      user.phone = formData.get("phone");
-      user.role = formData.get("role");
-      user.permission = formData.get("permission");
-      user.shiftStart = formData.get("shiftStart");
-      user.hireDate = formData.get("hireDate");
-      user.status = formData.get("status");
-
-      // Save to database immediately using individual endpoint
-      try {
-        const apiBase = window.API_BASE_URL || "";
-        const response = await fetch(`${apiBase}/api/users/${user.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(user),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to save user");
-        }
-      } catch (error) {
-        console.error("Error saving user to database:", error);
-        alert("Failed to save changes");
-        return;
-      }
-
-      modal.remove();
-      renderEmployees();
-      alert("Employee updated successfully!");
-    });
-  };
-
-  // Now assign it to window so inline onclick handlers can use it
-  window.openEditEmployeeModal = showEditModal;
-
-  if (!window.confirmArchiveEmployee) {
-    window.confirmArchiveEmployee = async function (userId) {
-      if (!isAdminOrManager()) {
-        alert("Only administrators and managers can archive employees.");
-        return;
-      }
-
-      const user = appState.users.find((u) => u.id === userId);
-      if (!user) {
-        alert("Employee not found");
-        return;
-      }
-
-      const modal = document.createElement("div");
-      modal.className = "modal-overlay";
-
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>Archive Employee</h3>
+      <form id="edit-employee-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label for="edit-name-${userId}">Name</label>
+            <input type="text" id="edit-name-${userId}" name="name" autocomplete="name" value="${
+    user.name
+  }" required>
           </div>
-          <p>Are you sure you want to archive <strong>${user.name}</strong>? This will move them to the archive.</p>
-          <div class="modal-actions">
-            <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
-            <button onclick="archiveEmployee('${userId}')" class="modal-btn confirm">Archive</button>
+          <div>
+            <label for="edit-email-${userId}">Email</label>
+            <input type="email" id="edit-email-${userId}" name="email" autocomplete="email" value="${
+    user.email
+  }" required>
+          </div>
+          <div>
+            <label for="edit-phone-${userId}">Phone</label>
+            <input type="tel" id="edit-phone-${userId}" name="phone" autocomplete="tel" value="${
+    user.phone || ""
+  }">
+          </div>
+          <div>
+            <label for="edit-role-${userId}">Role</label>
+            <input type="text" id="edit-role-${userId}" name="role" autocomplete="organization-title" value="${
+    user.role
+  }" required>
+          </div>
+          <div>
+            <label for="edit-permission-${userId}">Access</label>
+            <select id="edit-permission-${userId}" name="permission" autocomplete="off" required>
+              <option value="admin" ${
+                user.permission === "admin" ? "selected" : ""
+              }>Admin - Full Access</option>
+              <option value="manager" ${
+                user.permission === "manager" ? "selected" : ""
+              }>Manager</option>
+              <option value="kitchen_staff" ${
+                user.permission === "kitchen_staff" ? "selected" : ""
+              }>Kitchen Staff</option>
+              <option value="staff" ${
+                user.permission === "staff" ||
+                user.permission === "front_staff" ||
+                user.permission === "delivery_staff"
+                  ? "selected"
+                  : ""
+              }>Staff</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit-shiftStart-${userId}">Shift Start</label>
+            <input type="time" id="edit-shiftStart-${userId}" name="shiftStart" autocomplete="off" value="${
+    user.shiftStart || ""
+  }">
+          </div>
+          <div>
+            <label for="edit-hireDate-${userId}">Hire Date</label>
+            <input type="date" id="edit-hireDate-${userId}" name="hireDate" autocomplete="off" value="${
+    user.hireDate ? new Date(user.hireDate).toISOString().split("T")[0] : ""
+  }">
+          </div>
+          <div>
+            <label for="edit-status-${userId}">Status</label>
+            <select id="edit-status-${userId}" name="status" autocomplete="off" required>
+              <option value="active" ${
+                user.status === "active" ? "selected" : ""
+              }>Active</option>
+              <option value="inactive" ${
+                user.status === "inactive" ? "selected" : ""
+              }>Inactive</option>
+            </select>
           </div>
         </div>
-      `;
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  `;
 
-      document.body.appendChild(modal);
-    };
-  }
+  document.body.appendChild(modal);
 
-  if (!window.archiveEmployee) {
-    window.archiveEmployee = async function (userId) {
-      const user = appState.users.find((u) => u.id === userId);
-      if (!user) return;
+  const form = modal.querySelector("#edit-employee-form");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
 
-      // Mark as archived
-      const currentUser = getCurrentUser();
-      user.archived = true;
-      user.archivedAt = getLocalTimestamp();
-      user.archivedBy = currentUser?.id || null;
+    user.name = formData.get("name");
+    user.email = formData.get("email");
+    user.phone = formData.get("phone");
+    user.role = formData.get("role");
+    user.permission = formData.get("permission");
+    user.shiftStart = formData.get("shiftStart");
+    user.hireDate = formData.get("hireDate");
+    user.status = formData.get("status");
 
-      // Save to database using individual endpoint
-      try {
-        const apiBase = window.API_BASE_URL || "";
-        let response = await fetch(`${apiBase}/api/users/${user.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(user),
-        });
+    // Save to database immediately using individual endpoint
+    try {
+      const apiBase = window.API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(user),
+      });
 
-        // If individual endpoint not available, fallback to bulk save
-        if (response.status === 404) {
-          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(appState),
-          });
-        }
-
-        if (!response.ok) {
-          throw new Error("Failed to archive employee");
-        }
-
-        // Remove any open modals
-        document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
-
-        createToast("Employee archived successfully", "success");
-        renderEmployees();
-      } catch (error) {
-        console.error("Error archiving employee:", error);
-        alert("Failed to archive employee");
+      if (!response.ok) {
+        throw new Error("Failed to save user");
       }
-    };
+    } catch (error) {
+      console.error("Error saving user to database:", error);
+      alert("Failed to save changes");
+      return;
+    }
+
+    modal.remove();
+    renderEmployees();
+    alert("Employee updated successfully!");
+  });
+};
+
+// Define archive confirmation function globally
+window.confirmArchiveEmployee = async function (userId) {
+  if (!isAdminOrManager()) {
+    alert("Only administrators and managers can archive employees.");
+    return;
   }
 
+  const user = appState.users.find((u) => u.id === userId);
+  if (!user) {
+    alert("Employee not found");
+    return;
+  }
+
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Archive Employee</h3>
+      </div>
+      <p>Are you sure you want to archive <strong>${user.name}</strong>? This will move them to the archive.</p>
+      <div class="modal-actions">
+        <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
+        <button onclick="archiveEmployee('${userId}')" class="modal-btn confirm">Archive</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+};
+
+// Define archive execution function globally
+window.archiveEmployee = async function (userId) {
+  const user = appState.users.find((u) => u.id === userId);
+  if (!user) return;
+
+  // Mark as archived
+  const currentUser = getCurrentUser();
+  user.archived = true;
+  user.archivedAt = getLocalTimestamp();
+  user.archivedBy = currentUser?.id || null;
+
+  // Save to database using individual endpoint
+  try {
+    const apiBase = window.API_BASE_URL || "";
+    let response = await fetch(`${apiBase}/api/users/${user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(user),
+    });
+
+    // If individual endpoint not available, fallback to bulk save
+    if (response.status === 404) {
+      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(appState),
+      });
+    }
+
+    if (!response.ok) {
+      throw new Error("Failed to archive employee");
+    }
+
+    // Remove any open modals
+    document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
+    createToast("Employee archived successfully", "success");
+    renderEmployees();
+  } catch (error) {
+    console.error("Error archiving employee:", error);
+    alert("Failed to archive employee");
+  }
+};
+
+function renderEmployees() {
   // Render user access table
   renderUserAccess();
 
