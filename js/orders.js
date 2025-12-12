@@ -231,6 +231,8 @@ function showClearCartModal() {
 
   document.body.appendChild(modal);
 
+  setTimeout(() => modal.classList.add('active'), 10);
+
   document
     .getElementById("cancel-clear-cart")
     .addEventListener("click", () => modal.remove());
@@ -382,6 +384,8 @@ function showStyledAlert(title, message, type = "info") {
   `;
 
   document.body.appendChild(modal);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 }
 
 // Show complete order confirmation modal
@@ -446,6 +450,8 @@ function showCompleteOrderModal(customer, orderType) {
   `;
 
   document.body.appendChild(modal);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   document
     .getElementById("confirm-complete-order")
@@ -661,6 +667,8 @@ function showOrderReceiptModal(order) {
 
   document.body.appendChild(modal);
 
+  setTimeout(() => modal.classList.add('active'), 10);
+
   document
     .getElementById("close-receipt-modal")
     .addEventListener("click", () => {
@@ -717,6 +725,8 @@ function showOrderSuccessModal(order) {
   `;
 
   document.body.appendChild(modal);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   document
     .getElementById("close-success-modal")

@@ -94,9 +94,13 @@ function createConfirmModal(options) {
       <button class="modal-btn cancel" id="modal-cancel">${cancelText}</button>
       <button class="modal-btn confirm" id="modal-confirm">${confirmText}</button>
     </div>
-  `);
+  `);document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-  document.body.appendChild(modal);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   const cancelBtn = modal.querySelector("#modal-cancel");
   const confirmBtn = modal.querySelector("#modal-confirm");
@@ -1106,8 +1110,11 @@ function showAuthOverlay(onAuthenticated) {
           <p class="auth-error" id="auth-error"></p>
           <button class="btn btn-primary" type="submit">Sign In</button>
         </form>
-      </div>`;
-    document.body.appendChild(overlay);
+      </div>`;document.body.appendChild(overlay);
+setTimeout(() => overlay.classList.add('active'), 10);
+
+      setTimeout(() => overlay.classList.add('active'), 10);
+    setTimeout(() => overlay.classList.add('active'), 10);
   }
   const select = overlay.querySelector("#auth-user");
   if (select) {
@@ -1286,9 +1293,13 @@ function showClockInPromptModal(user, page) {
         <button id="confirm-clock-in-btn" class="modal-btn primary">Clock In</button>
       </div>
     </div>
-  `;
+  `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-  document.body.appendChild(modal);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   const laterBtn = document.getElementById("later-clock-in-btn");
   laterBtn.addEventListener("click", () => {
@@ -1384,9 +1395,13 @@ function showLateNoteDialog() {
           <button id="submit-note-btn" class="modal-btn primary">Submit</button>
         </div>
       </div>
-    `;
+    `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-    document.body.appendChild(modal);
+
+      setTimeout(() => modal.classList.add('active'), 10);
+
+    setTimeout(() => modal.classList.add('active'), 10);
 
     const noteInput = modal.querySelector("#late-note-input");
     const cancelBtn = modal.querySelector("#cancel-late-btn");
@@ -1476,8 +1491,11 @@ function showConfirm(message, onConfirm) {
           <button class="custom-confirm-btn custom-confirm-btn-cancel" id="custom-confirm-cancel">Cancel</button>
         </div>
       </div>
-    `;
-    document.body.appendChild(modal);
+    `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
+
+      setTimeout(() => modal.classList.add('active'), 10);
+    setTimeout(() => modal.classList.add('active'), 10);
 
     // Click outside to cancel
     modal.addEventListener("click", (e) => {
@@ -1535,8 +1553,11 @@ function showLoading(message = "Processing...") {
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loading-text"></div>
       </div>
-    `;
-    document.body.appendChild(overlay);
+    `;document.body.appendChild(overlay);
+setTimeout(() => overlay.classList.add('active'), 10);
+
+      setTimeout(() => overlay.classList.add('active'), 10);
+    setTimeout(() => overlay.classList.add('active'), 10);
   }
 
   const loadingText = document.getElementById("loading-text");
@@ -1588,9 +1609,13 @@ function showCustomSuccessAlert(title, message) {
         to { transform: scale(1); }
       }
     </style>
-  `;
+  `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-  document.body.appendChild(modal);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   // Auto-close after 3 seconds
   setTimeout(() => {
@@ -1644,9 +1669,13 @@ function showAlert(message, type = "info") {
         to { transform: translateY(0); opacity: 1; }
       }
     </style>
-  `;
+  `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-  document.body.appendChild(modal);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   // Click outside to close
   modal.addEventListener("click", (e) => {
@@ -1699,9 +1728,13 @@ function showConfirmAlert(title, message) {
           to { transform: translateY(0); opacity: 1; }
         }
       </style>
-    `;
+    `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-    document.body.appendChild(modal);
+
+      setTimeout(() => modal.classList.add('active'), 10);
+
+    setTimeout(() => modal.classList.add('active'), 10);
 
     const okBtn = modal.querySelector("#confirm-ok");
     const cancelBtn = modal.querySelector("#confirm-cancel");
@@ -1795,9 +1828,13 @@ function openEditProfileModal() {
         </div>
       </form>
     </div>
-  `;
+  `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-  document.body.appendChild(modal);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   const form = modal.querySelector("#edit-profile-form");
   form.addEventListener("submit", (e) => {
@@ -2278,9 +2315,13 @@ function showNotification(message, type = "info") {
       </div>
       <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="width: 100%; padding: 0.875rem; background: linear-gradient(135deg, ${colors[type]} 0%, ${colors[type]}dd 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px ${colors[type]}40; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Got it</button>
     </div>
-  `;
+  `;document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
 
-  document.body.appendChild(modal);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+
+  setTimeout(() => modal.classList.add('active'), 10);
 
   // Add animation styles if not already present
   if (!document.getElementById("notification-animations")) {
@@ -2485,8 +2526,11 @@ function showMobileDetailModal(item, fields) {
 
   content.appendChild(header);
   content.appendChild(body);
-  modal.appendChild(content);
-  document.body.appendChild(modal);
+  modal.appendChild(content);document.body.appendChild(modal);
+setTimeout(() => modal.classList.add('active'), 10);
+
+    setTimeout(() => modal.classList.add('active'), 10);
+  setTimeout(() => modal.classList.add('active'), 10);
 
   // Show modal
   setTimeout(() => modal.classList.add("active"), 10);
