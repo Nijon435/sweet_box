@@ -214,6 +214,218 @@ window.saveUserRole = function (userId) {
 };
 
 function renderEmployees() {
+  // Define window functions FIRST before they are used in HTML templates
+  // Define a function that creates and shows the edit modal
+  const showEditModal = (userId) => {
+    const user = appState.users.find((u) => u.id === userId);
+    if (!user) return;
+
+    const modal = document.createElement("div");
+    modal.className = "modal-overlay";
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+          <h3>Edit Employee: ${user.name}</h3>
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+        </div>
+        <form id="edit-employee-form">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <label>Name</label>
+              <input type="text" name="name" value="${user.name}" required>
+            </div>
+            <div>
+              <label>Email</label>
+              <input type="email" name="email" value="${user.email}" required>
+            </div>
+            <div>
+              <label>Phone</label>
+              <input type="text" name="phone" value="${user.phone || ""}">
+            </div>
+            <div>
+              <label>Role</label>
+              <input type="text" name="role" value="${user.role}" required>
+            </div>
+            <div>
+              <label>Access</label>
+              <select name="permission" required>
+                <option value="admin" ${
+                  user.permission === "admin" ? "selected" : ""
+                }>Admin - Full Access</option>
+                <option value="manager" ${
+                  user.permission === "manager" ? "selected" : ""
+                }>Manager</option>
+                <option value="kitchen_staff" ${
+                  user.permission === "kitchen_staff" ? "selected" : ""
+                }>Kitchen Staff</option>
+                <option value="staff" ${
+                  user.permission === "staff" ||
+                  user.permission === "front_staff" ||
+                  user.permission === "delivery_staff"
+                    ? "selected"
+                    : ""
+                }>Staff</option>
+              </select>
+            </div>
+            <div>
+              <label>Shift Start</label>
+              <input type="time" name="shiftStart" value="${
+                user.shiftStart || ""
+              }">
+            </div>
+            <div>
+              <label>Hire Date</label>
+              <input type="date" name="hireDate" value="${
+                user.hireDate
+                  ? new Date(user.hireDate).toISOString().split("T")[0]
+                  : ""
+              }">
+            </div>
+            <div>
+              <label>Status</label>
+              <select name="status" required>
+                <option value="active" ${
+                  user.status === "active" ? "selected" : ""
+                }>Active</option>
+                <option value="inactive" ${
+                  user.status === "inactive" ? "selected" : ""
+                }>Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const form = modal.querySelector("#edit-employee-form");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      user.name = formData.get("name");
+      user.email = formData.get("email");
+      user.phone = formData.get("phone");
+      user.role = formData.get("role");
+      user.permission = formData.get("permission");
+      user.shiftStart = formData.get("shiftStart");
+      user.hireDate = formData.get("hireDate");
+      user.status = formData.get("status");
+
+      // Save to database immediately using individual endpoint
+      try {
+        const apiBase = window.API_BASE_URL || "";
+        const response = await fetch(`${apiBase}/api/users/${user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(user),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save user");
+        }
+      } catch (error) {
+        console.error("Error saving user to database:", error);
+        alert("Failed to save changes");
+        return;
+      }
+
+      modal.remove();
+      renderEmployees();
+      alert("Employee updated successfully!");
+    });
+  };
+
+  // Now assign it to window so inline onclick handlers can use it
+  window.openEditEmployeeModal = showEditModal;
+
+  if (!window.confirmArchiveEmployee) {
+    window.confirmArchiveEmployee = async function (userId) {
+      if (!isAdminOrManager()) {
+        alert("Only administrators and managers can archive employees.");
+        return;
+      }
+
+      const user = appState.users.find((u) => u.id === userId);
+      if (!user) {
+        alert("Employee not found");
+        return;
+      }
+
+      const modal = document.createElement("div");
+      modal.className = "modal-overlay";
+
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Archive Employee</h3>
+          </div>
+          <p>Are you sure you want to archive <strong>${user.name}</strong>? This will move them to the archive.</p>
+          <div class="modal-actions">
+            <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
+            <button onclick="archiveEmployee('${userId}')" class="modal-btn confirm">Archive</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    };
+  }
+
+  if (!window.archiveEmployee) {
+    window.archiveEmployee = async function (userId) {
+      const user = appState.users.find((u) => u.id === userId);
+      if (!user) return;
+
+      // Mark as archived
+      const currentUser = getCurrentUser();
+      user.archived = true;
+      user.archivedAt = getLocalTimestamp();
+      user.archivedBy = currentUser?.id || null;
+
+      // Save to database using individual endpoint
+      try {
+        const apiBase = window.API_BASE_URL || "";
+        let response = await fetch(`${apiBase}/api/users/${user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(user),
+        });
+
+        // If individual endpoint not available, fallback to bulk save
+        if (response.status === 404) {
+          const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(appState),
+          });
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to archive employee");
+        }
+
+        // Remove any open modals
+        document.querySelectorAll(".modal-overlay").forEach((m) => m.remove());
+
+        createToast("Employee archived successfully", "success");
+        renderEmployees();
+      } catch (error) {
+        console.error("Error archiving employee:", error);
+        alert("Failed to archive employee");
+      }
+    };
+  }
+
   // Render user access table
   renderUserAccess();
 
@@ -393,136 +605,12 @@ function renderEmployees() {
           return;
         }
         const id = button.dataset.editEmployee;
-        openEditModal(id);
+        showEditModal(id); // Use the local function defined at the top of renderEmployees
       });
     });
   };
 
-  const openEditModal = (userId) => {
-    const user = appState.users.find((u) => u.id === userId);
-    if (!user) return;
-
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-    modal.innerHTML = `
-      <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-          <h3>Edit Employee: ${user.name}</h3>
-          <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-        </div>
-        <form id="edit-employee-form">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div>
-              <label>Name</label>
-              <input type="text" name="name" value="${user.name}" required>
-            </div>
-            <div>
-              <label>Email</label>
-              <input type="email" name="email" value="${user.email}" required>
-            </div>
-            <div>
-              <label>Phone</label>
-              <input type="text" name="phone" value="${user.phone || ""}">
-            </div>
-            <div>
-              <label>Role</label>
-              <input type="text" name="role" value="${user.role}" required>
-            </div>
-            <div>
-              <label>Access</label>
-              <select name="permission" required>
-                <option value="admin" ${
-                  user.permission === "admin" ? "selected" : ""
-                }>Admin - Full Access</option>
-                <option value="manager" ${
-                  user.permission === "manager" ? "selected" : ""
-                }>Manager</option>
-                <option value="kitchen_staff" ${
-                  user.permission === "kitchen_staff" ? "selected" : ""
-                }>Kitchen Staff</option>
-                <option value="staff" ${
-                  user.permission === "staff" ||
-                  user.permission === "front_staff" ||
-                  user.permission === "delivery_staff"
-                    ? "selected"
-                    : ""
-                }>Staff</option>
-              </select>
-            </div>
-            <div>
-              <label>Shift Start</label>
-              <input type="time" name="shiftStart" value="${
-                user.shiftStart || ""
-              }">
-            </div>
-            <div>
-              <label>Hire Date</label>
-              <input type="date" name="hireDate" value="${
-                user.hireDate
-                  ? new Date(user.hireDate).toISOString().split("T")[0]
-                  : ""
-              }">
-            </div>
-            <div>
-              <label>Status</label>
-              <select name="status" required>
-                <option value="active" ${
-                  user.status === "active" ? "selected" : ""
-                }>Active</option>
-                <option value="inactive" ${
-                  user.status === "inactive" ? "selected" : ""
-                }>Inactive</option>
-              </select>
-            </div>
-          </div>
-          <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-          </div>
-        </form>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const form = modal.querySelector("#edit-employee-form");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-
-      user.name = formData.get("name");
-      user.email = formData.get("email");
-      user.phone = formData.get("phone");
-      user.role = formData.get("role");
-      user.permission = formData.get("permission");
-      user.shiftStart = formData.get("shiftStart");
-      user.hireDate = formData.get("hireDate");
-      user.status = formData.get("status");
-
-      // Save to database immediately using individual endpoint
-      try {
-        const apiBase = window.API_BASE_URL || "";
-        const response = await fetch(`${apiBase}/api/users/${user.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(user),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to save user");
-        }
-      } catch (error) {
-        console.error("Error saving user to database:", error);
-        alert("Failed to save changes");
-        return;
-      }
-
-      modal.remove();
-      renderEmployees();
-      alert("Employee updated successfully!");
-    });
-  };
+  // Note: showEditModal is defined at the top of renderEmployees() and assigned to window.openEditEmployeeModal
 
   attachRemovalHandlers();
   updateQuickMetrics();
@@ -1562,254 +1650,9 @@ if (typeof window !== "undefined") {
   }
 }
 
-// Edit employee modal with inline styles and permission editing
-window.openEditEmployeeModal = function (userId) {
-  const user = appState.users.find((u) => u.id === userId);
-  if (!user) return;
-
-  const modal = document.createElement("div");
-  modal.className = "modal-overlay";
-
-  modal.innerHTML = `
-    <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0; font-size: 1.5rem; color: #333;">Edit Employee: ${
-          user.name
-        }</h3>
-        <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
-      </div>
-      <form id="edit-employee-form-${user.id}">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Name *</label>
-            <input type="text" name="name" value="${
-              user.name
-            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Email *</label>
-            <input type="email" name="email" value="${
-              user.email
-            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Phone</label>
-            <input type="text" name="phone" value="${
-              user.phone || ""
-            }" placeholder="09XXXXXXXXX" maxlength="13" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-            <small style="color: #888; font-size: 0.875rem;">11 digits, spaces allowed</small>
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Password *</label>
-            <input type="password" name="password" value="${
-              user.password
-            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Role (Job Title) *</label>
-            <input type="text" name="role" value="${
-              user.role
-            }" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Access Level *</label>
-            <select name="permission" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-              <option value="admin" ${
-                user.permission === "admin" ? "selected" : ""
-              }>Admin - Full Access</option>
-              <option value="manager" ${
-                user.permission === "manager" ? "selected" : ""
-              }>Manager</option>
-              <option value="kitchen_staff" ${
-                user.permission === "kitchen_staff" ? "selected" : ""
-              }>Kitchen Staff</option>
-              <option value="staff" ${
-                user.permission === "staff" ||
-                user.permission === "front_staff" ||
-                user.permission === "delivery_staff"
-                  ? "selected"
-                  : ""
-              }>Staff</option>
-            </select>
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Shift Start</label>
-            <input type="time" name="shiftStart" value="${
-              user.shiftStart || ""
-            }" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-            <small style="color: #888; font-size: 0.875rem;">Leave empty for admins</small>
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Hire Date</label>
-            <input type="date" name="hireDate" value="${
-              user.hireDate
-                ? new Date(user.hireDate).toISOString().split("T")[0]
-                : ""
-            }" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Status *</label>
-            <select name="status" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-              <option value="active" ${
-                user.status === "active" ? "selected" : ""
-              }>Active</option>
-              <option value="inactive" ${
-                user.status === "inactive" ? "selected" : ""
-              }>Inactive</option>
-            </select>
-          </div>
-        </div>
-        <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
-          <button type="button" onclick="this.closest('.modal-overlay').remove()" style="padding: 0.625rem 1.5rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
-          <button type="submit" style="padding: 0.625rem 1.5rem; background: #f6c343; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem;">Save Changes</button>
-        </div>
-      </form>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  const form = modal.querySelector(`#edit-employee-form-${user.id}`);
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-
-    // Validate phone number
-    const phone = formData.get("phone");
-    if (phone) {
-      const digitsOnly = phone.replace(/\s/g, "");
-      if (!/^\d+$/.test(digitsOnly)) {
-        alert("Phone number must contain only digits and spaces");
-        return;
-      }
-      if (digitsOnly.length !== 11) {
-        alert("Phone number must be exactly 11 digits (excluding spaces)");
-        return;
-      }
-    }
-
-    const password = formData.get("password");
-
-    user.name = formData.get("name");
-    user.email = formData.get("email");
-    user.phone = phone;
-    // Only update password if provided
-    if (password && password.trim() !== "") {
-      user.password = password;
-    }
-    user.role = formData.get("role");
-    user.permission = formData.get("permission");
-    user.shiftStart = formData.get("shiftStart") || null;
-    user.hireDate = formData.get("hireDate");
-    user.status = formData.get("status");
-
-    if (user.permission === "admin") {
-      user.shiftStart = null;
-    }
-
-    // Ensure createdAt exists for database
-    if (!user.createdAt) {
-      user.createdAt = getLocalTimestamp();
-    }
-
-    // Save to database immediately using individual endpoint
-    try {
-      const apiBase = window.API_BASE_URL || "";
-      const response = await fetch(`${apiBase}/api/users/${user.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(user),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save user");
-      }
-    } catch (error) {
-      console.error("Error saving user to database:", error);
-      alert("Failed to save changes");
-      return;
-    }
-
-    modal.remove();
-    renderEmployees();
-
-    createToast("Employee updated successfully!", "success");
-  });
-};
-
-// Custom archive confirmation modal
-window.confirmArchiveEmployee = async function (userId) {
-  const user = appState.users.find((u) => u.id === userId);
-  if (!user) return;
-
-  const modal = document.createElement("div");
-  modal.className = "modal-overlay";
-
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-icon warning">
-          <span class="modal-icon-emoji">📦</span>
-        </div>
-        <h3 class="modal-title">Archive Employee?</h3>
-        <p class="modal-message">Archive <strong>${user.name}</strong>? This will move them to the archive. They can be restored or permanently deleted from there.</p>
-      </div>
-      <div class="modal-actions">
-        <button onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>
-        <button onclick="archiveEmployee('${userId}')" class="modal-btn confirm">Archive</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-};
-
-window.archiveEmployee = async function (userId) {
-  const user = appState.users.find((u) => u.id === userId);
-  if (!user) return;
-
-  const currentUser = getCurrentUser();
-  user.archived = true;
-  user.archivedAt = getLocalTimestamp();
-  user.archivedBy = currentUser?.id || null;
-
-  // Save to database using individual endpoint
-  try {
-    const apiBase = window.API_BASE_URL || "";
-    let response = await fetch(`${apiBase}/api/users/${user.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(user),
-    });
-
-    // If individual endpoint not available, fallback to bulk save
-    if (response.status === 404) {
-      const endpoint = window.APP_STATE_ENDPOINT || "/api/state";
-      response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(appState),
-      });
-    }
-
-    if (!response.ok) {
-      throw new Error("Failed to archive user");
-    }
-  } catch (error) {
-    console.error("Error archiving employee:", error);
-    alert("Failed to archive employee");
-    return;
-  }
-
-  const modals = document.querySelectorAll("[style*='position: fixed']");
-  modals.forEach((m) => m.remove());
-  renderEmployees();
-
-  createToast("Employee archived successfully", "warning");
-};
+// openEditEmployeeModal is now defined at the top of renderEmployees()
+// confirmArchiveEmployee and archiveEmployee are now defined at the top of renderEmployees()
+// This ensures they are available when inline onclick handlers are rendered
 
 // Legacy delete function (kept for backward compatibility)
 window.confirmDeleteEmployee = function (userId) {
