@@ -605,12 +605,10 @@ function renderEmployees() {
           return;
         }
         const id = button.dataset.editEmployee;
-        showEditModal(id); // Use the local function defined at the top of renderEmployees
+        window.openEditEmployeeModal(id); // Use the global function
       });
     });
   };
-
-  // Note: showEditModal is defined at the top of renderEmployees() and assigned to window.openEditEmployeeModal
 
   attachRemovalHandlers();
   updateQuickMetrics();
@@ -1650,11 +1648,6 @@ if (typeof window !== "undefined") {
   }
 }
 
-// openEditEmployeeModal is now defined at the top of renderEmployees()
-// confirmArchiveEmployee and archiveEmployee are now defined at the top of renderEmployees()
-// This ensures they are available when inline onclick handlers are rendered
-
-// Legacy delete function (kept for backward compatibility)
 window.confirmDeleteEmployee = function (userId) {
   confirmArchiveEmployee(userId);
 };

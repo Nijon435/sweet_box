@@ -130,6 +130,145 @@ async function saveAttendanceLog(log) {
   }
 }
 
+// Show need to clock in modal
+function showNeedToClockInModal() {
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon warning">
+          <span class="modal-icon-emoji">⚠️</span>
+        </div>
+        <h3 class="modal-title">Not Clocked In</h3>
+        <p class="modal-message">You need to clock in first before clocking out.</p>
+        <div class="modal-info-box">
+          <div class="modal-info-value">Please use the Clock In button first.</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="got-it-need-clock-in-btn" class="modal-btn primary">Got it</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const gotItBtn = document.getElementById("got-it-need-clock-in-btn");
+  gotItBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+}
+
+// Show already clocked out modal
+function showAlreadyClockedOutModal() {
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon success">
+          <span class="modal-icon-emoji">✓</span>
+        </div>
+        <h3 class="modal-title">Already Clocked Out</h3>
+        <p class="modal-message">You've already clocked out for the day.</p>
+        <div class="modal-info-box">
+          <div class="modal-info-value">Your shift has ended. See you tomorrow!</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="got-it-clocked-out-btn" class="modal-btn primary">Got it</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const gotItBtn = document.getElementById("got-it-clocked-out-btn");
+  gotItBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+}
+
+// Show already clocked in modal
+function showAlreadyClockedInModal() {
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon info">
+          <span class="modal-icon-emoji">ℹ️</span>
+        </div>
+        <h3 class="modal-title">Already Clocked In</h3>
+        <p class="modal-message">You've already clocked in today.</p>
+        <div class="modal-info-box">
+          <div class="modal-info-value">Please clock out before clocking in again.</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="got-it-clocked-in-btn" class="modal-btn primary">Got it</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const gotItBtn = document.getElementById("got-it-clocked-in-btn");
+  gotItBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+}
+
+// Show late note dialog
+function showLateNoteDialog() {
+  return new Promise((resolve) => {
+    const modal = document.createElement("div");
+    modal.className = "modal-overlay";
+
+    modal.innerHTML = `
+      <div class="modal-content medium">
+        <div class="modal-header">
+          <div class="modal-icon warning">
+            <span class="modal-icon-emoji">⚠️</span>
+          </div>
+          <h3 class="modal-title">Late Arrival</h3>
+          <p class="modal-message">You're arriving late. Please provide a reason.</p>
+        </div>
+        <textarea id="late-note-input" placeholder="Reason for late arrival..." style="width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 100px; margin-bottom: 1.5rem; font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f6c343'"></textarea>
+        <div class="modal-actions" style="justify-content: flex-end;">
+          <button id="cancel-late-btn" class="modal-btn cancel">Cancel</button>
+          <button id="skip-note-btn" class="modal-btn cancel" style="background: #6b7280; color: white;">Skip Note</button>
+          <button id="submit-note-btn" class="modal-btn primary">Clock In</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const noteInput = modal.querySelector("#late-note-input");
+    const cancelBtn = modal.querySelector("#cancel-late-btn");
+    const skipBtn = modal.querySelector("#skip-note-btn");
+    const submitBtn = modal.querySelector("#submit-note-btn");
+
+    cancelBtn.onclick = () => {
+      modal.remove();
+      resolve(null);
+    };
+
+    skipBtn.onclick = () => {
+      modal.remove();
+      resolve("");
+    };
+
+    submitBtn.onclick = () => {
+      const note = noteInput.value.trim();
+      modal.remove();
+      resolve(note);
+    };
+  });
+}
+
 function renderAttendance() {
   const currentUser = getCurrentUser();
   const clockInBtn = document.getElementById("clock-in-btn");
@@ -419,144 +558,7 @@ function renderAttendance() {
     });
   }
 
-  // Show need to clock in modal
-  function showNeedToClockInModal() {
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-icon warning">
-            <span class="modal-icon-emoji">⚠️</span>
-          </div>
-          <h3 class="modal-title">Not Clocked In</h3>
-          <p class="modal-message">You need to clock in first before clocking out.</p>
-          <div class="modal-info-box">
-            <div class="modal-info-value">Please use the Clock In button first.</div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button id="got-it-need-clock-in-btn" class="modal-btn primary">Got it</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    const gotItBtn = document.getElementById("got-it-need-clock-in-btn");
-    gotItBtn.addEventListener("click", () => {
-      modal.remove();
-    });
-  }
-
-  // Show already clocked out modal
-  function showAlreadyClockedOutModal() {
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-icon success">
-            <span class="modal-icon-emoji">✓</span>
-          </div>
-          <h3 class="modal-title">Already Clocked Out</h3>
-          <p class="modal-message">You've already clocked out for the day.</p>
-          <div class="modal-info-box">
-            <div class="modal-info-value">Your shift has ended. See you tomorrow!</div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button id="got-it-clocked-out-btn" class="modal-btn primary">Got it</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    const gotItBtn = document.getElementById("got-it-clocked-out-btn");
-    gotItBtn.addEventListener("click", () => {
-      modal.remove();
-    });
-  }
-
-  // Show already clocked in modal
-  function showAlreadyClockedInModal() {
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-icon info">
-            <span class="modal-icon-emoji">ℹ️</span>
-          </div>
-          <h3 class="modal-title">Already Clocked In</h3>
-          <p class="modal-message">You've already clocked in today.</p>
-          <div class="modal-info-box">
-            <div class="modal-info-value">Please clock out before clocking in again.</div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button id="got-it-clocked-in-btn" class="modal-btn primary">Got it</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    const gotItBtn = document.getElementById("got-it-clocked-in-btn");
-    gotItBtn.addEventListener("click", () => {
-      modal.remove();
-    });
-  }
-
-  // Show late note dialog
-  function showLateNoteDialog() {
-    return new Promise((resolve) => {
-      const modal = document.createElement("div");
-      modal.className = "modal-overlay";
-
-      modal.innerHTML = `
-        <div class="modal-content medium">
-          <div class="modal-header">
-            <div class="modal-icon warning">
-              <span class="modal-icon-emoji">⚠️</span>
-            </div>
-            <h3 class="modal-title">Late Arrival</h3>
-            <p class="modal-message">You're arriving late. Please provide a reason.</p>
-          </div>
-          <textarea id="late-note-input" placeholder="Reason for late arrival..." style="width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 100px; margin-bottom: 1.5rem; font-size: 1rem; font-family: inherit; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f6c343'"></textarea>
-          <div class="modal-actions" style="justify-content: flex-end;">
-            <button id="cancel-late-btn" class="modal-btn cancel">Cancel</button>
-            <button id="skip-note-btn" class="modal-btn cancel" style="background: #6b7280; color: white;">Skip Note</button>
-            <button id="submit-note-btn" class="modal-btn primary">Clock In</button>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      const noteInput = modal.querySelector("#late-note-input");
-      const cancelBtn = modal.querySelector("#cancel-late-btn");
-      const skipBtn = modal.querySelector("#skip-note-btn");
-      const submitBtn = modal.querySelector("#submit-note-btn");
-
-      cancelBtn.onclick = () => {
-        modal.remove();
-        resolve(null);
-      };
-
-      skipBtn.onclick = () => {
-        modal.remove();
-        resolve("");
-      };
-
-      submitBtn.onclick = () => {
-        const note = noteInput.value.trim();
-        modal.remove();
-        resolve(note);
-      };
-    });
-  }
+  // isUserLate and modal functions are now defined globally above renderAttendance()
 
   // Status filter handler
   if (statusFilter && !statusFilter.dataset.bound) {
