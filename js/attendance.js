@@ -156,6 +156,8 @@ function showNeedToClockInModal() {
     </div>
   `;
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const gotItBtn = document.getElementById("got-it-need-clock-in-btn");
   gotItBtn.addEventListener("click", () => {
@@ -189,6 +191,8 @@ function showAlreadyClockedOutModal() {
     </div>
   `;
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const gotItBtn = document.getElementById("got-it-clocked-out-btn");
   gotItBtn.addEventListener("click", () => {
@@ -222,6 +226,8 @@ function showAlreadyClockedInModal() {
     </div>
   `;
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const gotItBtn = document.getElementById("got-it-clocked-in-btn");
   gotItBtn.addEventListener("click", () => {
@@ -257,6 +263,8 @@ function showLateNoteDialog() {
     `;
 
     document.body.appendChild(modal);
+    // Add active class to show modal (required by modal.css)
+    setTimeout(() => modal.classList.add("active"), 10);
 
     const noteInput = modal.querySelector("#late-note-input");
     const cancelBtn = modal.querySelector("#cancel-late-btn");
@@ -930,6 +938,8 @@ function openRequestLeaveModal(user) {
   `;
 
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const form = document.getElementById("leave-request-form");
   form.addEventListener("submit", (e) => {

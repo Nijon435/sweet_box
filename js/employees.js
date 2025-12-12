@@ -134,6 +134,8 @@ window.editUserAccess = function (userId) {
   `;
 
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const form = modal.querySelector("#edit-user-access-form");
   form.addEventListener("submit", (e) => {
@@ -313,6 +315,8 @@ window.openEditEmployeeModal = function (userId) {
   `;
 
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const form = modal.querySelector(`#edit-employee-form-${userId}`);
   form.addEventListener("submit", async (e) => {
@@ -386,6 +390,8 @@ window.confirmArchiveEmployee = async function (userId) {
   `;
 
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 };
 
 // Define archive execution function globally
@@ -937,6 +943,8 @@ function openAddEmployeeModal() {
   `;
 
   document.body.appendChild(modal);
+  // Add active class to show modal (required by modal.css)
+  setTimeout(() => modal.classList.add("active"), 10);
 
   const form = modal.querySelector("#add-employee-form");
   form.addEventListener("submit", (e) => {
