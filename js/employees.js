@@ -604,21 +604,10 @@ function renderEmployees() {
         renderEmployees();
       });
     });
-
-    // Add edit button handlers
-    document.querySelectorAll("[data-edit-employee]").forEach((button) => {
-      if (button.dataset.bound) return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", () => {
-        if (!isAdminOrManager()) {
-          alert("Only administrators and managers can edit employees.");
-          return;
-        }
-        const id = button.dataset.editEmployee;
-        window.openEditEmployeeModal(id); // Use the global function
-      });
-    });
   };
+
+  // Note: Edit and Archive buttons use inline onclick handlers, not addEventListener
+  // The onclick handlers call window.openEditEmployeeModal and window.confirmArchiveEmployee
 
   attachRemovalHandlers();
   updateQuickMetrics();
