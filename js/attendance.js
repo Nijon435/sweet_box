@@ -893,16 +893,16 @@ function openRequestLeaveModal(user) {
       <h3 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; color: #333;">Request Leave</h3>
       <form id="leave-request-form">
         <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Start Date</label>
-          <input type="date" id="leave-start-date" min="${today}" required style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;" />
+          <label for="leave-start-date" style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Start Date</label>
+          <input type="date" id="leave-start-date" name="leave-start-date" autocomplete="off" min="${today}" required style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;" />
         </div>
         <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">End Date</label>
-          <input type="date" id="leave-end-date" min="${today}" required style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;" />
+          <label for="leave-end-date" style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">End Date</label>
+          <input type="date" id="leave-end-date" name="leave-end-date" autocomplete="off" min="${today}" required style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;" />
         </div>
         <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Reason</label>
-          <textarea id="leave-reason" rows="3" placeholder="Enter reason for leave..." style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: inherit; resize: vertical;"></textarea>
+          <label for="leave-reason" style="display: block; margin-bottom: 0.5rem; color: #666; font-size: 0.875rem;">Reason</label>
+          <textarea id="leave-reason" name="leave-reason" autocomplete="off" rows="3" placeholder="Enter reason for leave..." style="width: 100%; padding: 0.625rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: inherit; resize: vertical;"></textarea>
         </div>
         <div class="modal-actions" style="justify-content: flex-end;">
           <button type="button" onclick="this.closest('.modal-overlay').remove()" class="modal-btn cancel">Cancel</button>

@@ -231,24 +231,32 @@ function renderEmployees() {
         <form id="edit-employee-form">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
-              <label>Name</label>
-              <input type="text" name="name" value="${user.name}" required>
+              <label for="edit-name-${userId}">Name</label>
+              <input type="text" id="edit-name-${userId}" name="name" autocomplete="name" value="${
+      user.name
+    }" required>
             </div>
             <div>
-              <label>Email</label>
-              <input type="email" name="email" value="${user.email}" required>
+              <label for="edit-email-${userId}">Email</label>
+              <input type="email" id="edit-email-${userId}" name="email" autocomplete="email" value="${
+      user.email
+    }" required>
             </div>
             <div>
-              <label>Phone</label>
-              <input type="text" name="phone" value="${user.phone || ""}">
+              <label for="edit-phone-${userId}">Phone</label>
+              <input type="tel" id="edit-phone-${userId}" name="phone" autocomplete="tel" value="${
+      user.phone || ""
+    }">
             </div>
             <div>
-              <label>Role</label>
-              <input type="text" name="role" value="${user.role}" required>
+              <label for="edit-role-${userId}">Role</label>
+              <input type="text" id="edit-role-${userId}" name="role" autocomplete="organization-title" value="${
+      user.role
+    }" required>
             </div>
             <div>
-              <label>Access</label>
-              <select name="permission" required>
+              <label for="edit-permission-${userId}">Access</label>
+              <select id="edit-permission-${userId}" name="permission" autocomplete="off" required>
                 <option value="admin" ${
                   user.permission === "admin" ? "selected" : ""
                 }>Admin - Full Access</option>
@@ -268,22 +276,20 @@ function renderEmployees() {
               </select>
             </div>
             <div>
-              <label>Shift Start</label>
-              <input type="time" name="shiftStart" value="${
-                user.shiftStart || ""
-              }">
+              <label for="edit-shiftStart-${userId}">Shift Start</label>
+              <input type="time" id="edit-shiftStart-${userId}" name="shiftStart" autocomplete="off" value="${
+      user.shiftStart || ""
+    }">
             </div>
             <div>
-              <label>Hire Date</label>
-              <input type="date" name="hireDate" value="${
-                user.hireDate
-                  ? new Date(user.hireDate).toISOString().split("T")[0]
-                  : ""
-              }">
+              <label for="edit-hireDate-${userId}">Hire Date</label>
+              <input type="date" id="edit-hireDate-${userId}" name="hireDate" autocomplete="off" value="${
+      user.hireDate ? new Date(user.hireDate).toISOString().split("T")[0] : ""
+    }">
             </div>
             <div>
-              <label>Status</label>
-              <select name="status" required>
+              <label for="edit-status-${userId}">Status</label>
+              <select id="edit-status-${userId}" name="status" autocomplete="off" required>
                 <option value="active" ${
                   user.status === "active" ? "selected" : ""
                 }>Active</option>
@@ -885,29 +891,29 @@ function openAddEmployeeModal() {
       <form id="add-employee-form">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Name *</label>
-            <input type="text" name="name" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-name-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Name *</label>
+            <input type="text" id="add-name-input" name="name" autocomplete="name" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Email *</label>
-            <input type="email" name="email" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-email-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Email *</label>
+            <input type="email" id="add-email-input" name="email" autocomplete="email" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Phone</label>
-            <input type="text" name="phone" id="add-phone-input" placeholder="09XXXXXXXXX" maxlength="13" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-phone-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Phone</label>
+            <input type="tel" id="add-phone-input" name="phone" autocomplete="tel" placeholder="09XXXXXXXXX" maxlength="13" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
             <small style="color: #888; font-size: 0.875rem;">11 digits, spaces allowed (e.g., 09XX XXX XXXX)</small>
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Password *</label>
-            <input type="password" name="password" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-password-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Password *</label>
+            <input type="password" id="add-password-input" name="password" autocomplete="new-password" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Role (Job Title) *</label>
-            <input type="text" name="role" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-role-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Role (Job Title) *</label>
+            <input type="text" id="add-role-input" name="role" autocomplete="organization-title" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div>
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Access Level *</label>
-            <select name="permission" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-permission-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Access Level *</label>
+            <select id="add-permission-input" name="permission" autocomplete="off" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
               <option value="">Select Access Level</option>
               <option value="admin">Admin - Full Access</option>
               <option value="manager">Manager</option>
@@ -916,13 +922,13 @@ function openAddEmployeeModal() {
             </select>
           </div>
           <div style="grid-column: 1 / -1;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Shift Start</label>
-            <input type="time" name="shiftStart" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-shiftStart-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Shift Start</label>
+            <input type="time" id="add-shiftStart-input" name="shiftStart" autocomplete="off" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
             <small style="color: #888; font-size: 0.875rem;">Leave empty for admins. Hire date will be set to today automatically.</small>
           </div>
           <div style="grid-column: 1 / -1;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Status *</label>
-            <select name="status" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <label for="add-status-input" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555;">Status *</label>
+            <select id="add-status-input" name="status" autocomplete="off" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>

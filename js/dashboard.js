@@ -68,8 +68,10 @@ function renderDashboard() {
     },
     { present: 0, late: 0, absent: 0, "on-leave": 0 }
   );
+  // Count both present and late as present for coverage calculation
+  const totalPresent = attendanceCounts.present + attendanceCounts.late;
   const coveragePercent = nonAdminUsers.length
-    ? Math.round((attendanceCounts.present / nonAdminUsers.length) * 100)
+    ? Math.round((totalPresent / nonAdminUsers.length) * 100)
     : 0;
 
   // Calculate weekly revenue (last 7 days)
@@ -99,7 +101,9 @@ function renderDashboard() {
     "metric-orders": `${orders.served} orders`,
     "metric-revenue": formatCurrency(weeklyRevenue),
     "metric-coverage": `${coveragePercent}%`,
-    "coverage-note": `${attendanceCounts.present} of ${nonAdminUsers.length} present`,
+    "coverage-note": `${totalPresent} of ${nonAdminUsers.length} present${
+      attendanceCounts.late > 0 ? ` (${attendanceCounts.late} late)` : ""
+    }`,
     "sales-trend-note": `${delta}% vs. yesterday`,
     "revenue-trend-note": "Last 7 days",
     "inventory-status-note": `${metrics.lowStock} low stock alerts`,
