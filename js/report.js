@@ -595,21 +595,9 @@ async function exportStaffAttendanceExcel(staffId, monthValue) {
   }
   const monthLogs = await response.json();
 
-  // Build the report data
-  const reportData = [];
+  // Build attendance data for all days
+  const attendanceData = [];
 
-  // Header rows
-  reportData.push(["DAILY TIME RECORD"]);
-  reportData.push([`For the Period: ${monthName} ${year}`]);
-  reportData.push([]);
-  reportData.push([`Name: ${employee.name}`]);
-  reportData.push([`Department: ${employee.permission || "Staff"}`]);
-  reportData.push([]);
-
-  // Column headers
-  reportData.push(["Day", "AM In", "AM Out", "PM In", "PM Out", "Total"]);
-
-  // Data rows for each day
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
       day
@@ -670,26 +658,131 @@ async function exportStaffAttendanceExcel(staffId, monthValue) {
     }
 
     const totalStr = totalHours > 0 ? totalHours.toFixed(2) : "";
-
-    reportData.push([day, amIn, amOut, pmIn, pmOut, totalStr]);
+    attendanceData.push({
+      day,
+      amIn,
+      amOut,
+      pmIn,
+      pmOut,
+      totalStr,
+      totalHours,
+    });
   }
 
-  // Add total hours row - properly calculate sum from all days
-  const allTotalHours = reportData
-    .slice(8) // Skip header rows
-    .filter((row) => row[5] && row[5] !== "") // Filter out empty strings
-    .reduce((sum, row) => sum + parseFloat(row[5]), 0);
+  // Split into two halves
+  const firstHalf = attendanceData.slice(0, 15);
+  const secondHalf = attendanceData.slice(15);
 
+  // Calculate totals
+  const firstHalfTotal = firstHalf.reduce(
+    (sum, row) => sum + row.totalHours,
+    0
+  );
+  const secondHalfTotal = secondHalf.reduce(
+    (sum, row) => sum + row.totalHours,
+    0
+  );
+  const totalHoursSum = firstHalfTotal + secondHalfTotal;
+
+  // Build the report data with side-by-side layout
+  const reportData = [];
+
+  // Header rows
+  reportData.push(["DAILY TIME RECORD"]);
+  reportData.push([`For the Period: ${monthName} ${year}`]);
   reportData.push([]);
-  reportData.push(["Total Hours:", "", "", "", "", allTotalHours.toFixed(2)]);
-  reportData.push(["Total Hours Rendered:", allTotalHours.toFixed(2)]);
+  reportData.push([
+    `Name: ${employee.name}`,
+    "",
+    "",
+    "",
+    "",
+    "",
+    `For the Period: ${monthName} ${year}`,
+  ]);
+  reportData.push([
+    `Role: ${employee.role || "Staff"}`,
+    "",
+    "",
+    "",
+    "",
+    "",
+    `Access: ${employee.permission || "staff"}`,
+  ]);
+  reportData.push([]);
+
+  // Column headers for side-by-side tables
+  reportData.push([
+    "Day",
+    "AM In",
+    "AM Out",
+    "PM In",
+    "PM Out",
+    "Total",
+    "", // Spacer
+    "Day",
+    "AM In",
+    "AM Out",
+    "PM In",
+    "PM Out",
+    "Total",
+  ]);
+
+  // Data rows - side by side
+  const maxRows = Math.max(firstHalf.length, secondHalf.length);
+  for (let i = 0; i < maxRows; i++) {
+    const row1 = firstHalf[i];
+    const row2 = secondHalf[i];
+
+    reportData.push([
+      row1 ? row1.day : "",
+      row1 ? row1.amIn : "",
+      row1 ? row1.amOut : "",
+      row1 ? row1.pmIn : "",
+      row1 ? row1.pmOut : "",
+      row1 ? row1.totalStr : "",
+      "", // Spacer
+      row2 ? row2.day : "",
+      row2 ? row2.amIn : "",
+      row2 ? row2.amOut : "",
+      row2 ? row2.pmIn : "",
+      row2 ? row2.pmOut : "",
+      row2 ? row2.totalStr : "",
+    ]);
+  }
+
+  // Add total hours row
+  reportData.push([
+    "",
+    "",
+    "",
+    "",
+    "Total Hours:",
+    firstHalfTotal.toFixed(2),
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Total Hours:",
+    secondHalfTotal.toFixed(2),
+  ]);
+  reportData.push([]);
+  reportData.push([`Total Hours Rendered: ${totalHoursSum.toFixed(2)}`]);
 
   // Create worksheet and workbook
   const ws = XLSX.utils.aoa_to_sheet(reportData);
 
-  // Set column widths
+  // Set column widths for side-by-side layout
   ws["!cols"] = [
-    { wch: 5 }, // Day
+    { wch: 5 }, // Day (1-15)
+    { wch: 8 }, // AM In
+    { wch: 8 }, // AM Out
+    { wch: 8 }, // PM In
+    { wch: 8 }, // PM Out
+    { wch: 8 }, // Total
+    { wch: 2 }, // Spacer
+    { wch: 5 }, // Day (16-31)
     { wch: 8 }, // AM In
     { wch: 8 }, // AM Out
     { wch: 8 }, // PM In
@@ -705,6 +798,8 @@ async function exportStaffAttendanceExcel(staffId, monthValue) {
     wb,
     `DTR_${employee.name.replace(/\s/g, "_")}_${monthName}_${year}.xlsx`
   );
+
+  showNotification("Attendance report downloaded successfully", "success");
 }
 
 // Export Staff Attendance Report as Word (Daily Time Record format)
@@ -1037,6 +1132,8 @@ async function exportStaffAttendanceWord(staffId, monthValue) {
   )}_${monthName}_${year}.doc`;
   link.click();
   URL.revokeObjectURL(link.href);
+
+  showNotification("Attendance report downloaded successfully", "success");
 }
 
 // ========== Utility Functions ==========
